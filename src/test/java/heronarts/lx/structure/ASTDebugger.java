@@ -43,6 +43,19 @@ public class ASTDebugger {
     }
     
     public static void main(String[] args) {
-        debugExpression("3 + 4");
+        try {
+            System.out.println("Testing simple parse...");
+            TreeNode ast = LXFExpression.parse("3");
+            System.out.println("Simple parse successful: " + ast.text);
+            
+            System.out.println("\nTesting addition parse...");
+            ast = LXFExpression.parse("3+4");
+            System.out.println("Addition parse successful: " + ast.text);
+            
+            printNode(ast, 0);
+        } catch (Exception e) {
+            System.out.println("Parse error: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }

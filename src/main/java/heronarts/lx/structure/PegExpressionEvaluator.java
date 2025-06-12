@@ -166,55 +166,50 @@ public class PegExpressionEvaluator implements ExpressionEvaluator {
     // Helper methods to detect operations at each level
     
     private boolean hasLogicalOrOperation(TreeNode node) {
-        if (node.elements.size() < 2) return false;
-        
-        TreeNode secondElement = node.elements.get(1);
-        return secondElement != null && !secondElement.text.trim().isEmpty() && 
-               (secondElement.text.contains("||") || secondElement.text.contains("|"));
+        String text = node.text.trim();
+        return text.contains("||") || text.contains("|");
     }
     
     private boolean hasLogicalAndOperation(TreeNode node) {
-        if (node.elements.size() < 2) return false;
-        
-        TreeNode secondElement = node.elements.get(1);
-        return secondElement != null && !secondElement.text.trim().isEmpty() && 
-               (secondElement.text.contains("&&") || secondElement.text.contains("&"));
+        String text = node.text.trim();
+        return text.contains("&&") || text.contains("&");
     }
     
     private boolean hasComparisonOperation(TreeNode node) {
-        if (node.elements.size() < 2) return false;
-        
-        TreeNode secondElement = node.elements.get(1);
-        return secondElement != null && !secondElement.text.trim().isEmpty() && 
-               (secondElement.text.contains("<=") || secondElement.text.contains(">=") || 
-                secondElement.text.contains("<") || secondElement.text.contains(">") || 
-                secondElement.text.contains("==") || secondElement.text.contains("!="));
+        String text = node.text.trim();
+        return text.contains("<=") || text.contains(">=") || text.contains("<") || 
+               text.contains(">") || text.contains("==") || text.contains("!=");
     }
     
     private boolean hasAdditiveOperation(TreeNode node) {
-        // For additive operations, look for the second element starting with + or -
-        if (node.elements.size() < 2) return false;
+        // Check if the node text contains additive operations
+        String text = node.text.trim();
         
-        TreeNode secondElement = node.elements.get(1);
-        return secondElement != null && !secondElement.text.trim().isEmpty() && 
-               (secondElement.text.startsWith("+") || secondElement.text.startsWith("-"));
+        // Look for + or - operators that are not at the beginning (to avoid unary minus)
+        for (int i = 1; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (c == '+' || c == '-') {
+                // Make sure it's not part of a number like "1e-5"
+                if (i > 0 && !Character.isDigit(text.charAt(i-1))) {
+                    return true;
+                }
+                if (i > 0 && Character.isDigit(text.charAt(i-1)) && c == '+') {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
     }
     
     private boolean hasMultiplicativeOperation(TreeNode node) {
-        if (node.elements.size() < 2) return false;
-        
-        TreeNode secondElement = node.elements.get(1);
-        return secondElement != null && !secondElement.text.trim().isEmpty() && 
-               (secondElement.text.startsWith("*") || secondElement.text.startsWith("/") || 
-                secondElement.text.startsWith("%"));
+        String text = node.text.trim();
+        return text.contains("*") || text.contains("/") || text.contains("%");
     }
     
     private boolean hasPowerOperation(TreeNode node) {
-        if (node.elements.size() < 2) return false;
-        
-        TreeNode secondElement = node.elements.get(1);
-        return secondElement != null && !secondElement.text.trim().isEmpty() && 
-               secondElement.text.startsWith("^");
+        String text = node.text.trim();
+        return text.contains("^");
     }
 
     private ExpressionResult evaluateTernary(TreeNode node) {
@@ -263,91 +258,129 @@ public class PegExpressionEvaluator implements ExpressionEvaluator {
     }
 
     /**
-     * Generic binary operation evaluator that handles left-associative operators.
-     * Works directly with AST nodes instead of re-parsing text.
+     * Generic binary operation evaluator using text parsing approach.
+     * Since the PEG AST structure is complex, we use text-based parsing for binary operations.
      */
     private ExpressionResult evaluateBinaryOperation(TreeNode node, String... operators) {
-        // With the new grammar, binary operations have a cleaner structure:
-        // elements[0] = left operand (as AST node)
-        // elements[1] = operator + right operand structure
+        String text = node.text.trim();
         
-        if (node.elements.size() < 2) {
-            // No operation, just evaluate the single element
-            if (node.elements.size() == 1) {
+        // If there are no operators in the text, delegate to child evaluation
+        boolean hasOperation = false;
+        for (String op : operators) {
+            if (text.contains(op)) {
+                hasOperation = true;
+                break;
+            }
+        }
+        
+        if (!hasOperation) {
+            // No operation at this level, evaluate the first child element
+            if (!node.elements.isEmpty()) {
                 return evaluateASTNode(node.elements.get(0));
+            } else {
+                return parseLeafNode(node);
             }
-            throw new IllegalArgumentException("No operands found in binary operation: " + node.text);
         }
         
-        // Left operand is the first element
-        ExpressionResult left = evaluateASTNode(node.elements.get(0));
+        // Use simple left-to-right parsing for operations
+        return parseAndEvaluateExpression(text, operators);
+    }
+    
+    /**
+     * Parse and evaluate a text expression with given operators.
+     * This uses simple text parsing to handle binary operations.
+     */
+    private ExpressionResult parseAndEvaluateExpression(String text, String... operators) {
+        // Simple left-to-right evaluation
+        ExpressionResult result = null;
+        int pos = 0;
+        String pendingOperator = null;
         
-        // Process all operator + operand pairs (for left-associativity)
-        ExpressionResult result = left;
-        
-        for (int i = 1; i < node.elements.size(); i++) {
-            TreeNode operatorElement = node.elements.get(i);
+        while (pos < text.length()) {
+            // Skip whitespace
+            while (pos < text.length() && Character.isWhitespace(text.charAt(pos))) {
+                pos++;
+            }
             
-            // Find the operator and right operand in this element
-            String operator = null;
-            TreeNode rightOperand = null;
+            if (pos >= text.length()) break;
             
-            // Look through the elements to find operator and operand
-            // The structure is: [SPC, operator, SPC, operand] or similar
-            for (TreeNode subElement : operatorElement.elements) {
-                String text = subElement.text.trim();
-                if (!text.isEmpty()) {
-                    boolean isOperator = false;
-                    for (String op : operators) {
-                        if (text.equals(op)) {
-                            operator = op;
-                            isOperator = true;
-                            break;
-                        }
-                    }
-                    
-                    if (!isOperator && rightOperand == null && !text.matches("\\s+")) {
-                        // This is the right operand - could be a simple text or a complex node
-                        rightOperand = subElement;
-                    }
+            // Find the next operator
+            int nextOpPos = -1;
+            String nextOp = null;
+            
+            for (String op : operators) {
+                int opPos = text.indexOf(op, pos + (result == null ? 0 : 1)); // Allow unary for first operand
+                if (opPos != -1 && (nextOpPos == -1 || opPos < nextOpPos)) {
+                    nextOpPos = opPos;
+                    nextOp = op;
                 }
             }
             
-            // If we didn't find a direct text operator, the structure might be nested
-            if (operator == null || rightOperand == null) {
-                // Look for nested structures that contain the operator and operand
-                for (TreeNode subElement : operatorElement.elements) {
-                    if (subElement.elements.size() > 0) {
-                        // Try to parse this as a nested structure
-                        for (TreeNode nestedElement : subElement.elements) {
-                            String text = nestedElement.text.trim();
-                            if (!text.isEmpty()) {
-                                for (String op : operators) {
-                                    if (text.equals(op)) {
-                                        operator = op;
-                                        break;
-                                    }
-                                }
-                                
-                                // Look for the operand node (has labels like POWER, UNARY, etc.)
-                                if (rightOperand == null && hasAnyLabel(nestedElement)) {
-                                    rightOperand = nestedElement;
-                                }
-                            }
-                        }
-                    }
+            // Extract operand
+            String operandText;
+            if (nextOpPos == -1) {
+                operandText = text.substring(pos).trim();
+                pos = text.length();
+            } else {
+                operandText = text.substring(pos, nextOpPos).trim();
+                pos = nextOpPos + nextOp.length();
+            }
+            
+            if (!operandText.isEmpty()) {
+                ExpressionResult operand = evaluateSimpleExpression(operandText);
+                
+                if (result == null) {
+                    result = operand;
+                    pendingOperator = nextOp;
+                } else if (pendingOperator != null) {
+                    result = applyBinaryOperator(pendingOperator, result, operand);
+                    pendingOperator = nextOp;
                 }
             }
-            
-            if (operator == null || rightOperand == null) {
-                throw new IllegalArgumentException("Could not find operator and operand in: " + operatorElement.text);
-            }
-            
-            ExpressionResult right = evaluateASTNode(rightOperand);
-            result = applyBinaryOperator(operator, result, right);
         }
         
-        return result;
+        return result != null ? result : new ExpressionResult.Numeric(0.0f);
+    }
+    
+    /**
+     * Evaluate a simple expression (no operators at this level).
+     */
+    private ExpressionResult evaluateSimpleExpression(String text) {
+        text = text.trim();
+        
+        // If it contains parentheses, functions, or complex expressions, use PEG
+        if (text.contains("(") || text.contains(")") || text.contains("sin") || 
+            text.contains("cos") || text.contains("true") || text.contains("false")) {
+            try {
+                TreeNode ast = LXFExpression.parse(text);
+                return evaluateASTNode(ast);
+            } catch (Exception e) {
+                // Fallback to direct parsing
+            }
+        }
+        
+        // Direct value parsing
+        return parseDirectValue(text);
+    }
+    
+    /**
+     * Parse a simple value directly (number, boolean).
+     */
+    private ExpressionResult parseDirectValue(String text) {
+        // Try to parse as boolean
+        if ("true".equalsIgnoreCase(text)) {
+            return ExpressionResult.Boolean.TRUE;
+        } else if ("false".equalsIgnoreCase(text)) {
+            return ExpressionResult.Boolean.FALSE;
+        }
+        
+        // Try to parse as number
+        try {
+            float value = Float.parseFloat(text);
+            return new ExpressionResult.Numeric(value);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Cannot parse value: " + text);
+        }
     }
     
     /**
