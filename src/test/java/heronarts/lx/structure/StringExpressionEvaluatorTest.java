@@ -1,9 +1,10 @@
 package heronarts.lx.structure;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.DisplayName;
 import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 /**
  * Unit tests for StringExpressionEvaluator functionality.
@@ -13,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * - "($row-1)*$rowSpacing"
  * - "$flipBacking ? -2 : 2"
  */
-public class ExpressionEvaluatorTest {
+public class StringExpressionEvaluatorTest {
 
     private ExpressionEvaluator evaluator;
 
@@ -58,6 +59,12 @@ public class ExpressionEvaluatorTest {
         assertEquals(0.75f, evaluateNumeric("3/4"));
         assertEquals(1.0f, evaluateNumeric("3%2"));
         assertEquals(9.0f, evaluateNumeric("3^2"));
+    }
+
+    @Test
+    @DisplayName("Test arithmetic operation with unary")
+    void testArithmeticWithUnary() {
+        assertEquals(0.0f, evaluateNumeric("4+-4"));
     }
 
     @Test
@@ -141,6 +148,10 @@ public class ExpressionEvaluatorTest {
         assertEquals(1.0f, evaluateNumeric("true?true?1:2:3"));
         assertEquals(2.0f, evaluateNumeric("true?false?1:2:3"));
         assertEquals(3.0f, evaluateNumeric("false?true?1:2:3"));
+        
+        // Nested ternary (with parentheses)
+        assertEquals(3.0f, evaluateNumeric("false?(true?1:2):3"));
+        assertEquals(3.0f, evaluateNumeric(" false ?  ( true ?  1 : 2  ) :  3 "));
     }
 
     @Test
