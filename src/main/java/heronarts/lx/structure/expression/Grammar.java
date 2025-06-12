@@ -252,11 +252,16 @@ abstract class Grammar {
                     int index3 = offset;
                     List<TreeNode> elements2 = new ArrayList<TreeNode>(4);
                     TreeNode address4 = FAILURE;
+                    int index4 = offset;
                     address4 = _read_SPC();
+                    if (address4 == FAILURE) {
+                        address4 = new TreeNode(input.substring(index4, index4), index4, new ArrayList<TreeNode>());
+                        offset = index4;
+                    }
                     if (address4 != FAILURE) {
                         elements2.add(0, address4);
                         TreeNode address5 = FAILURE;
-                        int index4 = offset;
+                        int index5 = offset;
                         String chunk0 = null;
                         int max0 = offset + 2;
                         if (max0 <= inputSize) {
@@ -276,7 +281,7 @@ abstract class Grammar {
                             }
                         }
                         if (address5 == FAILURE) {
-                            offset = index4;
+                            offset = index5;
                             String chunk1 = null;
                             int max1 = offset + 1;
                             if (max1 <= inputSize) {
@@ -296,13 +301,18 @@ abstract class Grammar {
                                 }
                             }
                             if (address5 == FAILURE) {
-                                offset = index4;
+                                offset = index5;
                             }
                         }
                         if (address5 != FAILURE) {
                             elements2.add(1, address5);
                             TreeNode address6 = FAILURE;
+                            int index6 = offset;
                             address6 = _read_SPC();
+                            if (address6 == FAILURE) {
+                                address6 = new TreeNode(input.substring(index6, index6), index6, new ArrayList<TreeNode>());
+                                offset = index6;
+                            }
                             if (address6 != FAILURE) {
                                 elements2.add(2, address6);
                                 TreeNode address7 = FAILURE;
@@ -390,11 +400,16 @@ abstract class Grammar {
                     int index3 = offset;
                     List<TreeNode> elements2 = new ArrayList<TreeNode>(4);
                     TreeNode address4 = FAILURE;
+                    int index4 = offset;
                     address4 = _read_SPC();
+                    if (address4 == FAILURE) {
+                        address4 = new TreeNode(input.substring(index4, index4), index4, new ArrayList<TreeNode>());
+                        offset = index4;
+                    }
                     if (address4 != FAILURE) {
                         elements2.add(0, address4);
                         TreeNode address5 = FAILURE;
-                        int index4 = offset;
+                        int index5 = offset;
                         String chunk0 = null;
                         int max0 = offset + 2;
                         if (max0 <= inputSize) {
@@ -414,7 +429,7 @@ abstract class Grammar {
                             }
                         }
                         if (address5 == FAILURE) {
-                            offset = index4;
+                            offset = index5;
                             String chunk1 = null;
                             int max1 = offset + 1;
                             if (max1 <= inputSize) {
@@ -434,13 +449,18 @@ abstract class Grammar {
                                 }
                             }
                             if (address5 == FAILURE) {
-                                offset = index4;
+                                offset = index5;
                             }
                         }
                         if (address5 != FAILURE) {
                             elements2.add(1, address5);
                             TreeNode address6 = FAILURE;
+                            int index6 = offset;
                             address6 = _read_SPC();
+                            if (address6 == FAILURE) {
+                                address6 = new TreeNode(input.substring(index6, index6), index6, new ArrayList<TreeNode>());
+                                offset = index6;
+                            }
                             if (address6 != FAILURE) {
                                 elements2.add(2, address6);
                                 TreeNode address7 = FAILURE;
@@ -528,11 +548,16 @@ abstract class Grammar {
                     int index3 = offset;
                     List<TreeNode> elements2 = new ArrayList<TreeNode>(4);
                     TreeNode address4 = FAILURE;
+                    int index4 = offset;
                     address4 = _read_SPC();
+                    if (address4 == FAILURE) {
+                        address4 = new TreeNode(input.substring(index4, index4), index4, new ArrayList<TreeNode>());
+                        offset = index4;
+                    }
                     if (address4 != FAILURE) {
                         elements2.add(0, address4);
                         TreeNode address5 = FAILURE;
-                        int index4 = offset;
+                        int index5 = offset;
                         String chunk0 = null;
                         int max0 = offset + 2;
                         if (max0 <= inputSize) {
@@ -552,7 +577,7 @@ abstract class Grammar {
                             }
                         }
                         if (address5 == FAILURE) {
-                            offset = index4;
+                            offset = index5;
                             String chunk1 = null;
                             int max1 = offset + 2;
                             if (max1 <= inputSize) {
@@ -572,7 +597,7 @@ abstract class Grammar {
                                 }
                             }
                             if (address5 == FAILURE) {
-                                offset = index4;
+                                offset = index5;
                                 String chunk2 = null;
                                 int max2 = offset + 1;
                                 if (max2 <= inputSize) {
@@ -592,7 +617,7 @@ abstract class Grammar {
                                     }
                                 }
                                 if (address5 == FAILURE) {
-                                    offset = index4;
+                                    offset = index5;
                                     String chunk3 = null;
                                     int max3 = offset + 1;
                                     if (max3 <= inputSize) {
@@ -612,7 +637,7 @@ abstract class Grammar {
                                         }
                                     }
                                     if (address5 == FAILURE) {
-                                        offset = index4;
+                                        offset = index5;
                                         String chunk4 = null;
                                         int max4 = offset + 2;
                                         if (max4 <= inputSize) {
@@ -632,7 +657,7 @@ abstract class Grammar {
                                             }
                                         }
                                         if (address5 == FAILURE) {
-                                            offset = index4;
+                                            offset = index5;
                                             String chunk5 = null;
                                             int max5 = offset + 2;
                                             if (max5 <= inputSize) {
@@ -652,7 +677,7 @@ abstract class Grammar {
                                                 }
                                             }
                                             if (address5 == FAILURE) {
-                                                offset = index4;
+                                                offset = index5;
                                             }
                                         }
                                     }
@@ -662,7 +687,12 @@ abstract class Grammar {
                         if (address5 != FAILURE) {
                             elements2.add(1, address5);
                             TreeNode address6 = FAILURE;
+                            int index6 = offset;
                             address6 = _read_SPC();
+                            if (address6 == FAILURE) {
+                                address6 = new TreeNode(input.substring(index6, index6), index6, new ArrayList<TreeNode>());
+                                offset = index6;
+                            }
                             if (address6 != FAILURE) {
                                 elements2.add(2, address6);
                                 TreeNode address7 = FAILURE;
@@ -750,57 +780,25 @@ abstract class Grammar {
                     int index3 = offset;
                     List<TreeNode> elements2 = new ArrayList<TreeNode>(4);
                     TreeNode address4 = FAILURE;
+                    int index4 = offset;
                     address4 = _read_SPC();
+                    if (address4 == FAILURE) {
+                        address4 = new TreeNode(input.substring(index4, index4), index4, new ArrayList<TreeNode>());
+                        offset = index4;
+                    }
                     if (address4 != FAILURE) {
                         elements2.add(0, address4);
                         TreeNode address5 = FAILURE;
-                        int index4 = offset;
-                        String chunk0 = null;
-                        int max0 = offset + 1;
-                        if (max0 <= inputSize) {
-                            chunk0 = input.substring(offset, max0);
-                        }
-                        if (chunk0 != null && chunk0.equals("+")) {
-                            address5 = new TreeNode(input.substring(offset, offset + 1), offset, new ArrayList<TreeNode>());
-                            offset = offset + 1;
-                        } else {
-                            address5 = FAILURE;
-                            if (offset > failure) {
-                                failure = offset;
-                                expected = new ArrayList<String[]>();
-                            }
-                            if (offset == failure) {
-                                expected.add(new String[] { "LXFExpression::ADDITIVE", "\"+\"" });
-                            }
-                        }
-                        if (address5 == FAILURE) {
-                            offset = index4;
-                            String chunk1 = null;
-                            int max1 = offset + 1;
-                            if (max1 <= inputSize) {
-                                chunk1 = input.substring(offset, max1);
-                            }
-                            if (chunk1 != null && chunk1.equals("-")) {
-                                address5 = new TreeNode(input.substring(offset, offset + 1), offset, new ArrayList<TreeNode>());
-                                offset = offset + 1;
-                            } else {
-                                address5 = FAILURE;
-                                if (offset > failure) {
-                                    failure = offset;
-                                    expected = new ArrayList<String[]>();
-                                }
-                                if (offset == failure) {
-                                    expected.add(new String[] { "LXFExpression::ADDITIVE", "\"-\"" });
-                                }
-                            }
-                            if (address5 == FAILURE) {
-                                offset = index4;
-                            }
-                        }
+                        address5 = _read_ADDITIVE_OP();
                         if (address5 != FAILURE) {
                             elements2.add(1, address5);
                             TreeNode address6 = FAILURE;
+                            int index5 = offset;
                             address6 = _read_SPC();
+                            if (address6 == FAILURE) {
+                                address6 = new TreeNode(input.substring(index5, index5), index5, new ArrayList<TreeNode>());
+                                offset = index5;
+                            }
                             if (address6 != FAILURE) {
                                 elements2.add(2, address6);
                                 TreeNode address7 = FAILURE;
@@ -862,6 +860,66 @@ abstract class Grammar {
         return address0;
     }
 
+    TreeNode _read_ADDITIVE_OP() {
+        TreeNode address0 = FAILURE;
+        int index0 = offset;
+        Map<Integer, CacheRecord> rule = cache.get(Label.ADDITIVE_OP);
+        if (rule == null) {
+            rule = new HashMap<Integer, CacheRecord>();
+            cache.put(Label.ADDITIVE_OP, rule);
+        }
+        if (rule.containsKey(offset)) {
+            address0 = rule.get(offset).node;
+            offset = rule.get(offset).tail;
+        } else {
+            int index1 = offset;
+            String chunk0 = null;
+            int max0 = offset + 1;
+            if (max0 <= inputSize) {
+                chunk0 = input.substring(offset, max0);
+            }
+            if (chunk0 != null && chunk0.equals("+")) {
+                address0 = new TreeNode(input.substring(offset, offset + 1), offset, new ArrayList<TreeNode>());
+                offset = offset + 1;
+            } else {
+                address0 = FAILURE;
+                if (offset > failure) {
+                    failure = offset;
+                    expected = new ArrayList<String[]>();
+                }
+                if (offset == failure) {
+                    expected.add(new String[] { "LXFExpression::ADDITIVE_OP", "\"+\"" });
+                }
+            }
+            if (address0 == FAILURE) {
+                offset = index1;
+                String chunk1 = null;
+                int max1 = offset + 1;
+                if (max1 <= inputSize) {
+                    chunk1 = input.substring(offset, max1);
+                }
+                if (chunk1 != null && chunk1.equals("-")) {
+                    address0 = new TreeNode(input.substring(offset, offset + 1), offset, new ArrayList<TreeNode>());
+                    offset = offset + 1;
+                } else {
+                    address0 = FAILURE;
+                    if (offset > failure) {
+                        failure = offset;
+                        expected = new ArrayList<String[]>();
+                    }
+                    if (offset == failure) {
+                        expected.add(new String[] { "LXFExpression::ADDITIVE_OP", "\"-\"" });
+                    }
+                }
+                if (address0 == FAILURE) {
+                    offset = index1;
+                }
+            }
+            rule.put(index0, new CacheRecord(address0, offset));
+        }
+        return address0;
+    }
+
     TreeNode _read_MULTIPLICATIVE() {
         TreeNode address0 = FAILURE;
         int index0 = offset;
@@ -888,11 +946,16 @@ abstract class Grammar {
                     int index3 = offset;
                     List<TreeNode> elements2 = new ArrayList<TreeNode>(4);
                     TreeNode address4 = FAILURE;
+                    int index4 = offset;
                     address4 = _read_SPC();
+                    if (address4 == FAILURE) {
+                        address4 = new TreeNode(input.substring(index4, index4), index4, new ArrayList<TreeNode>());
+                        offset = index4;
+                    }
                     if (address4 != FAILURE) {
                         elements2.add(0, address4);
                         TreeNode address5 = FAILURE;
-                        int index4 = offset;
+                        int index5 = offset;
                         String chunk0 = null;
                         int max0 = offset + 1;
                         if (max0 <= inputSize) {
@@ -912,7 +975,7 @@ abstract class Grammar {
                             }
                         }
                         if (address5 == FAILURE) {
-                            offset = index4;
+                            offset = index5;
                             String chunk1 = null;
                             int max1 = offset + 1;
                             if (max1 <= inputSize) {
@@ -932,7 +995,7 @@ abstract class Grammar {
                                 }
                             }
                             if (address5 == FAILURE) {
-                                offset = index4;
+                                offset = index5;
                                 String chunk2 = null;
                                 int max2 = offset + 1;
                                 if (max2 <= inputSize) {
@@ -952,14 +1015,19 @@ abstract class Grammar {
                                     }
                                 }
                                 if (address5 == FAILURE) {
-                                    offset = index4;
+                                    offset = index5;
                                 }
                             }
                         }
                         if (address5 != FAILURE) {
                             elements2.add(1, address5);
                             TreeNode address6 = FAILURE;
+                            int index6 = offset;
                             address6 = _read_SPC();
+                            if (address6 == FAILURE) {
+                                address6 = new TreeNode(input.substring(index6, index6), index6, new ArrayList<TreeNode>());
+                                offset = index6;
+                            }
                             if (address6 != FAILURE) {
                                 elements2.add(2, address6);
                                 TreeNode address7 = FAILURE;
@@ -1047,7 +1115,12 @@ abstract class Grammar {
                     int index3 = offset;
                     List<TreeNode> elements2 = new ArrayList<TreeNode>(4);
                     TreeNode address4 = FAILURE;
+                    int index4 = offset;
                     address4 = _read_SPC();
+                    if (address4 == FAILURE) {
+                        address4 = new TreeNode(input.substring(index4, index4), index4, new ArrayList<TreeNode>());
+                        offset = index4;
+                    }
                     if (address4 != FAILURE) {
                         elements2.add(0, address4);
                         TreeNode address5 = FAILURE;
@@ -1072,7 +1145,12 @@ abstract class Grammar {
                         if (address5 != FAILURE) {
                             elements2.add(1, address5);
                             TreeNode address6 = FAILURE;
+                            int index5 = offset;
                             address6 = _read_SPC();
+                            if (address6 == FAILURE) {
+                                address6 = new TreeNode(input.substring(index5, index5), index5, new ArrayList<TreeNode>());
+                                offset = index5;
+                            }
                             if (address6 != FAILURE) {
                                 elements2.add(2, address6);
                                 TreeNode address7 = FAILURE;

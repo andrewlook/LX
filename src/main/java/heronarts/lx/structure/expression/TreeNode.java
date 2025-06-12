@@ -71,7 +71,6 @@ class TreeNode4 extends TreeNode {
 class TreeNode5 extends TreeNode {
     TreeNode5(String text, int offset, List<TreeNode> elements) {
         super(text, offset, elements);
-        labelled.put(Label.SPC, elements.get(2));
         labelled.put(Label.LOGICAL_AND, elements.get(3));
     }
 }
@@ -86,7 +85,6 @@ class TreeNode6 extends TreeNode {
 class TreeNode7 extends TreeNode {
     TreeNode7(String text, int offset, List<TreeNode> elements) {
         super(text, offset, elements);
-        labelled.put(Label.SPC, elements.get(2));
         labelled.put(Label.COMPARISON, elements.get(3));
     }
 }
@@ -101,7 +99,6 @@ class TreeNode8 extends TreeNode {
 class TreeNode9 extends TreeNode {
     TreeNode9(String text, int offset, List<TreeNode> elements) {
         super(text, offset, elements);
-        labelled.put(Label.SPC, elements.get(2));
         labelled.put(Label.ADDITIVE, elements.get(3));
     }
 }
@@ -116,7 +113,7 @@ class TreeNode10 extends TreeNode {
 class TreeNode11 extends TreeNode {
     TreeNode11(String text, int offset, List<TreeNode> elements) {
         super(text, offset, elements);
-        labelled.put(Label.SPC, elements.get(2));
+        labelled.put(Label.ADDITIVE_OP, elements.get(1));
         labelled.put(Label.MULTIPLICATIVE, elements.get(3));
     }
 }
@@ -131,7 +128,6 @@ class TreeNode12 extends TreeNode {
 class TreeNode13 extends TreeNode {
     TreeNode13(String text, int offset, List<TreeNode> elements) {
         super(text, offset, elements);
-        labelled.put(Label.SPC, elements.get(2));
         labelled.put(Label.POWER, elements.get(3));
     }
 }
@@ -146,7 +142,6 @@ class TreeNode14 extends TreeNode {
 class TreeNode15 extends TreeNode {
     TreeNode15(String text, int offset, List<TreeNode> elements) {
         super(text, offset, elements);
-        labelled.put(Label.SPC, elements.get(2));
         labelled.put(Label.UNARY, elements.get(3));
     }
 }

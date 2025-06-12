@@ -1,12 +1,13 @@
   grammar LXFExpression
     EXPRESSION        <- SPC TERNARY SPC
     TERNARY           <- LOGICAL_OR (SPC "?" SPC EXPRESSION SPC ":" SPC EXPRESSION)?
-    LOGICAL_OR        <- LOGICAL_AND (SPC ("||" / "|") SPC LOGICAL_AND)*
-    LOGICAL_AND       <- COMPARISON (SPC ("&&" / "&") SPC COMPARISON)*
-    COMPARISON        <- ADDITIVE (SPC ("<=" / ">=" / "<" / ">" / "==" / "!=") SPC ADDITIVE)*
-    ADDITIVE          <- MULTIPLICATIVE (SPC ("+" / "-") SPC MULTIPLICATIVE)*
-    MULTIPLICATIVE    <- POWER (SPC ("*" / "/" / "%") SPC POWER)*
-    POWER             <- UNARY (SPC "^" SPC UNARY)*
+    LOGICAL_OR        <- LOGICAL_AND (SPC? ("||" / "|") SPC? LOGICAL_AND)*
+    LOGICAL_AND       <- COMPARISON (SPC? ("&&" / "&") SPC? COMPARISON)*
+    COMPARISON        <- ADDITIVE (SPC? ("<=" / ">=" / "<" / ">" / "==" / "!=") SPC? ADDITIVE)*
+    ADDITIVE          <- MULTIPLICATIVE (SPC? ADDITIVE_OP SPC? MULTIPLICATIVE)*
+    ADDITIVE_OP       <- "+" / "-"
+    MULTIPLICATIVE    <- POWER (SPC? ("*" / "/" / "%") SPC? POWER)*
+    POWER             <- UNARY (SPC? "^" SPC? UNARY)*
     UNARY             <- ("-" / "!")* SPC PRIMARY
     PRIMARY           <- NUMBER / BOOLEAN_TYPE / VARIABLE / FUNCTION / "(" SPC EXPRESSION SPC ")"
 

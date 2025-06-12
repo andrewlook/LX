@@ -7,6 +7,7 @@ package heronarts.lx.structure.expression;
 
 public enum Label {
     ADDITIVE,
+    ADDITIVE_OP,
     BOOLEAN_TYPE,
     COMPARISON,
     EXPRESSION,

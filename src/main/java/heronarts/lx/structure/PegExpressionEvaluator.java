@@ -78,10 +78,13 @@ public class PegExpressionEvaluator implements ExpressionEvaluator {
      * Evaluate by walking down the precedence hierarchy until we find the actual operation or leaf.
      */
     private ExpressionResult evaluateWithPrecedence(TreeNode node) {
+        System.out.println("DEBUG: evaluateWithPrecedence \"" + node.text + "\"");
+        
         // Check if this is a function (has both FUNCTION_NAME and EXPRESSION argument)
         TreeNode functionName = node.get(Label.FUNCTION_NAME);
         TreeNode expression = node.get(Label.EXPRESSION);
         if (functionName != null && expression != null) {
+            System.out.println("DEBUG: Found function");
             return evaluateFunction(node);
         }
         
@@ -90,127 +93,74 @@ public class PegExpressionEvaluator implements ExpressionEvaluator {
         // TERNARY level
         TreeNode ternary = node.get(Label.TERNARY);
         if (ternary != null) {
+            System.out.println("DEBUG: Found TERNARY level");
             return evaluateASTNode(ternary);
         }
         
         // LOGICAL_OR level
         TreeNode logicalOr = node.get(Label.LOGICAL_OR);
         if (logicalOr != null) {
-            if (hasLogicalOrOperation(logicalOr)) {
-                return evaluateLogicalOrOperation(logicalOr);
-            }
-            return evaluateASTNode(logicalOr);
+            System.out.println("DEBUG: Found LOGICAL_OR level");
+            return evaluateLogicalOrOperation(logicalOr);
         }
         
         // LOGICAL_AND level
         TreeNode logicalAnd = node.get(Label.LOGICAL_AND);
         if (logicalAnd != null) {
-            if (hasLogicalAndOperation(logicalAnd)) {
-                return evaluateLogicalAndOperation(logicalAnd);
-            }
-            return evaluateASTNode(logicalAnd);
+            System.out.println("DEBUG: Found LOGICAL_AND level");
+            return evaluateLogicalAndOperation(logicalAnd);
         }
         
         // COMPARISON level
         TreeNode comparison = node.get(Label.COMPARISON);
         if (comparison != null) {
-            if (hasComparisonOperation(comparison)) {
-                return evaluateComparisonOperation(comparison);
-            }
-            return evaluateASTNode(comparison);
+            System.out.println("DEBUG: Found COMPARISON level");
+            return evaluateComparisonOperation(comparison);
         }
         
         // ADDITIVE level
         TreeNode additive = node.get(Label.ADDITIVE);
         if (additive != null) {
-            if (hasAdditiveOperation(additive)) {
-                return evaluateAdditiveOperation(additive);
-            }
-            return evaluateASTNode(additive);
+            System.out.println("DEBUG: Found ADDITIVE level");
+            return evaluateAdditiveOperation(additive);
+        } else {
+            System.out.println("DEBUG: ADDITIVE level is null");
         }
         
         // MULTIPLICATIVE level
         TreeNode multiplicative = node.get(Label.MULTIPLICATIVE);
         if (multiplicative != null) {
-            if (hasMultiplicativeOperation(multiplicative)) {
-                return evaluateMultiplicativeOperation(multiplicative);
-            }
-            return evaluateASTNode(multiplicative);
+            System.out.println("DEBUG: Found MULTIPLICATIVE level");
+            return evaluateMultiplicativeOperation(multiplicative);
         }
         
         // POWER level
         TreeNode power = node.get(Label.POWER);
         if (power != null) {
-            if (hasPowerOperation(power)) {
-                return evaluatePowerOperation(power);
-            }
-            return evaluateASTNode(power);
+            System.out.println("DEBUG: Found POWER level");
+            return evaluatePowerOperation(power);
         }
         
         // UNARY level
         TreeNode unary = node.get(Label.UNARY);
         if (unary != null) {
+            System.out.println("DEBUG: Found UNARY level");
             return evaluateUnaryOperation(unary);
         }
         
         // PRIMARY level - leaf nodes
         TreeNode primary = node.get(Label.PRIMARY);
         if (primary != null) {
+            System.out.println("DEBUG: Found PRIMARY level");
             return evaluatePrimary(primary);
         }
         
         // If we get here, try to parse the text directly
+        System.out.println("DEBUG: No labeled levels found, parsing as leaf");
         return parseLeafNode(node);
     }
 
-    // Helper methods to detect operations at each level
-    
-    private boolean hasLogicalOrOperation(TreeNode node) {
-        String text = node.text.trim();
-        return text.contains("||") || text.contains("|");
-    }
-    
-    private boolean hasLogicalAndOperation(TreeNode node) {
-        String text = node.text.trim();
-        return text.contains("&&") || text.contains("&");
-    }
-    
-    private boolean hasComparisonOperation(TreeNode node) {
-        String text = node.text.trim();
-        return text.contains("<=") || text.contains(">=") || text.contains("<") || 
-               text.contains(">") || text.contains("==") || text.contains("!=");
-    }
-    
-    private boolean hasAdditiveOperation(TreeNode node) {
-        // Check if the node text contains additive operations
-        String text = node.text.trim();
-        
-        // Look for + or - operators that are not at the beginning (to avoid unary minus)
-        for (int i = 1; i < text.length(); i++) {
-            char c = text.charAt(i);
-            if (c == '+' || c == '-') {
-                // Make sure it's not part of a number like "1e-5"
-                if (i > 0 && !Character.isDigit(text.charAt(i-1))) {
-                    return true;
-                }
-                if (i > 0 && Character.isDigit(text.charAt(i-1)) && c == '+') {
-                    return true;
-                }
-            }
-        }
-        
-        return false;
-    }
-    
-    private boolean hasMultiplicativeOperation(TreeNode node) {
-        String text = node.text.trim();
-        return text.contains("*") || text.contains("/") || text.contains("%");
-    }
-    
-    private boolean hasPowerOperation(TreeNode node) {
-        String text = node.text.trim();
-        return text.contains("^");
-    }
+    // Operation evaluation methods
 
     private ExpressionResult evaluateTernary(TreeNode node) {
         // Ternary: condition ? true_expr : false_expr
@@ -242,10 +192,12 @@ public class PegExpressionEvaluator implements ExpressionEvaluator {
     }
 
     private ExpressionResult evaluateComparisonOperation(TreeNode node) {
+        System.out.println("DEBUG: evaluateComparisonOperation called with \"" + node.text + "\"");
         return evaluateBinaryOperation(node, "<=", ">=", "<", ">", "==", "!=");
     }
     
     private ExpressionResult evaluateAdditiveOperation(TreeNode node) {
+        System.out.println("DEBUG: evaluateAdditiveOperation called with \"" + node.text + "\"");
         return evaluateBinaryOperation(node, "+", "-");
     }
     
@@ -258,109 +210,63 @@ public class PegExpressionEvaluator implements ExpressionEvaluator {
     }
 
     /**
-     * Generic binary operation evaluator using text parsing approach.
-     * Since the PEG AST structure is complex, we use text-based parsing for binary operations.
+     * Generic binary operation evaluator using the Canopy PEG AST structure.
+     * The PEG parser creates nodes where:
+     * - element[0] = first operand (has its own hierarchy structure)
+     * - element[1] = operator + second operand as "+4" with sub-elements
      */
     private ExpressionResult evaluateBinaryOperation(TreeNode node, String... operators) {
-        String text = node.text.trim();
-        
-        // If there are no operators in the text, delegate to child evaluation
-        boolean hasOperation = false;
-        for (String op : operators) {
-            if (text.contains(op)) {
-                hasOperation = true;
-                break;
-            }
+        // Check if there are multiple elements (indicating an operation)
+        if (node.elements.size() < 2) {
+            // No operation at this level, continue down the precedence hierarchy
+            return evaluateWithPrecedence(node);
         }
         
-        if (!hasOperation) {
-            // No operation at this level, evaluate the first child element
-            if (!node.elements.isEmpty()) {
-                return evaluateASTNode(node.elements.get(0));
-            } else {
-                return parseLeafNode(node);
-            }
+        String element1Text = node.elements.get(1).text.trim();
+        if (element1Text.isEmpty()) {
+            // No operation at this level, continue down the precedence hierarchy
+            return evaluateWithPrecedence(node);
         }
         
-        // Use simple left-to-right parsing for operations
-        return parseAndEvaluateExpression(text, operators);
-    }
-    
-    /**
-     * Parse and evaluate a text expression with given operators.
-     * This uses simple text parsing to handle binary operations.
-     */
-    private ExpressionResult parseAndEvaluateExpression(String text, String... operators) {
-        // Simple left-to-right evaluation
-        ExpressionResult result = null;
-        int pos = 0;
-        String pendingOperator = null;
+        // We have a binary operation - use Canopy's structure
+        // Element 0 is the first operand
+        ExpressionResult result = evaluateASTNode(node.elements.get(0));
         
-        while (pos < text.length()) {
-            // Skip whitespace
-            while (pos < text.length() && Character.isWhitespace(text.charAt(pos))) {
-                pos++;
-            }
+        // Process remaining elements which contain operator + operand
+        for (int i = 1; i < node.elements.size(); i++) {
+            TreeNode opElement = node.elements.get(i);
+            String opText = opElement.text.trim();
             
-            if (pos >= text.length()) break;
+            if (opText.isEmpty()) continue;
             
-            // Find the next operator
-            int nextOpPos = -1;
-            String nextOp = null;
+            String operator = null;
+            ExpressionResult right = null;
             
+            // Check if the text starts with an operator
             for (String op : operators) {
-                int opPos = text.indexOf(op, pos + (result == null ? 0 : 1)); // Allow unary for first operand
-                if (opPos != -1 && (nextOpPos == -1 || opPos < nextOpPos)) {
-                    nextOpPos = opPos;
-                    nextOp = op;
+                if (opText.startsWith(op)) {
+                    operator = op;
+                    // Extract the operand text after the operator
+                    String operandText = opText.substring(op.length()).trim();
+                    if (!operandText.isEmpty()) {
+                        try {
+                            float value = Float.parseFloat(operandText);
+                            right = new ExpressionResult.Numeric(value);
+                        } catch (NumberFormatException e) {
+                            // Try to evaluate it as an expression
+                            right = evaluate(operandText);
+                        }
+                    }
+                    break;
                 }
             }
             
-            // Extract operand
-            String operandText;
-            if (nextOpPos == -1) {
-                operandText = text.substring(pos).trim();
-                pos = text.length();
-            } else {
-                operandText = text.substring(pos, nextOpPos).trim();
-                pos = nextOpPos + nextOp.length();
-            }
-            
-            if (!operandText.isEmpty()) {
-                ExpressionResult operand = evaluateSimpleExpression(operandText);
-                
-                if (result == null) {
-                    result = operand;
-                    pendingOperator = nextOp;
-                } else if (pendingOperator != null) {
-                    result = applyBinaryOperator(pendingOperator, result, operand);
-                    pendingOperator = nextOp;
-                }
+            if (operator != null && right != null) {
+                result = applyBinaryOperator(operator, result, right);
             }
         }
         
-        return result != null ? result : new ExpressionResult.Numeric(0.0f);
-    }
-    
-    /**
-     * Evaluate a simple expression (no operators at this level).
-     */
-    private ExpressionResult evaluateSimpleExpression(String text) {
-        text = text.trim();
-        
-        // If it contains parentheses, functions, or complex expressions, use PEG
-        if (text.contains("(") || text.contains(")") || text.contains("sin") || 
-            text.contains("cos") || text.contains("true") || text.contains("false")) {
-            try {
-                TreeNode ast = LXFExpression.parse(text);
-                return evaluateASTNode(ast);
-            } catch (Exception e) {
-                // Fallback to direct parsing
-            }
-        }
-        
-        // Direct value parsing
-        return parseDirectValue(text);
+        return result;
     }
     
     /**
