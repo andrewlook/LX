@@ -6,14 +6,23 @@
 package expression;
 
 public enum Label {
-    hash,
-    host,
-    hostname,
-    pathname,
-    port,
-    query,
-    scheme,
-    search,
-    segment,
-    url
+    _,
+    additive,
+    boolean,
+    comparison,
+    expression,
+    float,
+    function,
+    function_name,
+    identifier,
+    integer,
+    logical_and,
+    logical_or,
+    multiplicative,
+    number,
+    power,
+    primary,
+    ternary,
+    unary,
+    variable
 }

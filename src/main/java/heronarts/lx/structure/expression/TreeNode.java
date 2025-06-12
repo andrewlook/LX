@@ -41,37 +41,140 @@ public class TreeNode implements Iterable<TreeNode> {
 class TreeNode1 extends TreeNode {
     TreeNode1(String text, int offset, List<TreeNode> elements) {
         super(text, offset, elements);
-        labelled.put(Label.scheme, elements.get(0));
-        labelled.put(Label.host, elements.get(2));
-        labelled.put(Label.pathname, elements.get(3));
-        labelled.put(Label.search, elements.get(4));
+        labelled.put(Label.logical_or, elements.get(0));
     }
 }
 
 class TreeNode2 extends TreeNode {
     TreeNode2(String text, int offset, List<TreeNode> elements) {
         super(text, offset, elements);
-        labelled.put(Label.hostname, elements.get(0));
+        labelled.put(Label.expression, elements.get(3));
     }
 }
 
 class TreeNode3 extends TreeNode {
     TreeNode3(String text, int offset, List<TreeNode> elements) {
         super(text, offset, elements);
-        labelled.put(Label.segment, elements.get(0));
+        labelled.put(Label.logical_and, elements.get(0));
     }
 }
 
 class TreeNode4 extends TreeNode {
     TreeNode4(String text, int offset, List<TreeNode> elements) {
         super(text, offset, elements);
-        labelled.put(Label.segment, elements.get(1));
+        labelled.put(Label.logical_and, elements.get(1));
     }
 }
 
 class TreeNode5 extends TreeNode {
     TreeNode5(String text, int offset, List<TreeNode> elements) {
         super(text, offset, elements);
-        labelled.put(Label.query, elements.get(1));
+        labelled.put(Label.comparison, elements.get(0));
+    }
+}
+
+class TreeNode6 extends TreeNode {
+    TreeNode6(String text, int offset, List<TreeNode> elements) {
+        super(text, offset, elements);
+        labelled.put(Label.comparison, elements.get(1));
+    }
+}
+
+class TreeNode7 extends TreeNode {
+    TreeNode7(String text, int offset, List<TreeNode> elements) {
+        super(text, offset, elements);
+        labelled.put(Label.additive, elements.get(0));
+    }
+}
+
+class TreeNode8 extends TreeNode {
+    TreeNode8(String text, int offset, List<TreeNode> elements) {
+        super(text, offset, elements);
+        labelled.put(Label.additive, elements.get(1));
+    }
+}
+
+class TreeNode9 extends TreeNode {
+    TreeNode9(String text, int offset, List<TreeNode> elements) {
+        super(text, offset, elements);
+        labelled.put(Label.multiplicative, elements.get(0));
+    }
+}
+
+class TreeNode10 extends TreeNode {
+    TreeNode10(String text, int offset, List<TreeNode> elements) {
+        super(text, offset, elements);
+        labelled.put(Label.multiplicative, elements.get(1));
+    }
+}
+
+class TreeNode11 extends TreeNode {
+    TreeNode11(String text, int offset, List<TreeNode> elements) {
+        super(text, offset, elements);
+        labelled.put(Label.power, elements.get(0));
+    }
+}
+
+class TreeNode12 extends TreeNode {
+    TreeNode12(String text, int offset, List<TreeNode> elements) {
+        super(text, offset, elements);
+        labelled.put(Label.power, elements.get(1));
+    }
+}
+
+class TreeNode13 extends TreeNode {
+    TreeNode13(String text, int offset, List<TreeNode> elements) {
+        super(text, offset, elements);
+        labelled.put(Label.unary, elements.get(0));
+    }
+}
+
+class TreeNode14 extends TreeNode {
+    TreeNode14(String text, int offset, List<TreeNode> elements) {
+        super(text, offset, elements);
+        labelled.put(Label.unary, elements.get(1));
+    }
+}
+
+class TreeNode15 extends TreeNode {
+    TreeNode15(String text, int offset, List<TreeNode> elements) {
+        super(text, offset, elements);
+        labelled.put(Label.primary, elements.get(1));
+    }
+}
+
+class TreeNode16 extends TreeNode {
+    TreeNode16(String text, int offset, List<TreeNode> elements) {
+        super(text, offset, elements);
+        labelled.put(Label.expression, elements.get(1));
+    }
+}
+
+class TreeNode17 extends TreeNode {
+    TreeNode17(String text, int offset, List<TreeNode> elements) {
+        super(text, offset, elements);
+        labelled.put(Label.function_name, elements.get(0));
+        labelled.put(Label.unary, elements.get(1));
+    }
+}
+
+class TreeNode18 extends TreeNode {
+    TreeNode18(String text, int offset, List<TreeNode> elements) {
+        super(text, offset, elements);
+        labelled.put(Label.identifier, elements.get(2));
+    }
+}
+
+class TreeNode19 extends TreeNode {
+    TreeNode19(String text, int offset, List<TreeNode> elements) {
+        super(text, offset, elements);
+        labelled.put(Label.identifier, elements.get(1));
+    }
+}
+
+class TreeNode20 extends TreeNode {
+    TreeNode20(String text, int offset, List<TreeNode> elements) {
+        super(text, offset, elements);
+        labelled.put(Label.integer, elements.get(0));
     }
 }

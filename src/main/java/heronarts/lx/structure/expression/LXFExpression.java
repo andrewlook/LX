@@ -10,8 +10,8 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
-public class LXExpression extends Grammar {
-    public LXExpression(String input, Actions actions) {
+public class LXFExpression extends Grammar {
+    public LXFExpression(String input, Actions actions) {
         this.input = input;
         this.inputSize = input.length();
         this.actions = actions;
@@ -22,7 +22,7 @@ public class LXExpression extends Grammar {
     }
 
     public static TreeNode parse(String input, Actions actions) throws ParseError {
-        LXExpression parser = new LXExpression(input, actions);
+        LXFExpression parser = new LXFExpression(input, actions);
         return parser.parse();
     }
 
@@ -60,13 +60,13 @@ public class LXExpression extends Grammar {
     }
 
     private TreeNode parse() throws ParseError {
-        TreeNode tree = _read_url();
+        TreeNode tree = _read_expression();
         if (tree != FAILURE && offset == inputSize) {
             return tree;
         }
         if (expected.isEmpty()) {
             failure = offset;
-            expected.add(new String[] { "LXExpression", "<EOF>" });
+            expected.add(new String[] { "LXFExpression", "<EOF>" });
         }
         throw new ParseError(formatError(input, failure, expected));
     }
