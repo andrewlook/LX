@@ -1,9 +1,9 @@
 /**
- * This file was generated from expression.peg
+ * This file was generated from ../../../expression.peg
  * See https://canopy.jcoglan.com/ for documentation
  */
 
-package expression;
+package heronarts.lx.structure.expression;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -1992,13 +1992,13 @@ abstract class Grammar {
         return address0;
     }
 
-    TreeNode _read__() {
+    TreeNode _read_whitespace() {
         TreeNode address0 = FAILURE;
         int index0 = offset;
-        Map<Integer, CacheRecord> rule = cache.get(Label._);
+        Map<Integer, CacheRecord> rule = cache.get(Label.whitespace);
         if (rule == null) {
             rule = new HashMap<Integer, CacheRecord>();
-            cache.put(Label._, rule);
+            cache.put(Label.whitespace, rule);
         }
         if (rule.containsKey(offset)) {
             address0 = rule.get(offset).node;
@@ -2023,7 +2023,7 @@ abstract class Grammar {
                         expected = new ArrayList<String[]>();
                     }
                     if (offset == failure) {
-                        expected.add(new String[] { "LXFExpression::_", "[ \\t]" });
+                        expected.add(new String[] { "LXFExpression::whitespace", "[ \\t]" });
                     }
                 }
                 if (address1 != FAILURE) {

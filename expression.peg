@@ -22,4 +22,4 @@
     float             <- integer "." [0-9]+
     integer           <- [0-9]+
 
-    _                 <- [ \t]*
+    whitespace        <- [ \t]*

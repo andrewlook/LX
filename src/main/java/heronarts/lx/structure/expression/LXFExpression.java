@@ -1,9 +1,9 @@
 /**
- * This file was generated from expression.peg
+ * This file was generated from ../../../expression.peg
  * See https://canopy.jcoglan.com/ for documentation
  */
 
-package expression;
+package heronarts.lx.structure.expression;
 
 import java.util.ArrayList;
 import java.util.EnumMap;

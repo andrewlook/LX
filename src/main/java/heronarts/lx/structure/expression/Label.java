@@ -1,12 +1,11 @@
 /**
- * This file was generated from expression.peg
+ * This file was generated from ../../../expression.peg
  * See https://canopy.jcoglan.com/ for documentation
  */
 
-package expression;
+package heronarts.lx.structure.expression;
 
 public enum Label {
-    _,
     additive,
     boolean,
     comparison,
@@ -24,5 +23,6 @@ public enum Label {
     primary,
     ternary,
     unary,
-    variable
+    variable,
+    whitespace
 }
