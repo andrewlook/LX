@@ -1,6 +1,6 @@
   grammar LXFExpression
-    EXPRESSION        <- SPC TERNARY SPC
-    TERNARY           <- LOGICAL_OR (SPC "?" SPC EXPRESSION SPC ":" SPC EXPRESSION)?
+    EXPRESSION        <- SPC? TERNARY SPC?
+    TERNARY           <- LOGICAL_OR (SPC? "?" SPC? EXPRESSION SPC? ":" SPC? EXPRESSION)?
     LOGICAL_OR        <- LOGICAL_AND (SPC? ("||" / "|") SPC? LOGICAL_AND)*
     LOGICAL_AND       <- COMPARISON (SPC? ("&&" / "&") SPC? COMPARISON)*
     COMPARISON        <- ADDITIVE (SPC? ("<=" / ">=" / "<" / ">" / "==" / "!=") SPC? ADDITIVE)*
@@ -8,10 +8,10 @@
     ADDITIVE_OP       <- "+" / "-"
     MULTIPLICATIVE    <- POWER (SPC? ("*" / "/" / "%") SPC? POWER)*
     POWER             <- UNARY (SPC? "^" SPC? UNARY)*
-    UNARY             <- ("-" / "!")* SPC PRIMARY
-    PRIMARY           <- NUMBER / BOOLEAN_TYPE / VARIABLE / FUNCTION / "(" SPC EXPRESSION SPC ")"
+    UNARY             <- ("-" / "!")* SPC? PRIMARY
+    PRIMARY           <- NUMBER / BOOLEAN_TYPE / VARIABLE / FUNCTION / "(" SPC? EXPRESSION SPC? ")"
 
-    FUNCTION          <- FUNCTION_NAME SPC "(" SPC EXPRESSION SPC ")"
+    FUNCTION          <- FUNCTION_NAME SPC? "(" SPC? EXPRESSION SPC? ")"
     FUNCTION_NAME     <- "sin" / "cos" / "tan" / "asin" / "acos" / "atan" /
                          "deg" / "rad" / "abs" / "sqrt" / "floor" / "ceil" / "round"
 
@@ -23,4 +23,4 @@
     FLOAT_TYPE        <- INTEGER_TYPE "." [0-9]+
     INTEGER_TYPE      <- [0-9]+
 
-    SPC               <- [ \t]*
+    SPC               <- [ \t]+

@@ -78,13 +78,10 @@ public class PegExpressionEvaluator implements ExpressionEvaluator {
      * Evaluate by walking down the precedence hierarchy until we find the actual operation or leaf.
      */
     private ExpressionResult evaluateWithPrecedence(TreeNode node) {
-        System.out.println("DEBUG: evaluateWithPrecedence \"" + node.text + "\"");
-        
         // Check if this is a function (has both FUNCTION_NAME and EXPRESSION argument)
         TreeNode functionName = node.get(Label.FUNCTION_NAME);
         TreeNode expression = node.get(Label.EXPRESSION);
         if (functionName != null && expression != null) {
-            System.out.println("DEBUG: Found function");
             return evaluateFunction(node);
         }
         
@@ -93,70 +90,58 @@ public class PegExpressionEvaluator implements ExpressionEvaluator {
         // TERNARY level
         TreeNode ternary = node.get(Label.TERNARY);
         if (ternary != null) {
-            System.out.println("DEBUG: Found TERNARY level");
             return evaluateASTNode(ternary);
         }
         
         // LOGICAL_OR level
         TreeNode logicalOr = node.get(Label.LOGICAL_OR);
         if (logicalOr != null) {
-            System.out.println("DEBUG: Found LOGICAL_OR level");
             return evaluateLogicalOrOperation(logicalOr);
         }
         
         // LOGICAL_AND level
         TreeNode logicalAnd = node.get(Label.LOGICAL_AND);
         if (logicalAnd != null) {
-            System.out.println("DEBUG: Found LOGICAL_AND level");
             return evaluateLogicalAndOperation(logicalAnd);
         }
         
         // COMPARISON level
         TreeNode comparison = node.get(Label.COMPARISON);
         if (comparison != null) {
-            System.out.println("DEBUG: Found COMPARISON level");
             return evaluateComparisonOperation(comparison);
         }
         
         // ADDITIVE level
         TreeNode additive = node.get(Label.ADDITIVE);
         if (additive != null) {
-            System.out.println("DEBUG: Found ADDITIVE level");
             return evaluateAdditiveOperation(additive);
-        } else {
-            System.out.println("DEBUG: ADDITIVE level is null");
         }
         
         // MULTIPLICATIVE level
         TreeNode multiplicative = node.get(Label.MULTIPLICATIVE);
         if (multiplicative != null) {
-            System.out.println("DEBUG: Found MULTIPLICATIVE level");
             return evaluateMultiplicativeOperation(multiplicative);
         }
         
         // POWER level
         TreeNode power = node.get(Label.POWER);
         if (power != null) {
-            System.out.println("DEBUG: Found POWER level");
             return evaluatePowerOperation(power);
         }
         
         // UNARY level
         TreeNode unary = node.get(Label.UNARY);
         if (unary != null) {
-            System.out.println("DEBUG: Found UNARY level");
             return evaluateUnaryOperation(unary);
         }
         
         // PRIMARY level - leaf nodes
         TreeNode primary = node.get(Label.PRIMARY);
         if (primary != null) {
-            System.out.println("DEBUG: Found PRIMARY level");
             return evaluatePrimary(primary);
         }
         
         // If we get here, try to parse the text directly
-        System.out.println("DEBUG: No labeled levels found, parsing as leaf");
         return parseLeafNode(node);
     }
 
@@ -192,12 +177,10 @@ public class PegExpressionEvaluator implements ExpressionEvaluator {
     }
 
     private ExpressionResult evaluateComparisonOperation(TreeNode node) {
-        System.out.println("DEBUG: evaluateComparisonOperation called with \"" + node.text + "\"");
         return evaluateBinaryOperation(node, "<=", ">=", "<", ">", "==", "!=");
     }
     
     private ExpressionResult evaluateAdditiveOperation(TreeNode node) {
-        System.out.println("DEBUG: evaluateAdditiveOperation called with \"" + node.text + "\"");
         return evaluateBinaryOperation(node, "+", "-");
     }
     

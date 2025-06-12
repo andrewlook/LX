@@ -41,7 +41,12 @@ abstract class Grammar {
             int index1 = offset;
             List<TreeNode> elements0 = new ArrayList<TreeNode>(3);
             TreeNode address1 = FAILURE;
+            int index2 = offset;
             address1 = _read_SPC();
+            if (address1 == FAILURE) {
+                address1 = new TreeNode(input.substring(index2, index2), index2, new ArrayList<TreeNode>());
+                offset = index2;
+            }
             if (address1 != FAILURE) {
                 elements0.add(0, address1);
                 TreeNode address2 = FAILURE;
@@ -49,7 +54,12 @@ abstract class Grammar {
                 if (address2 != FAILURE) {
                     elements0.add(1, address2);
                     TreeNode address3 = FAILURE;
+                    int index3 = offset;
                     address3 = _read_SPC();
+                    if (address3 == FAILURE) {
+                        address3 = new TreeNode(input.substring(index3, index3), index3, new ArrayList<TreeNode>());
+                        offset = index3;
+                    }
                     if (address3 != FAILURE) {
                         elements0.add(2, address3);
                     } else {
@@ -98,7 +108,12 @@ abstract class Grammar {
                 int index3 = offset;
                 List<TreeNode> elements1 = new ArrayList<TreeNode>(8);
                 TreeNode address3 = FAILURE;
+                int index4 = offset;
                 address3 = _read_SPC();
+                if (address3 == FAILURE) {
+                    address3 = new TreeNode(input.substring(index4, index4), index4, new ArrayList<TreeNode>());
+                    offset = index4;
+                }
                 if (address3 != FAILURE) {
                     elements1.add(0, address3);
                     TreeNode address4 = FAILURE;
@@ -123,7 +138,12 @@ abstract class Grammar {
                     if (address4 != FAILURE) {
                         elements1.add(1, address4);
                         TreeNode address5 = FAILURE;
+                        int index5 = offset;
                         address5 = _read_SPC();
+                        if (address5 == FAILURE) {
+                            address5 = new TreeNode(input.substring(index5, index5), index5, new ArrayList<TreeNode>());
+                            offset = index5;
+                        }
                         if (address5 != FAILURE) {
                             elements1.add(2, address5);
                             TreeNode address6 = FAILURE;
@@ -131,7 +151,12 @@ abstract class Grammar {
                             if (address6 != FAILURE) {
                                 elements1.add(3, address6);
                                 TreeNode address7 = FAILURE;
+                                int index6 = offset;
                                 address7 = _read_SPC();
+                                if (address7 == FAILURE) {
+                                    address7 = new TreeNode(input.substring(index6, index6), index6, new ArrayList<TreeNode>());
+                                    offset = index6;
+                                }
                                 if (address7 != FAILURE) {
                                     elements1.add(4, address7);
                                     TreeNode address8 = FAILURE;
@@ -156,7 +181,12 @@ abstract class Grammar {
                                     if (address8 != FAILURE) {
                                         elements1.add(5, address8);
                                         TreeNode address9 = FAILURE;
+                                        int index7 = offset;
                                         address9 = _read_SPC();
+                                        if (address9 == FAILURE) {
+                                            address9 = new TreeNode(input.substring(index7, index7), index7, new ArrayList<TreeNode>());
+                                            offset = index7;
+                                        }
                                         if (address9 != FAILURE) {
                                             elements1.add(6, address9);
                                             TreeNode address10 = FAILURE;
@@ -1289,7 +1319,12 @@ abstract class Grammar {
             if (address1 != FAILURE) {
                 elements0.add(0, address1);
                 TreeNode address3 = FAILURE;
+                int index4 = offset;
                 address3 = _read_SPC();
+                if (address3 == FAILURE) {
+                    address3 = new TreeNode(input.substring(index4, index4), index4, new ArrayList<TreeNode>());
+                    offset = index4;
+                }
                 if (address3 != FAILURE) {
                     elements0.add(1, address3);
                     TreeNode address4 = FAILURE;
@@ -1368,7 +1403,12 @@ abstract class Grammar {
                             if (address1 != FAILURE) {
                                 elements0.add(0, address1);
                                 TreeNode address2 = FAILURE;
+                                int index3 = offset;
                                 address2 = _read_SPC();
+                                if (address2 == FAILURE) {
+                                    address2 = new TreeNode(input.substring(index3, index3), index3, new ArrayList<TreeNode>());
+                                    offset = index3;
+                                }
                                 if (address2 != FAILURE) {
                                     elements0.add(1, address2);
                                     TreeNode address3 = FAILURE;
@@ -1376,7 +1416,12 @@ abstract class Grammar {
                                     if (address3 != FAILURE) {
                                         elements0.add(2, address3);
                                         TreeNode address4 = FAILURE;
+                                        int index4 = offset;
                                         address4 = _read_SPC();
+                                        if (address4 == FAILURE) {
+                                            address4 = new TreeNode(input.substring(index4, index4), index4, new ArrayList<TreeNode>());
+                                            offset = index4;
+                                        }
                                         if (address4 != FAILURE) {
                                             elements0.add(3, address4);
                                             TreeNode address5 = FAILURE;
@@ -1457,7 +1502,12 @@ abstract class Grammar {
             if (address1 != FAILURE) {
                 elements0.add(0, address1);
                 TreeNode address2 = FAILURE;
+                int index2 = offset;
                 address2 = _read_SPC();
+                if (address2 == FAILURE) {
+                    address2 = new TreeNode(input.substring(index2, index2), index2, new ArrayList<TreeNode>());
+                    offset = index2;
+                }
                 if (address2 != FAILURE) {
                     elements0.add(1, address2);
                     TreeNode address3 = FAILURE;
@@ -1482,7 +1532,12 @@ abstract class Grammar {
                     if (address3 != FAILURE) {
                         elements0.add(2, address3);
                         TreeNode address4 = FAILURE;
+                        int index3 = offset;
                         address4 = _read_SPC();
+                        if (address4 == FAILURE) {
+                            address4 = new TreeNode(input.substring(index3, index3), index3, new ArrayList<TreeNode>());
+                            offset = index3;
+                        }
                         if (address4 != FAILURE) {
                             elements0.add(3, address4);
                             TreeNode address5 = FAILURE;
@@ -1490,7 +1545,12 @@ abstract class Grammar {
                             if (address5 != FAILURE) {
                                 elements0.add(4, address5);
                                 TreeNode address6 = FAILURE;
+                                int index4 = offset;
                                 address6 = _read_SPC();
+                                if (address6 == FAILURE) {
+                                    address6 = new TreeNode(input.substring(index4, index4), index4, new ArrayList<TreeNode>());
+                                    offset = index4;
+                                }
                                 if (address6 != FAILURE) {
                                     elements0.add(5, address6);
                                     TreeNode address7 = FAILURE;
@@ -2367,7 +2427,7 @@ abstract class Grammar {
                     break;
                 }
             }
-            if (elements0.size() >= 0) {
+            if (elements0.size() >= 1) {
                 address0 = new TreeNode(input.substring(index1, offset), index1, elements0);
                 offset = offset;
             } else {

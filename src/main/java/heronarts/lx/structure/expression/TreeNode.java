@@ -41,7 +41,6 @@ public class TreeNode implements Iterable<TreeNode> {
 class TreeNode1 extends TreeNode {
     TreeNode1(String text, int offset, List<TreeNode> elements) {
         super(text, offset, elements);
-        labelled.put(Label.SPC, elements.get(2));
         labelled.put(Label.TERNARY, elements.get(1));
     }
 }
@@ -56,7 +55,6 @@ class TreeNode2 extends TreeNode {
 class TreeNode3 extends TreeNode {
     TreeNode3(String text, int offset, List<TreeNode> elements) {
         super(text, offset, elements);
-        labelled.put(Label.SPC, elements.get(6));
         labelled.put(Label.EXPRESSION, elements.get(7));
     }
 }
@@ -149,7 +147,6 @@ class TreeNode15 extends TreeNode {
 class TreeNode16 extends TreeNode {
     TreeNode16(String text, int offset, List<TreeNode> elements) {
         super(text, offset, elements);
-        labelled.put(Label.SPC, elements.get(1));
         labelled.put(Label.PRIMARY, elements.get(2));
     }
 }
@@ -157,7 +154,6 @@ class TreeNode16 extends TreeNode {
 class TreeNode17 extends TreeNode {
     TreeNode17(String text, int offset, List<TreeNode> elements) {
         super(text, offset, elements);
-        labelled.put(Label.SPC, elements.get(3));
         labelled.put(Label.EXPRESSION, elements.get(2));
     }
 }
@@ -166,7 +162,6 @@ class TreeNode18 extends TreeNode {
     TreeNode18(String text, int offset, List<TreeNode> elements) {
         super(text, offset, elements);
         labelled.put(Label.FUNCTION_NAME, elements.get(0));
-        labelled.put(Label.SPC, elements.get(5));
         labelled.put(Label.EXPRESSION, elements.get(4));
     }
 }
