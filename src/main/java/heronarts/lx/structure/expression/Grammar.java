@@ -26,31 +26,31 @@ abstract class Grammar {
     private static Pattern REGEX_4 = Pattern.compile("\\A[0-9]");
     private static Pattern REGEX_5 = Pattern.compile("\\A[ \\t]");
 
-    TreeNode _read_expression() {
+    TreeNode _read_EXPRESSION() {
         TreeNode address0 = FAILURE;
         int index0 = offset;
-        Map<Integer, CacheRecord> rule = cache.get(Label.expression);
+        Map<Integer, CacheRecord> rule = cache.get(Label.EXPRESSION);
         if (rule == null) {
             rule = new HashMap<Integer, CacheRecord>();
-            cache.put(Label.expression, rule);
+            cache.put(Label.EXPRESSION, rule);
         }
         if (rule.containsKey(offset)) {
             address0 = rule.get(offset).node;
             offset = rule.get(offset).tail;
         } else {
-            address0 = _read_ternary();
+            address0 = _read_TERNARY();
             rule.put(index0, new CacheRecord(address0, offset));
         }
         return address0;
     }
 
-    TreeNode _read_ternary() {
+    TreeNode _read_TERNARY() {
         TreeNode address0 = FAILURE;
         int index0 = offset;
-        Map<Integer, CacheRecord> rule = cache.get(Label.ternary);
+        Map<Integer, CacheRecord> rule = cache.get(Label.TERNARY);
         if (rule == null) {
             rule = new HashMap<Integer, CacheRecord>();
-            cache.put(Label.ternary, rule);
+            cache.put(Label.TERNARY, rule);
         }
         if (rule.containsKey(offset)) {
             address0 = rule.get(offset).node;
@@ -59,7 +59,7 @@ abstract class Grammar {
             int index1 = offset;
             List<TreeNode> elements0 = new ArrayList<TreeNode>(2);
             TreeNode address1 = FAILURE;
-            address1 = _read_logical_or();
+            address1 = _read_LOGICAL_OR();
             if (address1 != FAILURE) {
                 elements0.add(0, address1);
                 TreeNode address2 = FAILURE;
@@ -82,13 +82,13 @@ abstract class Grammar {
                         expected = new ArrayList<String[]>();
                     }
                     if (offset == failure) {
-                        expected.add(new String[] { "LXFExpression::ternary", "\"?\"" });
+                        expected.add(new String[] { "LXFExpression::TERNARY", "\"?\"" });
                     }
                 }
                 if (address3 != FAILURE) {
                     elements1.add(0, address3);
                     TreeNode address4 = FAILURE;
-                    address4 = _read_expression();
+                    address4 = _read_EXPRESSION();
                     if (address4 != FAILURE) {
                         elements1.add(1, address4);
                         TreeNode address5 = FAILURE;
@@ -107,13 +107,13 @@ abstract class Grammar {
                                 expected = new ArrayList<String[]>();
                             }
                             if (offset == failure) {
-                                expected.add(new String[] { "LXFExpression::ternary", "\":\"" });
+                                expected.add(new String[] { "LXFExpression::TERNARY", "\":\"" });
                             }
                         }
                         if (address5 != FAILURE) {
                             elements1.add(2, address5);
                             TreeNode address6 = FAILURE;
-                            address6 = _read_expression();
+                            address6 = _read_EXPRESSION();
                             if (address6 != FAILURE) {
                                 elements1.add(3, address6);
                             } else {
@@ -163,13 +163,13 @@ abstract class Grammar {
         return address0;
     }
 
-    TreeNode _read_logical_or() {
+    TreeNode _read_LOGICAL_OR() {
         TreeNode address0 = FAILURE;
         int index0 = offset;
-        Map<Integer, CacheRecord> rule = cache.get(Label.logical_or);
+        Map<Integer, CacheRecord> rule = cache.get(Label.LOGICAL_OR);
         if (rule == null) {
             rule = new HashMap<Integer, CacheRecord>();
-            cache.put(Label.logical_or, rule);
+            cache.put(Label.LOGICAL_OR, rule);
         }
         if (rule.containsKey(offset)) {
             address0 = rule.get(offset).node;
@@ -178,7 +178,7 @@ abstract class Grammar {
             int index1 = offset;
             List<TreeNode> elements0 = new ArrayList<TreeNode>(2);
             TreeNode address1 = FAILURE;
-            address1 = _read_logical_and();
+            address1 = _read_LOGICAL_AND();
             if (address1 != FAILURE) {
                 elements0.add(0, address1);
                 TreeNode address2 = FAILURE;
@@ -205,7 +205,7 @@ abstract class Grammar {
                             expected = new ArrayList<String[]>();
                         }
                         if (offset == failure) {
-                            expected.add(new String[] { "LXFExpression::logical_or", "\"||\"" });
+                            expected.add(new String[] { "LXFExpression::LOGICAL_OR", "\"||\"" });
                         }
                     }
                     if (address4 == FAILURE) {
@@ -225,7 +225,7 @@ abstract class Grammar {
                                 expected = new ArrayList<String[]>();
                             }
                             if (offset == failure) {
-                                expected.add(new String[] { "LXFExpression::logical_or", "\"|\"" });
+                                expected.add(new String[] { "LXFExpression::LOGICAL_OR", "\"|\"" });
                             }
                         }
                         if (address4 == FAILURE) {
@@ -235,7 +235,7 @@ abstract class Grammar {
                     if (address4 != FAILURE) {
                         elements2.add(0, address4);
                         TreeNode address5 = FAILURE;
-                        address5 = _read_logical_and();
+                        address5 = _read_LOGICAL_AND();
                         if (address5 != FAILURE) {
                             elements2.add(1, address5);
                         } else {
@@ -285,13 +285,13 @@ abstract class Grammar {
         return address0;
     }
 
-    TreeNode _read_logical_and() {
+    TreeNode _read_LOGICAL_AND() {
         TreeNode address0 = FAILURE;
         int index0 = offset;
-        Map<Integer, CacheRecord> rule = cache.get(Label.logical_and);
+        Map<Integer, CacheRecord> rule = cache.get(Label.LOGICAL_AND);
         if (rule == null) {
             rule = new HashMap<Integer, CacheRecord>();
-            cache.put(Label.logical_and, rule);
+            cache.put(Label.LOGICAL_AND, rule);
         }
         if (rule.containsKey(offset)) {
             address0 = rule.get(offset).node;
@@ -300,7 +300,7 @@ abstract class Grammar {
             int index1 = offset;
             List<TreeNode> elements0 = new ArrayList<TreeNode>(2);
             TreeNode address1 = FAILURE;
-            address1 = _read_comparison();
+            address1 = _read_COMPARISON();
             if (address1 != FAILURE) {
                 elements0.add(0, address1);
                 TreeNode address2 = FAILURE;
@@ -327,7 +327,7 @@ abstract class Grammar {
                             expected = new ArrayList<String[]>();
                         }
                         if (offset == failure) {
-                            expected.add(new String[] { "LXFExpression::logical_and", "\"&&\"" });
+                            expected.add(new String[] { "LXFExpression::LOGICAL_AND", "\"&&\"" });
                         }
                     }
                     if (address4 == FAILURE) {
@@ -347,7 +347,7 @@ abstract class Grammar {
                                 expected = new ArrayList<String[]>();
                             }
                             if (offset == failure) {
-                                expected.add(new String[] { "LXFExpression::logical_and", "\"&\"" });
+                                expected.add(new String[] { "LXFExpression::LOGICAL_AND", "\"&\"" });
                             }
                         }
                         if (address4 == FAILURE) {
@@ -357,7 +357,7 @@ abstract class Grammar {
                     if (address4 != FAILURE) {
                         elements2.add(0, address4);
                         TreeNode address5 = FAILURE;
-                        address5 = _read_comparison();
+                        address5 = _read_COMPARISON();
                         if (address5 != FAILURE) {
                             elements2.add(1, address5);
                         } else {
@@ -407,13 +407,13 @@ abstract class Grammar {
         return address0;
     }
 
-    TreeNode _read_comparison() {
+    TreeNode _read_COMPARISON() {
         TreeNode address0 = FAILURE;
         int index0 = offset;
-        Map<Integer, CacheRecord> rule = cache.get(Label.comparison);
+        Map<Integer, CacheRecord> rule = cache.get(Label.COMPARISON);
         if (rule == null) {
             rule = new HashMap<Integer, CacheRecord>();
-            cache.put(Label.comparison, rule);
+            cache.put(Label.COMPARISON, rule);
         }
         if (rule.containsKey(offset)) {
             address0 = rule.get(offset).node;
@@ -422,7 +422,7 @@ abstract class Grammar {
             int index1 = offset;
             List<TreeNode> elements0 = new ArrayList<TreeNode>(2);
             TreeNode address1 = FAILURE;
-            address1 = _read_additive();
+            address1 = _read_ADDITIVE();
             if (address1 != FAILURE) {
                 elements0.add(0, address1);
                 TreeNode address2 = FAILURE;
@@ -449,7 +449,7 @@ abstract class Grammar {
                             expected = new ArrayList<String[]>();
                         }
                         if (offset == failure) {
-                            expected.add(new String[] { "LXFExpression::comparison", "\"<=\"" });
+                            expected.add(new String[] { "LXFExpression::COMPARISON", "\"<=\"" });
                         }
                     }
                     if (address4 == FAILURE) {
@@ -469,7 +469,7 @@ abstract class Grammar {
                                 expected = new ArrayList<String[]>();
                             }
                             if (offset == failure) {
-                                expected.add(new String[] { "LXFExpression::comparison", "\">=\"" });
+                                expected.add(new String[] { "LXFExpression::COMPARISON", "\">=\"" });
                             }
                         }
                         if (address4 == FAILURE) {
@@ -489,7 +489,7 @@ abstract class Grammar {
                                     expected = new ArrayList<String[]>();
                                 }
                                 if (offset == failure) {
-                                    expected.add(new String[] { "LXFExpression::comparison", "\"<\"" });
+                                    expected.add(new String[] { "LXFExpression::COMPARISON", "\"<\"" });
                                 }
                             }
                             if (address4 == FAILURE) {
@@ -509,7 +509,7 @@ abstract class Grammar {
                                         expected = new ArrayList<String[]>();
                                     }
                                     if (offset == failure) {
-                                        expected.add(new String[] { "LXFExpression::comparison", "\">\"" });
+                                        expected.add(new String[] { "LXFExpression::COMPARISON", "\">\"" });
                                     }
                                 }
                                 if (address4 == FAILURE) {
@@ -529,7 +529,7 @@ abstract class Grammar {
                                             expected = new ArrayList<String[]>();
                                         }
                                         if (offset == failure) {
-                                            expected.add(new String[] { "LXFExpression::comparison", "\"==\"" });
+                                            expected.add(new String[] { "LXFExpression::COMPARISON", "\"==\"" });
                                         }
                                     }
                                     if (address4 == FAILURE) {
@@ -549,7 +549,7 @@ abstract class Grammar {
                                                 expected = new ArrayList<String[]>();
                                             }
                                             if (offset == failure) {
-                                                expected.add(new String[] { "LXFExpression::comparison", "\"!=\"" });
+                                                expected.add(new String[] { "LXFExpression::COMPARISON", "\"!=\"" });
                                             }
                                         }
                                         if (address4 == FAILURE) {
@@ -563,7 +563,7 @@ abstract class Grammar {
                     if (address4 != FAILURE) {
                         elements2.add(0, address4);
                         TreeNode address5 = FAILURE;
-                        address5 = _read_additive();
+                        address5 = _read_ADDITIVE();
                         if (address5 != FAILURE) {
                             elements2.add(1, address5);
                         } else {
@@ -613,13 +613,13 @@ abstract class Grammar {
         return address0;
     }
 
-    TreeNode _read_additive() {
+    TreeNode _read_ADDITIVE() {
         TreeNode address0 = FAILURE;
         int index0 = offset;
-        Map<Integer, CacheRecord> rule = cache.get(Label.additive);
+        Map<Integer, CacheRecord> rule = cache.get(Label.ADDITIVE);
         if (rule == null) {
             rule = new HashMap<Integer, CacheRecord>();
-            cache.put(Label.additive, rule);
+            cache.put(Label.ADDITIVE, rule);
         }
         if (rule.containsKey(offset)) {
             address0 = rule.get(offset).node;
@@ -628,7 +628,7 @@ abstract class Grammar {
             int index1 = offset;
             List<TreeNode> elements0 = new ArrayList<TreeNode>(2);
             TreeNode address1 = FAILURE;
-            address1 = _read_multiplicative();
+            address1 = _read_MULTIPLICATIVE();
             if (address1 != FAILURE) {
                 elements0.add(0, address1);
                 TreeNode address2 = FAILURE;
@@ -655,7 +655,7 @@ abstract class Grammar {
                             expected = new ArrayList<String[]>();
                         }
                         if (offset == failure) {
-                            expected.add(new String[] { "LXFExpression::additive", "\"+\"" });
+                            expected.add(new String[] { "LXFExpression::ADDITIVE", "\"+\"" });
                         }
                     }
                     if (address4 == FAILURE) {
@@ -675,7 +675,7 @@ abstract class Grammar {
                                 expected = new ArrayList<String[]>();
                             }
                             if (offset == failure) {
-                                expected.add(new String[] { "LXFExpression::additive", "\"-\"" });
+                                expected.add(new String[] { "LXFExpression::ADDITIVE", "\"-\"" });
                             }
                         }
                         if (address4 == FAILURE) {
@@ -685,7 +685,7 @@ abstract class Grammar {
                     if (address4 != FAILURE) {
                         elements2.add(0, address4);
                         TreeNode address5 = FAILURE;
-                        address5 = _read_multiplicative();
+                        address5 = _read_MULTIPLICATIVE();
                         if (address5 != FAILURE) {
                             elements2.add(1, address5);
                         } else {
@@ -735,13 +735,13 @@ abstract class Grammar {
         return address0;
     }
 
-    TreeNode _read_multiplicative() {
+    TreeNode _read_MULTIPLICATIVE() {
         TreeNode address0 = FAILURE;
         int index0 = offset;
-        Map<Integer, CacheRecord> rule = cache.get(Label.multiplicative);
+        Map<Integer, CacheRecord> rule = cache.get(Label.MULTIPLICATIVE);
         if (rule == null) {
             rule = new HashMap<Integer, CacheRecord>();
-            cache.put(Label.multiplicative, rule);
+            cache.put(Label.MULTIPLICATIVE, rule);
         }
         if (rule.containsKey(offset)) {
             address0 = rule.get(offset).node;
@@ -750,7 +750,7 @@ abstract class Grammar {
             int index1 = offset;
             List<TreeNode> elements0 = new ArrayList<TreeNode>(2);
             TreeNode address1 = FAILURE;
-            address1 = _read_power();
+            address1 = _read_POWER();
             if (address1 != FAILURE) {
                 elements0.add(0, address1);
                 TreeNode address2 = FAILURE;
@@ -777,7 +777,7 @@ abstract class Grammar {
                             expected = new ArrayList<String[]>();
                         }
                         if (offset == failure) {
-                            expected.add(new String[] { "LXFExpression::multiplicative", "\"*\"" });
+                            expected.add(new String[] { "LXFExpression::MULTIPLICATIVE", "\"*\"" });
                         }
                     }
                     if (address4 == FAILURE) {
@@ -797,7 +797,7 @@ abstract class Grammar {
                                 expected = new ArrayList<String[]>();
                             }
                             if (offset == failure) {
-                                expected.add(new String[] { "LXFExpression::multiplicative", "\"/\"" });
+                                expected.add(new String[] { "LXFExpression::MULTIPLICATIVE", "\"/\"" });
                             }
                         }
                         if (address4 == FAILURE) {
@@ -817,7 +817,7 @@ abstract class Grammar {
                                     expected = new ArrayList<String[]>();
                                 }
                                 if (offset == failure) {
-                                    expected.add(new String[] { "LXFExpression::multiplicative", "\"%\"" });
+                                    expected.add(new String[] { "LXFExpression::MULTIPLICATIVE", "\"%\"" });
                                 }
                             }
                             if (address4 == FAILURE) {
@@ -828,7 +828,7 @@ abstract class Grammar {
                     if (address4 != FAILURE) {
                         elements2.add(0, address4);
                         TreeNode address5 = FAILURE;
-                        address5 = _read_power();
+                        address5 = _read_POWER();
                         if (address5 != FAILURE) {
                             elements2.add(1, address5);
                         } else {
@@ -878,13 +878,13 @@ abstract class Grammar {
         return address0;
     }
 
-    TreeNode _read_power() {
+    TreeNode _read_POWER() {
         TreeNode address0 = FAILURE;
         int index0 = offset;
-        Map<Integer, CacheRecord> rule = cache.get(Label.power);
+        Map<Integer, CacheRecord> rule = cache.get(Label.POWER);
         if (rule == null) {
             rule = new HashMap<Integer, CacheRecord>();
-            cache.put(Label.power, rule);
+            cache.put(Label.POWER, rule);
         }
         if (rule.containsKey(offset)) {
             address0 = rule.get(offset).node;
@@ -893,7 +893,7 @@ abstract class Grammar {
             int index1 = offset;
             List<TreeNode> elements0 = new ArrayList<TreeNode>(2);
             TreeNode address1 = FAILURE;
-            address1 = _read_unary();
+            address1 = _read_UNARY();
             if (address1 != FAILURE) {
                 elements0.add(0, address1);
                 TreeNode address2 = FAILURE;
@@ -919,13 +919,13 @@ abstract class Grammar {
                             expected = new ArrayList<String[]>();
                         }
                         if (offset == failure) {
-                            expected.add(new String[] { "LXFExpression::power", "\"^\"" });
+                            expected.add(new String[] { "LXFExpression::POWER", "\"^\"" });
                         }
                     }
                     if (address4 != FAILURE) {
                         elements2.add(0, address4);
                         TreeNode address5 = FAILURE;
-                        address5 = _read_unary();
+                        address5 = _read_UNARY();
                         if (address5 != FAILURE) {
                             elements2.add(1, address5);
                         } else {
@@ -975,13 +975,13 @@ abstract class Grammar {
         return address0;
     }
 
-    TreeNode _read_unary() {
+    TreeNode _read_UNARY() {
         TreeNode address0 = FAILURE;
         int index0 = offset;
-        Map<Integer, CacheRecord> rule = cache.get(Label.unary);
+        Map<Integer, CacheRecord> rule = cache.get(Label.UNARY);
         if (rule == null) {
             rule = new HashMap<Integer, CacheRecord>();
-            cache.put(Label.unary, rule);
+            cache.put(Label.UNARY, rule);
         }
         if (rule.containsKey(offset)) {
             address0 = rule.get(offset).node;
@@ -1010,7 +1010,7 @@ abstract class Grammar {
                         expected = new ArrayList<String[]>();
                     }
                     if (offset == failure) {
-                        expected.add(new String[] { "LXFExpression::unary", "\"-\"" });
+                        expected.add(new String[] { "LXFExpression::UNARY", "\"-\"" });
                     }
                 }
                 if (address2 == FAILURE) {
@@ -1030,7 +1030,7 @@ abstract class Grammar {
                             expected = new ArrayList<String[]>();
                         }
                         if (offset == failure) {
-                            expected.add(new String[] { "LXFExpression::unary", "\"!\"" });
+                            expected.add(new String[] { "LXFExpression::UNARY", "\"!\"" });
                         }
                     }
                     if (address2 == FAILURE) {
@@ -1052,7 +1052,7 @@ abstract class Grammar {
             if (address1 != FAILURE) {
                 elements0.add(0, address1);
                 TreeNode address3 = FAILURE;
-                address3 = _read_primary();
+                address3 = _read_PRIMARY();
                 if (address3 != FAILURE) {
                     elements0.add(1, address3);
                 } else {
@@ -1074,29 +1074,29 @@ abstract class Grammar {
         return address0;
     }
 
-    TreeNode _read_primary() {
+    TreeNode _read_PRIMARY() {
         TreeNode address0 = FAILURE;
         int index0 = offset;
-        Map<Integer, CacheRecord> rule = cache.get(Label.primary);
+        Map<Integer, CacheRecord> rule = cache.get(Label.PRIMARY);
         if (rule == null) {
             rule = new HashMap<Integer, CacheRecord>();
-            cache.put(Label.primary, rule);
+            cache.put(Label.PRIMARY, rule);
         }
         if (rule.containsKey(offset)) {
             address0 = rule.get(offset).node;
             offset = rule.get(offset).tail;
         } else {
             int index1 = offset;
-            address0 = _read_number();
+            address0 = _read_NUMBER();
             if (address0 == FAILURE) {
                 offset = index1;
-                address0 = _read_boolean();
+                address0 = _read_BOOLEAN_TYPE();
                 if (address0 == FAILURE) {
                     offset = index1;
-                    address0 = _read_variable();
+                    address0 = _read_VARIABLE();
                     if (address0 == FAILURE) {
                         offset = index1;
-                        address0 = _read_function();
+                        address0 = _read_FUNCTION();
                         if (address0 == FAILURE) {
                             offset = index1;
                             int index2 = offset;
@@ -1117,13 +1117,13 @@ abstract class Grammar {
                                     expected = new ArrayList<String[]>();
                                 }
                                 if (offset == failure) {
-                                    expected.add(new String[] { "LXFExpression::primary", "\"(\"" });
+                                    expected.add(new String[] { "LXFExpression::PRIMARY", "\"(\"" });
                                 }
                             }
                             if (address1 != FAILURE) {
                                 elements0.add(0, address1);
                                 TreeNode address2 = FAILURE;
-                                address2 = _read_expression();
+                                address2 = _read_EXPRESSION();
                                 if (address2 != FAILURE) {
                                     elements0.add(1, address2);
                                     TreeNode address3 = FAILURE;
@@ -1142,7 +1142,7 @@ abstract class Grammar {
                                             expected = new ArrayList<String[]>();
                                         }
                                         if (offset == failure) {
-                                            expected.add(new String[] { "LXFExpression::primary", "\")\"" });
+                                            expected.add(new String[] { "LXFExpression::PRIMARY", "\")\"" });
                                         }
                                     }
                                     if (address3 != FAILURE) {
@@ -1177,13 +1177,13 @@ abstract class Grammar {
         return address0;
     }
 
-    TreeNode _read_function() {
+    TreeNode _read_FUNCTION() {
         TreeNode address0 = FAILURE;
         int index0 = offset;
-        Map<Integer, CacheRecord> rule = cache.get(Label.function);
+        Map<Integer, CacheRecord> rule = cache.get(Label.FUNCTION);
         if (rule == null) {
             rule = new HashMap<Integer, CacheRecord>();
-            cache.put(Label.function, rule);
+            cache.put(Label.FUNCTION, rule);
         }
         if (rule.containsKey(offset)) {
             address0 = rule.get(offset).node;
@@ -1192,11 +1192,11 @@ abstract class Grammar {
             int index1 = offset;
             List<TreeNode> elements0 = new ArrayList<TreeNode>(2);
             TreeNode address1 = FAILURE;
-            address1 = _read_function_name();
+            address1 = _read_FUNCTION_NAME();
             if (address1 != FAILURE) {
                 elements0.add(0, address1);
                 TreeNode address2 = FAILURE;
-                address2 = _read_unary();
+                address2 = _read_UNARY();
                 if (address2 != FAILURE) {
                     elements0.add(1, address2);
                 } else {
@@ -1218,13 +1218,13 @@ abstract class Grammar {
         return address0;
     }
 
-    TreeNode _read_function_name() {
+    TreeNode _read_FUNCTION_NAME() {
         TreeNode address0 = FAILURE;
         int index0 = offset;
-        Map<Integer, CacheRecord> rule = cache.get(Label.function_name);
+        Map<Integer, CacheRecord> rule = cache.get(Label.FUNCTION_NAME);
         if (rule == null) {
             rule = new HashMap<Integer, CacheRecord>();
-            cache.put(Label.function_name, rule);
+            cache.put(Label.FUNCTION_NAME, rule);
         }
         if (rule.containsKey(offset)) {
             address0 = rule.get(offset).node;
@@ -1246,7 +1246,7 @@ abstract class Grammar {
                     expected = new ArrayList<String[]>();
                 }
                 if (offset == failure) {
-                    expected.add(new String[] { "LXFExpression::function_name", "\"sin\"" });
+                    expected.add(new String[] { "LXFExpression::FUNCTION_NAME", "\"sin\"" });
                 }
             }
             if (address0 == FAILURE) {
@@ -1266,7 +1266,7 @@ abstract class Grammar {
                         expected = new ArrayList<String[]>();
                     }
                     if (offset == failure) {
-                        expected.add(new String[] { "LXFExpression::function_name", "\"cos\"" });
+                        expected.add(new String[] { "LXFExpression::FUNCTION_NAME", "\"cos\"" });
                     }
                 }
                 if (address0 == FAILURE) {
@@ -1286,7 +1286,7 @@ abstract class Grammar {
                             expected = new ArrayList<String[]>();
                         }
                         if (offset == failure) {
-                            expected.add(new String[] { "LXFExpression::function_name", "\"tan\"" });
+                            expected.add(new String[] { "LXFExpression::FUNCTION_NAME", "\"tan\"" });
                         }
                     }
                     if (address0 == FAILURE) {
@@ -1306,7 +1306,7 @@ abstract class Grammar {
                                 expected = new ArrayList<String[]>();
                             }
                             if (offset == failure) {
-                                expected.add(new String[] { "LXFExpression::function_name", "\"asin\"" });
+                                expected.add(new String[] { "LXFExpression::FUNCTION_NAME", "\"asin\"" });
                             }
                         }
                         if (address0 == FAILURE) {
@@ -1326,7 +1326,7 @@ abstract class Grammar {
                                     expected = new ArrayList<String[]>();
                                 }
                                 if (offset == failure) {
-                                    expected.add(new String[] { "LXFExpression::function_name", "\"acos\"" });
+                                    expected.add(new String[] { "LXFExpression::FUNCTION_NAME", "\"acos\"" });
                                 }
                             }
                             if (address0 == FAILURE) {
@@ -1346,7 +1346,7 @@ abstract class Grammar {
                                         expected = new ArrayList<String[]>();
                                     }
                                     if (offset == failure) {
-                                        expected.add(new String[] { "LXFExpression::function_name", "\"atan\"" });
+                                        expected.add(new String[] { "LXFExpression::FUNCTION_NAME", "\"atan\"" });
                                     }
                                 }
                                 if (address0 == FAILURE) {
@@ -1366,7 +1366,7 @@ abstract class Grammar {
                                             expected = new ArrayList<String[]>();
                                         }
                                         if (offset == failure) {
-                                            expected.add(new String[] { "LXFExpression::function_name", "\"deg\"" });
+                                            expected.add(new String[] { "LXFExpression::FUNCTION_NAME", "\"deg\"" });
                                         }
                                     }
                                     if (address0 == FAILURE) {
@@ -1386,7 +1386,7 @@ abstract class Grammar {
                                                 expected = new ArrayList<String[]>();
                                             }
                                             if (offset == failure) {
-                                                expected.add(new String[] { "LXFExpression::function_name", "\"rad\"" });
+                                                expected.add(new String[] { "LXFExpression::FUNCTION_NAME", "\"rad\"" });
                                             }
                                         }
                                         if (address0 == FAILURE) {
@@ -1406,7 +1406,7 @@ abstract class Grammar {
                                                     expected = new ArrayList<String[]>();
                                                 }
                                                 if (offset == failure) {
-                                                    expected.add(new String[] { "LXFExpression::function_name", "\"abs\"" });
+                                                    expected.add(new String[] { "LXFExpression::FUNCTION_NAME", "\"abs\"" });
                                                 }
                                             }
                                             if (address0 == FAILURE) {
@@ -1426,7 +1426,7 @@ abstract class Grammar {
                                                         expected = new ArrayList<String[]>();
                                                     }
                                                     if (offset == failure) {
-                                                        expected.add(new String[] { "LXFExpression::function_name", "\"sqrt\"" });
+                                                        expected.add(new String[] { "LXFExpression::FUNCTION_NAME", "\"sqrt\"" });
                                                     }
                                                 }
                                                 if (address0 == FAILURE) {
@@ -1446,7 +1446,7 @@ abstract class Grammar {
                                                             expected = new ArrayList<String[]>();
                                                         }
                                                         if (offset == failure) {
-                                                            expected.add(new String[] { "LXFExpression::function_name", "\"floor\"" });
+                                                            expected.add(new String[] { "LXFExpression::FUNCTION_NAME", "\"floor\"" });
                                                         }
                                                     }
                                                     if (address0 == FAILURE) {
@@ -1466,7 +1466,7 @@ abstract class Grammar {
                                                                 expected = new ArrayList<String[]>();
                                                             }
                                                             if (offset == failure) {
-                                                                expected.add(new String[] { "LXFExpression::function_name", "\"ceil\"" });
+                                                                expected.add(new String[] { "LXFExpression::FUNCTION_NAME", "\"ceil\"" });
                                                             }
                                                         }
                                                         if (address0 == FAILURE) {
@@ -1486,7 +1486,7 @@ abstract class Grammar {
                                                                     expected = new ArrayList<String[]>();
                                                                 }
                                                                 if (offset == failure) {
-                                                                    expected.add(new String[] { "LXFExpression::function_name", "\"round\"" });
+                                                                    expected.add(new String[] { "LXFExpression::FUNCTION_NAME", "\"round\"" });
                                                                 }
                                                             }
                                                             if (address0 == FAILURE) {
@@ -1509,13 +1509,13 @@ abstract class Grammar {
         return address0;
     }
 
-    TreeNode _read_variable() {
+    TreeNode _read_VARIABLE() {
         TreeNode address0 = FAILURE;
         int index0 = offset;
-        Map<Integer, CacheRecord> rule = cache.get(Label.variable);
+        Map<Integer, CacheRecord> rule = cache.get(Label.VARIABLE);
         if (rule == null) {
             rule = new HashMap<Integer, CacheRecord>();
-            cache.put(Label.variable, rule);
+            cache.put(Label.VARIABLE, rule);
         }
         if (rule.containsKey(offset)) {
             address0 = rule.get(offset).node;
@@ -1540,7 +1540,7 @@ abstract class Grammar {
                     expected = new ArrayList<String[]>();
                 }
                 if (offset == failure) {
-                    expected.add(new String[] { "LXFExpression::variable", "\"$\"" });
+                    expected.add(new String[] { "LXFExpression::VARIABLE", "\"$\"" });
                 }
             }
             if (address1 != FAILURE) {
@@ -1561,13 +1561,13 @@ abstract class Grammar {
                         expected = new ArrayList<String[]>();
                     }
                     if (offset == failure) {
-                        expected.add(new String[] { "LXFExpression::variable", "\"{\"" });
+                        expected.add(new String[] { "LXFExpression::VARIABLE", "\"{\"" });
                     }
                 }
                 if (address2 != FAILURE) {
                     elements0.add(1, address2);
                     TreeNode address3 = FAILURE;
-                    address3 = _read_identifier();
+                    address3 = _read_IDENTIFIER();
                     if (address3 != FAILURE) {
                         elements0.add(2, address3);
                         TreeNode address4 = FAILURE;
@@ -1586,7 +1586,7 @@ abstract class Grammar {
                                 expected = new ArrayList<String[]>();
                             }
                             if (offset == failure) {
-                                expected.add(new String[] { "LXFExpression::variable", "\"}\"" });
+                                expected.add(new String[] { "LXFExpression::VARIABLE", "\"}\"" });
                             }
                         }
                         if (address4 != FAILURE) {
@@ -1633,13 +1633,13 @@ abstract class Grammar {
                         expected = new ArrayList<String[]>();
                     }
                     if (offset == failure) {
-                        expected.add(new String[] { "LXFExpression::variable", "\"$\"" });
+                        expected.add(new String[] { "LXFExpression::VARIABLE", "\"$\"" });
                     }
                 }
                 if (address5 != FAILURE) {
                     elements1.add(0, address5);
                     TreeNode address6 = FAILURE;
-                    address6 = _read_identifier();
+                    address6 = _read_IDENTIFIER();
                     if (address6 != FAILURE) {
                         elements1.add(1, address6);
                     } else {
@@ -1665,13 +1665,13 @@ abstract class Grammar {
         return address0;
     }
 
-    TreeNode _read_identifier() {
+    TreeNode _read_IDENTIFIER() {
         TreeNode address0 = FAILURE;
         int index0 = offset;
-        Map<Integer, CacheRecord> rule = cache.get(Label.identifier);
+        Map<Integer, CacheRecord> rule = cache.get(Label.IDENTIFIER);
         if (rule == null) {
             rule = new HashMap<Integer, CacheRecord>();
-            cache.put(Label.identifier, rule);
+            cache.put(Label.IDENTIFIER, rule);
         }
         if (rule.containsKey(offset)) {
             address0 = rule.get(offset).node;
@@ -1695,7 +1695,7 @@ abstract class Grammar {
                     expected = new ArrayList<String[]>();
                 }
                 if (offset == failure) {
-                    expected.add(new String[] { "LXFExpression::identifier", "[a-zA-Z]" });
+                    expected.add(new String[] { "LXFExpression::IDENTIFIER", "[a-zA-Z]" });
                 }
             }
             if (address1 != FAILURE) {
@@ -1720,7 +1720,7 @@ abstract class Grammar {
                             expected = new ArrayList<String[]>();
                         }
                         if (offset == failure) {
-                            expected.add(new String[] { "LXFExpression::identifier", "[a-zA-Z0-9]" });
+                            expected.add(new String[] { "LXFExpression::IDENTIFIER", "[a-zA-Z0-9]" });
                         }
                     }
                     if (address3 != FAILURE) {
@@ -1756,13 +1756,13 @@ abstract class Grammar {
         return address0;
     }
 
-    TreeNode _read_boolean() {
+    TreeNode _read_BOOLEAN_TYPE() {
         TreeNode address0 = FAILURE;
         int index0 = offset;
-        Map<Integer, CacheRecord> rule = cache.get(Label.boolean);
+        Map<Integer, CacheRecord> rule = cache.get(Label.BOOLEAN_TYPE);
         if (rule == null) {
             rule = new HashMap<Integer, CacheRecord>();
-            cache.put(Label.boolean, rule);
+            cache.put(Label.BOOLEAN_TYPE, rule);
         }
         if (rule.containsKey(offset)) {
             address0 = rule.get(offset).node;
@@ -1784,7 +1784,7 @@ abstract class Grammar {
                     expected = new ArrayList<String[]>();
                 }
                 if (offset == failure) {
-                    expected.add(new String[] { "LXFExpression::boolean", "\"true\"" });
+                    expected.add(new String[] { "LXFExpression::BOOLEAN_TYPE", "\"true\"" });
                 }
             }
             if (address0 == FAILURE) {
@@ -1804,7 +1804,7 @@ abstract class Grammar {
                         expected = new ArrayList<String[]>();
                     }
                     if (offset == failure) {
-                        expected.add(new String[] { "LXFExpression::boolean", "\"false\"" });
+                        expected.add(new String[] { "LXFExpression::BOOLEAN_TYPE", "\"false\"" });
                     }
                 }
                 if (address0 == FAILURE) {
@@ -1816,23 +1816,23 @@ abstract class Grammar {
         return address0;
     }
 
-    TreeNode _read_number() {
+    TreeNode _read_NUMBER() {
         TreeNode address0 = FAILURE;
         int index0 = offset;
-        Map<Integer, CacheRecord> rule = cache.get(Label.number);
+        Map<Integer, CacheRecord> rule = cache.get(Label.NUMBER);
         if (rule == null) {
             rule = new HashMap<Integer, CacheRecord>();
-            cache.put(Label.number, rule);
+            cache.put(Label.NUMBER, rule);
         }
         if (rule.containsKey(offset)) {
             address0 = rule.get(offset).node;
             offset = rule.get(offset).tail;
         } else {
             int index1 = offset;
-            address0 = _read_float();
+            address0 = _read_FLOAT_TYPE();
             if (address0 == FAILURE) {
                 offset = index1;
-                address0 = _read_integer();
+                address0 = _read_INTEGER_TYPE();
                 if (address0 == FAILURE) {
                     offset = index1;
                 }
@@ -1842,13 +1842,13 @@ abstract class Grammar {
         return address0;
     }
 
-    TreeNode _read_float() {
+    TreeNode _read_FLOAT_TYPE() {
         TreeNode address0 = FAILURE;
         int index0 = offset;
-        Map<Integer, CacheRecord> rule = cache.get(Label.float);
+        Map<Integer, CacheRecord> rule = cache.get(Label.FLOAT_TYPE);
         if (rule == null) {
             rule = new HashMap<Integer, CacheRecord>();
-            cache.put(Label.float, rule);
+            cache.put(Label.FLOAT_TYPE, rule);
         }
         if (rule.containsKey(offset)) {
             address0 = rule.get(offset).node;
@@ -1857,7 +1857,7 @@ abstract class Grammar {
             int index1 = offset;
             List<TreeNode> elements0 = new ArrayList<TreeNode>(3);
             TreeNode address1 = FAILURE;
-            address1 = _read_integer();
+            address1 = _read_INTEGER_TYPE();
             if (address1 != FAILURE) {
                 elements0.add(0, address1);
                 TreeNode address2 = FAILURE;
@@ -1876,7 +1876,7 @@ abstract class Grammar {
                         expected = new ArrayList<String[]>();
                     }
                     if (offset == failure) {
-                        expected.add(new String[] { "LXFExpression::float", "\".\"" });
+                        expected.add(new String[] { "LXFExpression::FLOAT_TYPE", "\".\"" });
                     }
                 }
                 if (address2 != FAILURE) {
@@ -1901,7 +1901,7 @@ abstract class Grammar {
                                 expected = new ArrayList<String[]>();
                             }
                             if (offset == failure) {
-                                expected.add(new String[] { "LXFExpression::float", "[0-9]" });
+                                expected.add(new String[] { "LXFExpression::FLOAT_TYPE", "[0-9]" });
                             }
                         }
                         if (address4 != FAILURE) {
@@ -1941,13 +1941,13 @@ abstract class Grammar {
         return address0;
     }
 
-    TreeNode _read_integer() {
+    TreeNode _read_INTEGER_TYPE() {
         TreeNode address0 = FAILURE;
         int index0 = offset;
-        Map<Integer, CacheRecord> rule = cache.get(Label.integer);
+        Map<Integer, CacheRecord> rule = cache.get(Label.INTEGER_TYPE);
         if (rule == null) {
             rule = new HashMap<Integer, CacheRecord>();
-            cache.put(Label.integer, rule);
+            cache.put(Label.INTEGER_TYPE, rule);
         }
         if (rule.containsKey(offset)) {
             address0 = rule.get(offset).node;
@@ -1972,7 +1972,7 @@ abstract class Grammar {
                         expected = new ArrayList<String[]>();
                     }
                     if (offset == failure) {
-                        expected.add(new String[] { "LXFExpression::integer", "[0-9]" });
+                        expected.add(new String[] { "LXFExpression::INTEGER_TYPE", "[0-9]" });
                     }
                 }
                 if (address1 != FAILURE) {
@@ -1992,13 +1992,13 @@ abstract class Grammar {
         return address0;
     }
 
-    TreeNode _read_whitespace() {
+    TreeNode _read_WHITESPACE() {
         TreeNode address0 = FAILURE;
         int index0 = offset;
-        Map<Integer, CacheRecord> rule = cache.get(Label.whitespace);
+        Map<Integer, CacheRecord> rule = cache.get(Label.WHITESPACE);
         if (rule == null) {
             rule = new HashMap<Integer, CacheRecord>();
-            cache.put(Label.whitespace, rule);
+            cache.put(Label.WHITESPACE, rule);
         }
         if (rule.containsKey(offset)) {
             address0 = rule.get(offset).node;
@@ -2023,7 +2023,7 @@ abstract class Grammar {
                         expected = new ArrayList<String[]>();
                     }
                     if (offset == failure) {
-                        expected.add(new String[] { "LXFExpression::whitespace", "[ \\t]" });
+                        expected.add(new String[] { "LXFExpression::WHITESPACE", "[ \\t]" });
                     }
                 }
                 if (address1 != FAILURE) {

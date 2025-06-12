@@ -60,7 +60,7 @@ public class LXFExpression extends Grammar {
     }
 
     private TreeNode parse() throws ParseError {
-        TreeNode tree = _read_expression();
+        TreeNode tree = _read_EXPRESSION();
         if (tree != FAILURE && offset == inputSize) {
             return tree;
         }
