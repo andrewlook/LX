@@ -121,13 +121,13 @@ public class PegExpressionEvaluatorTest {
     @Test
     @DisplayName("Test simple functions")
     void testSimpleFunctions() {
-        assertEquals(0.0f, evaluateNumeric("sin0"), 0.0001f);
-        assertEquals(1.0f, evaluateNumeric("cos0"), 0.0001f);
-        assertEquals(5.0f, evaluateNumeric("abs-5"));
-        assertEquals(3.0f, evaluateNumeric("sqrt9"));
-        assertEquals(2.0f, evaluateNumeric("floor2.7"));
-        assertEquals(3.0f, evaluateNumeric("ceil2.3"));
-        assertEquals(3.0f, evaluateNumeric("round2.7"));
+        assertEquals(0.0f, evaluateNumeric("sin(0)"), 0.0001f);
+        assertEquals(1.0f, evaluateNumeric("cos(0)"), 0.0001f);
+        assertEquals(5.0f, evaluateNumeric("abs(-5)"));
+        assertEquals(3.0f, evaluateNumeric("sqrt(9)"));
+        assertEquals(2.0f, evaluateNumeric("floor(2.7)"));
+        assertEquals(3.0f, evaluateNumeric("ceil(2.3)"));
+        assertEquals(3.0f, evaluateNumeric("round(2.7)"));
     }
 
     @Test

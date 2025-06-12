@@ -57,83 +57,164 @@ public class PegExpressionEvaluator implements ExpressionEvaluator {
     }
 
     /**
-     * Recursively evaluates an AST node and returns the result.
+     * Recursively evaluates an AST node based on the PEG parser structure.
+     * The parser creates a hierarchy: LOGICAL_OR → LOGICAL_AND → COMPARISON → ADDITIVE → MULTIPLICATIVE → POWER → UNARY → PRIMARY
      */
     private ExpressionResult evaluateASTNode(TreeNode node) {
-        if (node == null) {
-            throw new IllegalArgumentException("Cannot evaluate null AST node");
+        if (node == null || node.text.isEmpty()) {
+            throw new IllegalArgumentException("Cannot evaluate null or empty AST node");
         }
 
-        // Check what type of node this is based on its labeled elements
-        // The PEG parser creates TreeNode objects with labeled elements that indicate the structure
-
-        // Handle ternary conditional (highest level)
-        if (node.get(Label.EXPRESSION) != null && node.text.contains("?")) {
+        // Check if this is a ternary conditional at the top level
+        if (node.elements.size() >= 2 && node.elements.get(1).text.startsWith("?")) {
             return evaluateTernary(node);
         }
 
-        // Handle logical OR
-        if (node.get(Label.LOGICAL_OR) != null) {
-            return evaluateLogicalOr(node);
-        }
+        // Traverse down the precedence hierarchy by checking which level has operations
+        return evaluateWithPrecedence(node);
+    }
 
-        // Handle logical AND  
-        if (node.get(Label.LOGICAL_AND) != null) {
-            return evaluateLogicalAnd(node);
-        }
-
-        // Handle comparison operations
-        if (node.get(Label.COMPARISON) != null) {
-            return evaluateComparison(node);
-        }
-
-        // Handle additive operations (+, -)
-        if (node.get(Label.ADDITIVE) != null) {
-            return evaluateAdditive(node);
-        }
-
-        // Handle multiplicative operations (*, /, %)
-        if (node.get(Label.MULTIPLICATIVE) != null) {
-            return evaluateMultiplicative(node);
-        }
-
-        // Handle power operations (^)
-        if (node.get(Label.POWER) != null) {
-            return evaluatePower(node);
-        }
-
-        // Handle unary operations (-, !)
-        if (node.get(Label.UNARY) != null) {
-            return evaluateUnary(node);
-        }
-
-        // Handle primary expressions (numbers, booleans, variables, functions, parentheses)
-        if (node.get(Label.PRIMARY) != null) {
-            return evaluatePrimary(node);
-        }
-
-        // Handle function calls
-        if (node.get(Label.FUNCTION_NAME) != null) {
+    /**
+     * Evaluate by walking down the precedence hierarchy until we find the actual operation or leaf.
+     */
+    private ExpressionResult evaluateWithPrecedence(TreeNode node) {
+        // Check if this is a function (has both FUNCTION_NAME and EXPRESSION argument)
+        TreeNode functionName = node.get(Label.FUNCTION_NAME);
+        TreeNode expression = node.get(Label.EXPRESSION);
+        if (functionName != null && expression != null) {
             return evaluateFunction(node);
         }
-
-        // Handle variables
-        if (node.get(Label.VARIABLE) != null) {
-            return evaluateVariable(node);
+        
+        // Traverse the precedence hierarchy: TERNARY -> LOGICAL_OR -> ... -> PRIMARY
+        
+        // TERNARY level
+        TreeNode ternary = node.get(Label.TERNARY);
+        if (ternary != null) {
+            return evaluateASTNode(ternary);
         }
-
-        // Handle direct number literals
-        if (node.get(Label.NUMBER) != null || node.get(Label.INTEGER_TYPE) != null || node.get(Label.FLOAT_TYPE) != null) {
-            return evaluateNumber(node);
+        
+        // LOGICAL_OR level
+        TreeNode logicalOr = node.get(Label.LOGICAL_OR);
+        if (logicalOr != null) {
+            if (hasLogicalOrOperation(logicalOr)) {
+                return evaluateLogicalOrOperation(logicalOr);
+            }
+            return evaluateASTNode(logicalOr);
         }
-
-        // Handle boolean literals
-        if (node.get(Label.BOOLEAN_TYPE) != null) {
-            return evaluateBoolean(node);
+        
+        // LOGICAL_AND level
+        TreeNode logicalAnd = node.get(Label.LOGICAL_AND);
+        if (logicalAnd != null) {
+            if (hasLogicalAndOperation(logicalAnd)) {
+                return evaluateLogicalAndOperation(logicalAnd);
+            }
+            return evaluateASTNode(logicalAnd);
         }
-
-        // If we can't identify the node type from labels, try to parse the text directly
+        
+        // COMPARISON level
+        TreeNode comparison = node.get(Label.COMPARISON);
+        if (comparison != null) {
+            if (hasComparisonOperation(comparison)) {
+                return evaluateComparisonOperation(comparison);
+            }
+            return evaluateASTNode(comparison);
+        }
+        
+        // ADDITIVE level
+        TreeNode additive = node.get(Label.ADDITIVE);
+        if (additive != null) {
+            if (hasAdditiveOperation(additive)) {
+                return evaluateAdditiveOperation(additive);
+            }
+            return evaluateASTNode(additive);
+        }
+        
+        // MULTIPLICATIVE level
+        TreeNode multiplicative = node.get(Label.MULTIPLICATIVE);
+        if (multiplicative != null) {
+            if (hasMultiplicativeOperation(multiplicative)) {
+                return evaluateMultiplicativeOperation(multiplicative);
+            }
+            return evaluateASTNode(multiplicative);
+        }
+        
+        // POWER level
+        TreeNode power = node.get(Label.POWER);
+        if (power != null) {
+            if (hasPowerOperation(power)) {
+                return evaluatePowerOperation(power);
+            }
+            return evaluateASTNode(power);
+        }
+        
+        // UNARY level
+        TreeNode unary = node.get(Label.UNARY);
+        if (unary != null) {
+            return evaluateUnaryOperation(unary);
+        }
+        
+        // PRIMARY level - leaf nodes
+        TreeNode primary = node.get(Label.PRIMARY);
+        if (primary != null) {
+            return evaluatePrimary(primary);
+        }
+        
+        // If we get here, try to parse the text directly
         return parseLeafNode(node);
+    }
+
+    // Helper methods to detect operations at each level
+    
+    private boolean hasLogicalOrOperation(TreeNode node) {
+        if (node.elements.size() < 2) return false;
+        
+        TreeNode secondElement = node.elements.get(1);
+        return secondElement != null && !secondElement.text.trim().isEmpty() && 
+               (secondElement.text.contains("||") || secondElement.text.contains("|"));
+    }
+    
+    private boolean hasLogicalAndOperation(TreeNode node) {
+        if (node.elements.size() < 2) return false;
+        
+        TreeNode secondElement = node.elements.get(1);
+        return secondElement != null && !secondElement.text.trim().isEmpty() && 
+               (secondElement.text.contains("&&") || secondElement.text.contains("&"));
+    }
+    
+    private boolean hasComparisonOperation(TreeNode node) {
+        if (node.elements.size() < 2) return false;
+        
+        TreeNode secondElement = node.elements.get(1);
+        return secondElement != null && !secondElement.text.trim().isEmpty() && 
+               (secondElement.text.contains("<=") || secondElement.text.contains(">=") || 
+                secondElement.text.contains("<") || secondElement.text.contains(">") || 
+                secondElement.text.contains("==") || secondElement.text.contains("!="));
+    }
+    
+    private boolean hasAdditiveOperation(TreeNode node) {
+        // For additive operations, look for the second element starting with + or -
+        if (node.elements.size() < 2) return false;
+        
+        TreeNode secondElement = node.elements.get(1);
+        return secondElement != null && !secondElement.text.trim().isEmpty() && 
+               (secondElement.text.startsWith("+") || secondElement.text.startsWith("-"));
+    }
+    
+    private boolean hasMultiplicativeOperation(TreeNode node) {
+        if (node.elements.size() < 2) return false;
+        
+        TreeNode secondElement = node.elements.get(1);
+        return secondElement != null && !secondElement.text.trim().isEmpty() && 
+               (secondElement.text.startsWith("*") || secondElement.text.startsWith("/") || 
+                secondElement.text.startsWith("%"));
+    }
+    
+    private boolean hasPowerOperation(TreeNode node) {
+        if (node.elements.size() < 2) return false;
+        
+        TreeNode secondElement = node.elements.get(1);
+        return secondElement != null && !secondElement.text.trim().isEmpty() && 
+               secondElement.text.startsWith("^");
     }
 
     private ExpressionResult evaluateTernary(TreeNode node) {
@@ -155,63 +236,130 @@ public class PegExpressionEvaluator implements ExpressionEvaluator {
         return condition ? evaluate(trueExprText) : evaluate(falseExprText);
     }
 
-    private ExpressionResult evaluateLogicalOr(TreeNode node) {
-        return evaluateBinaryOperation(node, Label.LOGICAL_OR, "||", "|");
+    // Operation evaluation methods
+    
+    private ExpressionResult evaluateLogicalOrOperation(TreeNode node) {
+        return evaluateBinaryOperation(node, "||", "|");
+    }
+    
+    private ExpressionResult evaluateLogicalAndOperation(TreeNode node) {
+        return evaluateBinaryOperation(node, "&&", "&");
     }
 
-    private ExpressionResult evaluateLogicalAnd(TreeNode node) {
-        return evaluateBinaryOperation(node, Label.LOGICAL_AND, "&&", "&");
+    private ExpressionResult evaluateComparisonOperation(TreeNode node) {
+        return evaluateBinaryOperation(node, "<=", ">=", "<", ">", "==", "!=");
     }
-
-    private ExpressionResult evaluateComparison(TreeNode node) {
-        return evaluateBinaryOperation(node, Label.COMPARISON, "<=", ">=", "<", ">", "==", "!=");
+    
+    private ExpressionResult evaluateAdditiveOperation(TreeNode node) {
+        return evaluateBinaryOperation(node, "+", "-");
     }
-
-    private ExpressionResult evaluateAdditive(TreeNode node) {
-        return evaluateBinaryOperation(node, Label.ADDITIVE, "+", "-");
+    
+    private ExpressionResult evaluateMultiplicativeOperation(TreeNode node) {
+        return evaluateBinaryOperation(node, "*", "/", "%");
     }
-
-    private ExpressionResult evaluateMultiplicative(TreeNode node) {
-        return evaluateBinaryOperation(node, Label.MULTIPLICATIVE, "*", "/", "%");
-    }
-
-    private ExpressionResult evaluatePower(TreeNode node) {
-        return evaluateBinaryOperation(node, Label.POWER, "^");
+    
+    private ExpressionResult evaluatePowerOperation(TreeNode node) {
+        return evaluateBinaryOperation(node, "^");
     }
 
     /**
      * Generic binary operation evaluator that handles left-associative operators.
+     * Works directly with AST nodes instead of re-parsing text.
      */
-    private ExpressionResult evaluateBinaryOperation(TreeNode node, Label label, String... operators) {
-        String text = node.text.trim();
+    private ExpressionResult evaluateBinaryOperation(TreeNode node, String... operators) {
+        // With the new grammar, binary operations have a cleaner structure:
+        // elements[0] = left operand (as AST node)
+        // elements[1] = operator + right operand structure
         
-        // Find the rightmost operator (for left-associativity)
-        int lastOpPos = -1;
-        String foundOperator = null;
-        
-        for (String op : operators) {
-            int pos = text.lastIndexOf(op);
-            if (pos > lastOpPos) {
-                lastOpPos = pos;
-                foundOperator = op;
-            }
-        }
-
-        if (lastOpPos == -1) {
-            // No operator found, this might be a nested expression
+        if (node.elements.size() < 2) {
+            // No operation, just evaluate the single element
             if (node.elements.size() == 1) {
                 return evaluateASTNode(node.elements.get(0));
             }
-            throw new IllegalArgumentException("No operator found in binary operation: " + text);
+            throw new IllegalArgumentException("No operands found in binary operation: " + node.text);
         }
-
-        String leftText = text.substring(0, lastOpPos).trim();
-        String rightText = text.substring(lastOpPos + foundOperator.length()).trim();
-
-        ExpressionResult left = evaluate(leftText);
-        ExpressionResult right = evaluate(rightText);
-
-        return applyBinaryOperator(foundOperator, left, right);
+        
+        // Left operand is the first element
+        ExpressionResult left = evaluateASTNode(node.elements.get(0));
+        
+        // Process all operator + operand pairs (for left-associativity)
+        ExpressionResult result = left;
+        
+        for (int i = 1; i < node.elements.size(); i++) {
+            TreeNode operatorElement = node.elements.get(i);
+            
+            // Find the operator and right operand in this element
+            String operator = null;
+            TreeNode rightOperand = null;
+            
+            // Look through the elements to find operator and operand
+            // The structure is: [SPC, operator, SPC, operand] or similar
+            for (TreeNode subElement : operatorElement.elements) {
+                String text = subElement.text.trim();
+                if (!text.isEmpty()) {
+                    boolean isOperator = false;
+                    for (String op : operators) {
+                        if (text.equals(op)) {
+                            operator = op;
+                            isOperator = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!isOperator && rightOperand == null && !text.matches("\\s+")) {
+                        // This is the right operand - could be a simple text or a complex node
+                        rightOperand = subElement;
+                    }
+                }
+            }
+            
+            // If we didn't find a direct text operator, the structure might be nested
+            if (operator == null || rightOperand == null) {
+                // Look for nested structures that contain the operator and operand
+                for (TreeNode subElement : operatorElement.elements) {
+                    if (subElement.elements.size() > 0) {
+                        // Try to parse this as a nested structure
+                        for (TreeNode nestedElement : subElement.elements) {
+                            String text = nestedElement.text.trim();
+                            if (!text.isEmpty()) {
+                                for (String op : operators) {
+                                    if (text.equals(op)) {
+                                        operator = op;
+                                        break;
+                                    }
+                                }
+                                
+                                // Look for the operand node (has labels like POWER, UNARY, etc.)
+                                if (rightOperand == null && hasAnyLabel(nestedElement)) {
+                                    rightOperand = nestedElement;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            if (operator == null || rightOperand == null) {
+                throw new IllegalArgumentException("Could not find operator and operand in: " + operatorElement.text);
+            }
+            
+            ExpressionResult right = evaluateASTNode(rightOperand);
+            result = applyBinaryOperator(operator, result, right);
+        }
+        
+        return result;
+    }
+    
+    /**
+     * Helper method to check if a node has any labels (indicating it's a structured node).
+     */
+    private boolean hasAnyLabel(TreeNode node) {
+        for (Label label : Label.values()) {
+            if (node.get(label) != null) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private ExpressionResult applyBinaryOperator(String operator, ExpressionResult left, ExpressionResult right) {
@@ -276,7 +424,7 @@ public class PegExpressionEvaluator implements ExpressionEvaluator {
         };
     }
 
-    private ExpressionResult evaluateUnary(TreeNode node) {
+    private ExpressionResult evaluateUnaryOperation(TreeNode node) {
         String text = node.text.trim();
         
         if (text.startsWith("-")) {
@@ -289,26 +437,43 @@ public class PegExpressionEvaluator implements ExpressionEvaluator {
             return new ExpressionResult.Boolean(!((ExpressionResult.Boolean) result).getValue());
         }
         
-        // If no unary operator, evaluate the operand directly
-        TreeNode unaryNode = node.get(Label.UNARY);
-        if (unaryNode != null) {
-            return evaluateASTNode(unaryNode);
+        // If no unary operator at this level, traverse down
+        TreeNode primary = node.get(Label.PRIMARY);
+        if (primary != null) {
+            return evaluateASTNode(primary);
+        }
+        
+        // If we have elements, evaluate the first one
+        if (!node.elements.isEmpty()) {
+            return evaluateASTNode(node.elements.get(0));
         }
         
         throw new IllegalArgumentException("Unknown unary operation: " + text);
     }
 
     private ExpressionResult evaluatePrimary(TreeNode node) {
-        TreeNode primaryNode = node.get(Label.PRIMARY);
-        if (primaryNode != null) {
-            return evaluateASTNode(primaryNode);
+        // Check if it's a parenthesized expression
+        TreeNode expression = node.get(Label.EXPRESSION);
+        if (expression != null) {
+            return evaluateASTNode(expression);
         }
         
-        // Handle parenthesized expressions
-        String text = node.text.trim();
-        if (text.startsWith("(") && text.endsWith(")")) {
-            String inner = text.substring(1, text.length() - 1).trim();
-            return evaluate(inner);
+        // Check if it's a function
+        TreeNode functionName = node.get(Label.FUNCTION_NAME);
+        if (functionName != null) {
+            return evaluateFunction(node);
+        }
+        
+        // Check for direct number, boolean, or variable
+        if (node.get(Label.NUMBER) != null || node.get(Label.BOOLEAN_TYPE) != null || node.get(Label.VARIABLE) != null) {
+            return parseLeafNode(node);
+        }
+        
+        // If we have elements, try to find the actual content
+        for (TreeNode element : node.elements) {
+            if (!element.text.trim().isEmpty() && !element.text.equals("(") && !element.text.equals(")")) {
+                return parseLeafNode(element);
+            }
         }
         
         return parseLeafNode(node);
@@ -316,16 +481,14 @@ public class PegExpressionEvaluator implements ExpressionEvaluator {
 
     private ExpressionResult evaluateFunction(TreeNode node) {
         TreeNode functionNameNode = node.get(Label.FUNCTION_NAME);
-        TreeNode unaryNode = node.get(Label.UNARY);
+        TreeNode expressionNode = node.get(Label.EXPRESSION);
         
-        if (functionNameNode == null || unaryNode == null) {
-            // Parse from text
-            String text = node.text.trim();
-            return evaluateFunctionFromText(text);
+        if (functionNameNode == null || expressionNode == null) {
+            throw new IllegalArgumentException("Invalid function structure in node: " + node.text);
         }
         
         String functionName = functionNameNode.text.trim();
-        ExpressionResult argument = evaluateASTNode(unaryNode);
+        ExpressionResult argument = evaluateASTNode(expressionNode);
         
         return applyFunction(functionName, ((ExpressionResult.Numeric) argument).getValue());
     }
@@ -429,6 +592,8 @@ public class PegExpressionEvaluator implements ExpressionEvaluator {
             return evaluate(inner);
         }
         
+        // For very simple cases like just ".", this might be part of a float that got fragmented
+        // In this case, we should have handled it at a higher level
         throw new IllegalArgumentException("Cannot parse expression: " + text);
     }
 }

@@ -21,8 +21,8 @@ public enum Label {
     NUMBER,
     POWER,
     PRIMARY,
+    SPC,
     TERNARY,
     UNARY,
-    VARIABLE,
-    WHITESPACE
+    VARIABLE
 }
