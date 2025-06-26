@@ -1,1 +1,0 @@
-import heronarts.lx.structure.expression.LXFExpression; class Test { public static void main(String[] args) { try { System.out.println("Parsing floor2.7..."); var ast = LXFExpression.parse("floor2.7"); System.out.println("Success: " + ast.text); } catch (Exception e) { System.out.println("Error: " + e.getMessage()); } } }
