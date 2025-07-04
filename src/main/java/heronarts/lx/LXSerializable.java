@@ -19,6 +19,7 @@
 package heronarts.lx;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -191,6 +192,65 @@ public interface LXSerializable {
           LX.error(x, "Invalid format loading parameter " + parameter + " from JSON value: " + value);
         }
       }
+    }
+
+    public static void loadParameter(LXParameter parameter, Map<String, Object> obj, String path) {
+      if (obj.containsKey(path)) {
+        Object value = obj.get(path);
+        try {
+          if (parameter instanceof FunctionalParameter) {
+            // Do nothing
+          } else if (parameter instanceof StringParameter) {
+            if (value == null) {
+              ((StringParameter) parameter).setValue(null);
+            } else {
+              ((StringParameter) parameter).setValue((String) value);
+            }
+          } else if (parameter instanceof BooleanParameter) {
+            ((BooleanParameter) parameter).setValue((Boolean) value);
+          } else if (parameter instanceof IEnumParameter<?> enumParameter) {
+            boolean fallbackInt = true;
+            // NOTE: check for the enum name field first and try to load that. It could
+            // be missing if saved by an older version of LX that didn't write enums,
+            // or if the enum values have been changed in code. In those cases fall back
+            // to the basic integer value.
+            String enumNamePath = getEnumNamePath(path);
+            if (obj.containsKey(enumNamePath)) {
+              final String nameElem = (String) obj.get(enumNamePath);
+              try {
+                enumParameter.setEnum(nameElem);
+                fallbackInt = false;
+              } catch (Exception x) {
+                LX.error(x, "Failed to load EnumParameter at path " + path + " by name: " + nameElem);
+              }
+            }
+            if (fallbackInt) {
+              parameter.setValue((Integer) value);
+            }
+          } else if (parameter instanceof DiscreteParameter) {
+            parameter.setValue((Integer) value);
+          } else if (parameter instanceof ColorParameter) {
+            ((ColorParameter) parameter).setColor((Integer) value);
+          } else {
+            parameter.setValue((Double) value);
+          }
+        } catch (Exception x) {
+          LX.error(x, "Invalid format loading parameter " + parameter + " from JSON value: " + value);
+        }
+      }
+    }
+
+    public static Map<String, Object> deepCopy(Map<String, Object> original) {
+      Map<String, Object> copy = new HashMap<>();
+      for (Map.Entry<String, Object> entry : original.entrySet()) {
+          Object value = entry.getValue();
+          if (value instanceof Map) {
+              copy.put(entry.getKey(), deepCopy((Map<String, Object>) value));
+          } else {
+              copy.put(entry.getKey(), value); // Still shallow for non-Map objects
+          }
+      }
+      return copy;
     }
 
     /**

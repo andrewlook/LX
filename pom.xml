@@ -55,6 +55,11 @@
 			<version>${gson.version}</version>
 		</dependency>
 		<dependency>
+			<groupId>com.squareup.moshi</groupId>
+			<artifactId>moshi</artifactId>
+			<version>1.15.2</version>
+		</dependency>
+		<dependency>
 			<groupId>uk.co.xfactory-librarians</groupId>
 			<artifactId>coremidi4j</artifactId>
 			<version>${coremidi4j.version}</version>
