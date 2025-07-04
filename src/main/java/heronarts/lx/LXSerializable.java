@@ -18,6 +18,8 @@
 
 package heronarts.lx;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -27,6 +29,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
+import com.squareup.moshi.FromJson;
+import com.squareup.moshi.JsonReader;
 
 import heronarts.lx.color.ColorParameter;
 import heronarts.lx.parameter.AggregateParameter;
@@ -253,6 +257,49 @@ public interface LXSerializable {
       return copy;
     }
 
+    public class FloatMapAdapter {
+      @FromJson
+      public Object fromJson(JsonReader reader) throws IOException {
+          return readJsonValue(reader);
+      }
+      
+      private Object readJsonValue(JsonReader reader) throws IOException {
+          switch (reader.peek()) {
+              case BEGIN_OBJECT:
+                  Map<String, Object> map = new HashMap<>();
+                  reader.beginObject();
+                  while (reader.hasNext()) {
+                      map.put(reader.nextName(), readJsonValue(reader));
+                  }
+                  reader.endObject();
+                  return map;
+              case BEGIN_ARRAY:
+                  List<Object> list = new ArrayList<>();
+                  reader.beginArray();
+                  while (reader.hasNext()) {
+                      list.add(readJsonValue(reader));
+                  }
+                  reader.endArray();
+                  return list;
+              case STRING:
+                  return reader.nextString();
+              case NUMBER:
+                  String numberStr = reader.nextString();
+                  if (numberStr.contains(".")) {
+                      return Float.parseFloat(numberStr);  // Use Float instead of Double
+                  } else {
+                      return Integer.parseInt(numberStr);
+                  }
+              case BOOLEAN:
+                  return reader.nextBoolean();
+              case NULL:
+                  reader.nextNull();
+                  return null;
+              default:
+                  throw new IllegalStateException("Unknown token: " + reader.peek());
+          }
+      }
+  }
     /**
      * Loads an integer value into a parameter, if it is found. If the
      * key doesn't exist, this method does nothing.
