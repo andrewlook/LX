@@ -18,32 +18,11 @@
 
 package heronarts.lx.structure;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.lang.reflect.Method;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import com.google.gson.JsonObject;
 import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.Moshi;
 import com.squareup.moshi.Types;
-
 import heronarts.lx.LX;
 import heronarts.lx.LXSerializable;
 import heronarts.lx.model.LXModel;
@@ -69,7 +48,24 @@ import heronarts.lx.parameter.StringParameter;
 import heronarts.lx.transform.LXMatrix;
 import heronarts.lx.transform.LXVector;
 import heronarts.lx.utils.LXUtils;
-import okio.Buffer;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import okio.BufferedSource;
 import okio.Okio;
 
@@ -1323,11 +1319,15 @@ public class JsonFixture extends LXFixture {
     if (obj.containsKey(key)) {
       Object floatElem = obj.get(key);
       if (floatElem instanceof Float) {
-        if (variablesAllowed && floatElem instanceof String) {
-          return evaluateVariableExpression(obj, key, (String) floatElem, ParameterType.FLOAT);
-        }
         return (Float) floatElem;
+      } else if (floatElem instanceof Integer) {
+        return ((Integer) floatElem).floatValue();
+      } else if (floatElem instanceof Double) {
+        return ((Double) floatElem).floatValue();
+      } else if (variablesAllowed && floatElem instanceof String) {
+        return evaluateVariableExpression(obj, key, (String) floatElem, ParameterType.FLOAT);
       }
+      
       addWarning(warning);
     }
     return 0f;
@@ -1337,10 +1337,9 @@ public class JsonFixture extends LXFixture {
     if (obj.containsKey(key)) {
       Object boolElem = obj.get(key);
       if (boolElem instanceof Boolean) {
-        if (variablesAllowed && boolElem instanceof String) {
-          return evaluateBooleanExpression(obj, key, (String) boolElem);
-        }
         return (Boolean) boolElem;
+      } else if (variablesAllowed && boolElem instanceof String) {
+        return evaluateBooleanExpression(obj, key, (String) boolElem);
       }
       addWarning(warning);
     }
@@ -1351,10 +1350,13 @@ public class JsonFixture extends LXFixture {
     if (obj.containsKey(key)) {
       Object intElem = obj.get(key);
       if (intElem instanceof Integer) {
-        if (variablesAllowed && intElem instanceof String) {
-          return (int) evaluateVariableExpression(obj, key, (String) intElem, ParameterType.INT);
-        }
         return (Integer) intElem;
+      } else if (intElem instanceof Double) {
+        return ((Double) intElem).intValue();
+      } else if (intElem instanceof Float) {
+        return ((Float) intElem).intValue();
+      } else if (variablesAllowed && intElem instanceof String) {
+        return (int) evaluateVariableExpression(obj, key, (String) intElem, ParameterType.INT);
       }
       addWarning(warning);
     }
@@ -1561,7 +1563,7 @@ public class JsonFixture extends LXFixture {
         if (scale.containsKey(KEY_Z)) {
           fixture.addTransform(new Transform(Transform.Type.SCALE_Z, loadFloat(scale, KEY_Z, true)));
         }
-      } else if (scaleElem instanceof Float || scaleElem instanceof String) {
+      } else if (scaleElem instanceof Float || scaleElem instanceof Integer || scaleElem instanceof Double || scaleElem instanceof String) {
         final float scale = loadFloat(obj, KEY_SCALE, true);
         fixture.addTransform(new Transform(Transform.Type.SCALE, scale));
       } else {
@@ -1713,7 +1715,7 @@ public class JsonFixture extends LXFixture {
         continue;
       }
       Object defaultElem = parameterObj.get(KEY_PARAMETER_DEFAULT);
-      if (!(defaultElem instanceof Float || defaultElem instanceof Integer || defaultElem instanceof Boolean || defaultElem instanceof String)) {
+      if (!(defaultElem instanceof Float || defaultElem instanceof Double || defaultElem instanceof Integer || defaultElem instanceof Boolean || defaultElem instanceof String)) {
         addWarning("Parameter " + parameterName + " must specify primitive value for " + KEY_PARAMETER_DEFAULT);
         continue;
       }
@@ -1738,7 +1740,7 @@ public class JsonFixture extends LXFixture {
 
       switch (type) {
       case FLOAT:
-        final float defaultFloat = defaultElem instanceof Float ? (Float) defaultElem : Float.parseFloat(defaultElem.toString());
+        final float defaultFloat = defaultElem instanceof String ? Float.parseFloat(defaultElem.toString()) : (defaultElem instanceof Float ? (Float) defaultElem : (defaultElem instanceof Integer ? ((Integer) defaultElem).floatValue() : (defaultElem instanceof Double ? ((Double) defaultElem).floatValue() : null)));
         float floatValue = defaultFloat;
         if (this.jsonParameterValues.containsKey(parameterName)) {
           floatValue = this.jsonParameterContext.loadFloat(this.jsonParameterValues, parameterName, true);
