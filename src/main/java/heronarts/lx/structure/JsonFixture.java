@@ -20,6 +20,7 @@ package heronarts.lx.structure;
 
 import java.io.File;
 import java.io.FileReader;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -679,7 +680,10 @@ public class JsonFixture extends LXFixture {
   @Override
   public void onParameterChanged(LXParameter p) {
     if (p == this.fixtureType) {
-      loadFixture(true);
+      JsonObject obj = resolveFixtureFile(this.fixtureType.getString());
+      if (obj != null) {
+        loadFixture(obj, true);
+      }
     } else if (p == this.enabled) {
       // JSON fixture enabled cascades down children...
       for (LXFixture child : this.children) {
@@ -687,14 +691,6 @@ public class JsonFixture extends LXFixture {
       }
     }
     super.onParameterChanged(p);
-  }
-
-  public String getFixturePath() {
-    String name = this.fixtureType.getString();
-    if (!LXUtils.isEmpty(name)) {
-      return name + ".lxf";
-    }
-    return "";
   }
 
   private void addJsonParameter(ParameterDefinition parameter) {
@@ -761,7 +757,10 @@ public class JsonFixture extends LXFixture {
     clearTransforms();
 
     this.isLoaded = false;
-    loadFixture(reloadParameters);
+    JsonObject obj = resolveFixtureFile(this.fixtureType.getString());
+      if (obj != null) {
+        loadFixture(obj, reloadParameters);
+      }
     regenerate();
   }
 
@@ -785,26 +784,41 @@ public class JsonFixture extends LXFixture {
     return this.lx.getMediaFile(LX.Media.FIXTURES, fixtureType.replace(PATH_SEPARATOR, File.separator) + ".lxf", false);
   }
 
-  private void loadFixture(boolean loadParameters) {
+  private JsonObject resolveFixtureFile(String fixtureType) {
     if (this.isLoaded) {
       LX.error(new Exception(), "Trying to load JsonFixture twice, why?");
-      return;
+      return null;
     }
     this.isLoaded = true;
-
-    final String fixtureType = this.fixtureType.getString();
     final File fixtureFile = getFixtureFile(fixtureType);
     if (!fixtureFile.exists()) {
       setError("Invalid fixture type, could not find file: " + fixtureFile);
-      return;
+      return null;
     } else if (!fixtureFile.isFile()) {
       setError("Invalid fixture type, not a normal file: " + fixtureFile);
-      return;
+      return null;
     }
 
     try (FileReader fr = new FileReader(fixtureFile)) {
-      JsonObject obj = new Gson().fromJson(fr, JsonObject.class);
+      JsonObject obj = new Gson().fromJson(fr, JsonObject.class);   
+      return obj;   
+    } catch (JsonParseException jpx) {
+      String message = jpx.getLocalizedMessage();
+      Throwable cause = jpx.getCause();
+      if (cause instanceof MalformedJsonException) {
+        message = "Invalid JSON in " + fixtureFile.getName() + ": " + cause.getLocalizedMessage();
+      }
+      setError(jpx, message);
+      setErrorLabel(fixtureType);
+    } catch (IOException ioe) {
+      setError(ioe, "Error loading fixture from " + fixtureFile.getName() + ": " + ioe.getLocalizedMessage());
+      setErrorLabel(fixtureType);
+    }
+    return null;
+  }
 
+  void loadFixture(JsonObject obj, boolean loadParameters) {
+    try {
       if (loadParameters) {
         loadLabel(obj);
         loadTags(this, obj, true, false);
@@ -833,18 +847,9 @@ public class JsonFixture extends LXFixture {
 
       // Load UI constructs
       loadUI(obj);
-
-    } catch (JsonParseException jpx) {
-      String message = jpx.getLocalizedMessage();
-      Throwable cause = jpx.getCause();
-      if (cause instanceof MalformedJsonException) {
-        message = "Invalid JSON in " + fixtureFile.getName() + ": " + cause.getLocalizedMessage();
-      }
-      setError(jpx, message);
-      setErrorLabel(fixtureType);
     } catch (Exception x) {
-      setError(x, "Error loading fixture from " + fixtureFile.getName() + ": " + x.getLocalizedMessage());
-      setErrorLabel(fixtureType);
+      setError(x, "Error loading fixture from " + this.fixtureType.getString() + ": " + x.getLocalizedMessage());
+      setErrorLabel(this.fixtureType.getString());
     }
   }
 
