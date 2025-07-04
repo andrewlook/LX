@@ -38,6 +38,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -337,26 +338,42 @@ public class LXRegistry implements LXSerializable {
       String fileName = prefix + file.getName();
       boolean isVisible = false;
 
-      try (FileReader fr = new FileReader(file)) {
-        JsonObject obj = new Gson().fromJson(fr, JsonObject.class);
-        if (obj == null) {
-          LX.error("JSON fixture file is empty: " + file.getAbsolutePath());
-          mutableJsonFixtureErrors.add(new Error(prefix, file, "Syntax error", new Exception("File is empty")));
+      Map<String, Object> obj = LXSerializable.Utils.mochiReadJson(new File(fileName), (Exception e) -> {
+        if (e instanceof FileNotFoundException) {
+          LX.error(e, "JSON fixture file does not exist: " + file.getAbsolutePath());
         } else {
-          isVisible = !obj.has(KEY_IS_VISIBLE) || obj.get(KEY_IS_VISIBLE).getAsBoolean();
+          LX.error(e, "Error reading JSON fixture file: " + file.getAbsolutePath());
+          mutableJsonFixtureErrors.add(new Error(prefix, file, "I/O error", e));
         }
-      } catch (JsonSyntaxException jsx) {
-        LX.error(jsx, "JSON fixture file has invalid syntax: " + file.getAbsolutePath());
-        mutableJsonFixtureErrors.add(new Error(prefix, file, "Syntax error", jsx));
-      } catch (JsonParseException jpx) {
-        LX.error(jpx, "JSON fixture file is not valid JSON: " + file.getAbsolutePath());
-        mutableJsonFixtureErrors.add(new Error(prefix, file, "Parse error", jpx));
-      } catch (FileNotFoundException fnfx) {
-        LX.error(fnfx, "JSON fixture file does not exist: " + file.getAbsolutePath());
-      } catch (Exception x) {
-        LX.error(x, "Error reading JSON fixture file: " + file.getAbsolutePath());
-        mutableJsonFixtureErrors.add(new Error(prefix, file, "I/O error", x));
+      });
+
+      if (obj == null) {
+        LX.error("JSON fixture file is empty: " + file.getAbsolutePath());
+        mutableJsonFixtureErrors.add(new Error(prefix, file, "Syntax error", new Exception("File is empty")));
+      } else {
+        isVisible = !obj.containsKey(KEY_IS_VISIBLE) || (Boolean) obj.get(KEY_IS_VISIBLE);
       }
+
+      // try (FileReader fr = new FileReader(file)) {
+      //   JsonObject obj = new Gson().fromJson(fr, JsonObject.class);
+      //   if (obj == null) {
+      //     LX.error("JSON fixture file is empty: " + file.getAbsolutePath());
+      //     mutableJsonFixtureErrors.add(new Error(prefix, file, "Syntax error", new Exception("File is empty")));
+      //   } else {
+      //     isVisible = !obj.has(KEY_IS_VISIBLE) || obj.get(KEY_IS_VISIBLE).getAsBoolean();
+      //   }
+      // } catch (JsonSyntaxException jsx) {
+      //   LX.error(jsx, "JSON fixture file has invalid syntax: " + file.getAbsolutePath());
+      //   mutableJsonFixtureErrors.add(new Error(prefix, file, "Syntax error", jsx));
+      // } catch (JsonParseException jpx) {
+      //   LX.error(jpx, "JSON fixture file is not valid JSON: " + file.getAbsolutePath());
+      //   mutableJsonFixtureErrors.add(new Error(prefix, file, "Parse error", jpx));
+      // } catch (FileNotFoundException fnfx) {
+      //   LX.error(fnfx, "JSON fixture file does not exist: " + file.getAbsolutePath());
+      // } catch (Exception x) {
+      //   LX.error(x, "Error reading JSON fixture file: " + file.getAbsolutePath());
+      //   mutableJsonFixtureErrors.add(new Error(prefix, file, "I/O error", x));
+      // }
 
       this.type = fileName.substring(0, fileName.length() - ".lxf".length());
       this.isVisible = isVisible;
