@@ -1770,7 +1770,7 @@ public class JsonFixture extends LXFixture {
         if (parameterObj.containsKey(KEY_PARAMETER_MAX)) {
           maxInt = loadInt(parameterObj, KEY_PARAMETER_MAX, false, "Parameter min value must be an integer");
         }
-        final int defaultInt = (Integer) defaultElem;
+        final int defaultInt = defaultElem instanceof Integer ? (Integer) defaultElem : (defaultElem instanceof Float ? ((Float) defaultElem).intValue() : (defaultElem instanceof Double ? ((Double) defaultElem).intValue() : defaultElem instanceof String ? Integer.parseInt(defaultElem.toString()) : null));
         int intValue = defaultInt;
         if (minInt > maxInt) {
           addWarning("Parameter minimum may not be greater than maximum: " + minInt + ">" + maxInt);
