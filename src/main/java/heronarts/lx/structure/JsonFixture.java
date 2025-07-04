@@ -64,6 +64,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import okio.BufferedSource;
@@ -806,31 +808,10 @@ public class JsonFixture extends LXFixture {
       return null;
     }
 
-    String content = null;
-    try {
-      content = Files.readString(fixtureFile.toPath());
-    } catch (IOException ioe) {
-      setError(ioe, "Error loading fixture from " + fixtureFile.getName() + ": " + ioe.getLocalizedMessage());
-      setErrorLabel(fixtureType);
-      return null;
-    }
-
-    Moshi moshi = new Moshi.Builder().build();
-    JsonAdapter<Map<String, Object>> adapter = moshi.adapter(
-        Types.newParameterizedType(Map.class, String.class, Object.class)
-    );
-    BufferedSource bufferedSource = Okio.buffer(Okio.source(new ByteArrayInputStream(content.getBytes())));
-    JsonReader reader = JsonReader.of(bufferedSource);
-    reader.setLenient(true);
-
-    try {
-      Map<String, Object> jsonMap = adapter.fromJson(reader);
-      return jsonMap;
-    } catch (IOException e) {
+    return LXSerializable.Utils.mochiReadJson(fixtureFile, (Exception e) -> {
       setError(e, "Error loading fixture from " + fixtureFile.getName() + ": " + e.getLocalizedMessage());
       setErrorLabel(fixtureType);
-      return null;
-    }
+    });
   }
 
   void loadFixture(Map<String, Object> obj, boolean loadParameters) {
