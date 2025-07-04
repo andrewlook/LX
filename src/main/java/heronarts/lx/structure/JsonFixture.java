@@ -18,6 +18,7 @@
 
 package heronarts.lx.structure;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -39,6 +40,7 @@ import java.util.regex.Pattern;
 
 import com.google.gson.JsonObject;
 import com.squareup.moshi.JsonAdapter;
+import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.Moshi;
 import com.squareup.moshi.Types;
 
@@ -67,6 +69,9 @@ import heronarts.lx.parameter.StringParameter;
 import heronarts.lx.transform.LXMatrix;
 import heronarts.lx.transform.LXVector;
 import heronarts.lx.utils.LXUtils;
+import okio.Buffer;
+import okio.BufferedSource;
+import okio.Okio;
 
 public class JsonFixture extends LXFixture {
 
@@ -818,9 +823,12 @@ public class JsonFixture extends LXFixture {
     JsonAdapter<Map<String, Object>> adapter = moshi.adapter(
         Types.newParameterizedType(Map.class, String.class, Object.class)
     );
+    BufferedSource bufferedSource = Okio.buffer(Okio.source(new ByteArrayInputStream(content.getBytes())));
+    JsonReader reader = JsonReader.of(bufferedSource);
+    reader.setLenient(true);
 
     try {
-      Map<String, Object> jsonMap = adapter.fromJson(content);
+      Map<String, Object> jsonMap = adapter.fromJson(reader);
       return jsonMap;
     } catch (IOException e) {
       setError(e, "Error loading fixture from " + fixtureFile.getName() + ": " + e.getLocalizedMessage());
@@ -1730,7 +1738,7 @@ public class JsonFixture extends LXFixture {
 
       switch (type) {
       case FLOAT:
-        final float defaultFloat = (Float) defaultElem;
+        final float defaultFloat = defaultElem instanceof Float ? (Float) defaultElem : Float.parseFloat(defaultElem.toString());
         float floatValue = defaultFloat;
         if (this.jsonParameterValues.containsKey(parameterName)) {
           floatValue = this.jsonParameterContext.loadFloat(this.jsonParameterValues, parameterName, true);
