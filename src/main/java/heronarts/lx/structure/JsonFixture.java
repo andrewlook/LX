@@ -1,39 +1,19 @@
 /**
  * Copyright 2019- Mark C. Slee, Heron Arts LLC
  *
- * This file is part of the LX Studio software library. By using
- * LX, you agree to the terms of the LX Studio Software License
- * and Distribution Agreement, available at: http://lx.studio/license
+ * <p>This file is part of the LX Studio software library. By using LX, you agree to the terms of
+ * the LX Studio Software License and Distribution Agreement, available at: http://lx.studio/license
  *
- * Please note that the LX license is not open-source. The license
- * allows for free, non-commercial use.
+ * <p>Please note that the LX license is not open-source. The license allows for free,
+ * non-commercial use.
  *
- * HERON ARTS MAKES NO WARRANTY, EXPRESS, IMPLIED, STATUTORY, OR
- * OTHERWISE, AND SPECIFICALLY DISCLAIMS ANY WARRANTY OF
- * MERCHANTABILITY, NON-INFRINGEMENT, OR FITNESS FOR A PARTICULAR
- * PURPOSE, WITH RESPECT TO THE SOFTWARE.
+ * <p>HERON ARTS MAKES NO WARRANTY, EXPRESS, IMPLIED, STATUTORY, OR OTHERWISE, AND SPECIFICALLY
+ * DISCLAIMS ANY WARRANTY OF MERCHANTABILITY, NON-INFRINGEMENT, OR FITNESS FOR A PARTICULAR PURPOSE,
+ * WITH RESPECT TO THE SOFTWARE.
  *
  * @author Mark C. Slee <mark@heronarts.com>
  */
-
 package heronarts.lx.structure;
-
-import java.io.File;
-import java.io.FileReader;
-import java.lang.reflect.Method;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -42,7 +22,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.stream.MalformedJsonException;
-
 import heronarts.lx.LX;
 import heronarts.lx.LXSerializable;
 import heronarts.lx.model.LXModel;
@@ -68,6 +47,22 @@ import heronarts.lx.parameter.StringParameter;
 import heronarts.lx.transform.LXMatrix;
 import heronarts.lx.transform.LXVector;
 import heronarts.lx.utils.LXUtils;
+import java.io.File;
+import java.io.FileReader;
+import java.lang.reflect.Method;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class JsonFixture extends LXFixture {
 
@@ -80,7 +75,7 @@ public class JsonFixture extends LXFixture {
   // Model tags
   private static final String KEY_TAG = "tag";
   private static final String KEY_TAGS = "tags";
-  private static final String KEY_MODEL_KEY = "modelKey";   // deprecated, backwards-compatible
+  private static final String KEY_MODEL_KEY = "modelKey"; // deprecated, backwards-compatible
   private static final String KEY_MODEL_KEYS = "modelKeys"; // deprecated, backwards-compatible
 
   // Geometry
@@ -224,7 +219,11 @@ public class JsonFixture extends LXFixture {
     private final String channelKey;
     private final String[] protocolKeys;
 
-    private JsonProtocolDefinition(LXProtocolFixture.Protocol protocol, String universeKey, String channelKey, String ... protocolKeys) {
+    private JsonProtocolDefinition(
+        LXProtocolFixture.Protocol protocol,
+        String universeKey,
+        String channelKey,
+        String... protocolKeys) {
       this.protocol = protocol;
       this.universeKey = universeKey;
       this.channelKey = channelKey;
@@ -267,7 +266,6 @@ public class JsonFixture extends LXFixture {
       }
       return null;
     }
-
   }
 
   // A bit superfluous, but avoiding using the LXBufferOutput stuff
@@ -275,9 +273,11 @@ public class JsonFixture extends LXFixture {
   // to clearly reflect that, in case the two diverge in the future
   private static class JsonByteEncoderDefinition {
 
-    private static final JsonByteEncoderDefinition RGB = new JsonByteEncoderDefinition(LXBufferOutput.ByteOrder.RGB);
+    private static final JsonByteEncoderDefinition RGB =
+        new JsonByteEncoderDefinition(LXBufferOutput.ByteOrder.RGB);
 
-    private static final Map<String, JsonByteEncoderDefinition> instances = new HashMap<String, JsonByteEncoderDefinition>();
+    private static final Map<String, JsonByteEncoderDefinition> instances =
+        new HashMap<String, JsonByteEncoderDefinition>();
 
     private final LXBufferOutput.ByteEncoder byteEncoder;
 
@@ -285,32 +285,34 @@ public class JsonFixture extends LXFixture {
       this.byteEncoder = byteEncoder;
     }
 
-    private JsonByteEncoderDefinition(LX lx, final String className) throws NoSuchMethodException, ClassNotFoundException {
+    private JsonByteEncoderDefinition(LX lx, final String className)
+        throws NoSuchMethodException, ClassNotFoundException {
       final Class<?> cls = lx.instantiateStatic(className.replace('/', '$'));
       final Method getNumBytes = cls.getMethod("getNumBytes");
-      final Method writeBytes = cls.getMethod("writeBytes", int.class, GammaTable.Curve.class, byte[].class, int.class);
-      this.byteEncoder = new LXBufferOutput.ByteEncoder() {
+      final Method writeBytes =
+          cls.getMethod("writeBytes", int.class, GammaTable.Curve.class, byte[].class, int.class);
+      this.byteEncoder =
+          new LXBufferOutput.ByteEncoder() {
 
-        @Override
-        public int getNumBytes() {
-          try {
-            return (int) getNumBytes.invoke(null);
-          } catch (Throwable t) {
-            LX.error("ByteEncoderClass " + cls  + " error on getNumBytes: " + t.getMessage());
-            return 0;
-          }
-        }
+            @Override
+            public int getNumBytes() {
+              try {
+                return (int) getNumBytes.invoke(null);
+              } catch (Throwable t) {
+                LX.error("ByteEncoderClass " + cls + " error on getNumBytes: " + t.getMessage());
+                return 0;
+              }
+            }
 
-        @Override
-        public void writeBytes(int argb, GammaTable.Curve gamma, byte[] output, int offset) {
-          try {
-            writeBytes.invoke(null, argb, gamma, output, offset);
-          } catch (Throwable t) {
-            LX.error("ByteEncoderClass " + cls  + " error on writeBytes: " + t.getMessage());
-          }
-        }
-
-      };
+            @Override
+            public void writeBytes(int argb, GammaTable.Curve gamma, byte[] output, int offset) {
+              try {
+                writeBytes.invoke(null, argb, gamma, output, offset);
+              } catch (Throwable t) {
+                LX.error("ByteEncoderClass " + cls + " error on writeBytes: " + t.getMessage());
+              }
+            }
+          };
     }
 
     private static JsonByteEncoderDefinition get(LX lx, String order) {
@@ -319,7 +321,6 @@ public class JsonFixture extends LXFixture {
       if (instance != null) {
         return instance;
       }
-
 
       // Check for the basic byte order enum types
       for (LXBufferOutput.ByteOrder byteOrder : LXBufferOutput.ByteOrder.values()) {
@@ -334,30 +335,36 @@ public class JsonFixture extends LXFixture {
       try {
         final Class<?> cls = lx.instantiateStatic(order.replace('/', '$'));
         final Method getNumBytes = cls.getMethod("getNumBytes");
-        final Method writeBytes = cls.getMethod("writeBytes", int.class, GammaTable.Curve.class, byte[].class, int.class);
+        final Method writeBytes =
+            cls.getMethod("writeBytes", int.class, GammaTable.Curve.class, byte[].class, int.class);
 
         // Create a new dynamic encoder which uses reflection to call static methods
         // on the provided class
-        instance = new JsonByteEncoderDefinition(new LXBufferOutput.ByteEncoder() {
-          @Override
-          public int getNumBytes() {
-            try {
-              return (int) getNumBytes.invoke(null);
-            } catch (Throwable t) {
-              LX.error("JsonByteEncoder " + cls  + " error on getNumBytes: " + t.getMessage());
-              return 0;
-            }
-          }
+        instance =
+            new JsonByteEncoderDefinition(
+                new LXBufferOutput.ByteEncoder() {
+                  @Override
+                  public int getNumBytes() {
+                    try {
+                      return (int) getNumBytes.invoke(null);
+                    } catch (Throwable t) {
+                      LX.error(
+                          "JsonByteEncoder " + cls + " error on getNumBytes: " + t.getMessage());
+                      return 0;
+                    }
+                  }
 
-          @Override
-          public void writeBytes(int argb, GammaTable.Curve gamma, byte[] output, int offset) {
-            try {
-              writeBytes.invoke(null, argb, gamma, output, offset);
-            } catch (Throwable t) {
-              LX.error("JsonByteEncoder " + cls  + " error on writeBytes: " + t.getMessage());
-            }
-          }
-        });
+                  @Override
+                  public void writeBytes(
+                      int argb, GammaTable.Curve gamma, byte[] output, int offset) {
+                    try {
+                      writeBytes.invoke(null, argb, gamma, output, offset);
+                    } catch (Throwable t) {
+                      LX.error(
+                          "JsonByteEncoder " + cls + " error on writeBytes: " + t.getMessage());
+                    }
+                  }
+                });
         instances.put(order, instance);
         return instance;
       } catch (Throwable x) {
@@ -415,7 +422,12 @@ public class JsonFixture extends LXFixture {
     private boolean isReferenced = false;
 
     @SuppressWarnings("unchecked")
-    private ParameterDefinition(String name, String label, String description, ParameterType type, LXListenableParameter parameter) {
+    private ParameterDefinition(
+        String name,
+        String label,
+        String description,
+        ParameterType type,
+        LXListenableParameter parameter) {
       this.name = name;
       this.label = label;
       this.description = description;
@@ -425,81 +437,117 @@ public class JsonFixture extends LXFixture {
         parameter.setDescription(description);
       }
       switch (type) {
-      case STRING:
-        this.stringParameter = (StringParameter) parameter;
-        this.intParameter = null;
-        this.floatParameter = null;
-        this.booleanParameter = null;
-        this.stringSelectParameter = null;
-        break;
-      case INT:
-        this.stringParameter = null;
-        this.intParameter = (DiscreteParameter) parameter;
-        this.floatParameter = null;
-        this.booleanParameter = null;
-        this.stringSelectParameter = null;
-        break;
-      case FLOAT:
-        this.stringParameter = null;
-        this.intParameter = null;
-        this.floatParameter = (BoundedParameter) parameter;
-        this.booleanParameter = null;
-        this.stringSelectParameter = null;
-        break;
-      case BOOLEAN:
-        this.stringParameter = null;
-        this.intParameter = null;
-        this.floatParameter = null;
-        this.booleanParameter = (BooleanParameter) parameter;
-        this.stringSelectParameter = null;
-        break;
-      case STRING_SELECT:
-        this.stringSelectParameter = (ObjectParameter<String>) parameter;
-        this.stringParameter = null;
-        this.intParameter = null;
-        this.floatParameter = null;
-        this.booleanParameter = null;
-        break;
-      default:
-        throw new IllegalStateException("Unknown ParameterType: " + type);
+        case STRING:
+          this.stringParameter = (StringParameter) parameter;
+          this.intParameter = null;
+          this.floatParameter = null;
+          this.booleanParameter = null;
+          this.stringSelectParameter = null;
+          break;
+        case INT:
+          this.stringParameter = null;
+          this.intParameter = (DiscreteParameter) parameter;
+          this.floatParameter = null;
+          this.booleanParameter = null;
+          this.stringSelectParameter = null;
+          break;
+        case FLOAT:
+          this.stringParameter = null;
+          this.intParameter = null;
+          this.floatParameter = (BoundedParameter) parameter;
+          this.booleanParameter = null;
+          this.stringSelectParameter = null;
+          break;
+        case BOOLEAN:
+          this.stringParameter = null;
+          this.intParameter = null;
+          this.floatParameter = null;
+          this.booleanParameter = (BooleanParameter) parameter;
+          this.stringSelectParameter = null;
+          break;
+        case STRING_SELECT:
+          this.stringSelectParameter = (ObjectParameter<String>) parameter;
+          this.stringParameter = null;
+          this.intParameter = null;
+          this.floatParameter = null;
+          this.booleanParameter = null;
+          break;
+        default:
+          throw new IllegalStateException("Unknown ParameterType: " + type);
       }
       parameter.addListener(this);
     }
 
-    private ParameterDefinition(String name, String label, String description, String value, String defaultStr) {
-      this(name, label, description, ParameterType.STRING,
-        new StringParameter(label, defaultStr)
-        .setValue(value)
-      );
+    private ParameterDefinition(
+        String name, String label, String description, String value, String defaultStr) {
+      this(
+          name,
+          label,
+          description,
+          ParameterType.STRING,
+          new StringParameter(label, defaultStr).setValue(value));
     }
 
-    private ParameterDefinition(String name, String label, String description, int value, int defaultInt, int minInt, int maxInt) {
-      this(name, label, description, ParameterType.INT,
-        (DiscreteParameter) new DiscreteParameter(label, defaultInt, minInt, maxInt + 1)
-        .setValue(value)
-      );
+    private ParameterDefinition(
+        String name,
+        String label,
+        String description,
+        int value,
+        int defaultInt,
+        int minInt,
+        int maxInt) {
+      this(
+          name,
+          label,
+          description,
+          ParameterType.INT,
+          (DiscreteParameter)
+              new DiscreteParameter(label, defaultInt, minInt, maxInt + 1).setValue(value));
     }
 
-    private ParameterDefinition(String name, String label, String description, float value, float defaultFloat, float minFloat, float maxFloat) {
-      this(name, label, description, ParameterType.FLOAT,
-        (BoundedParameter) new BoundedParameter(label, defaultFloat, minFloat, maxFloat)
-        .setFormatter(LXParameter.Formatter.DECIMAL_2_TO_8_PLACES)
-        .setValue(value)
-      );
+    private ParameterDefinition(
+        String name,
+        String label,
+        String description,
+        float value,
+        float defaultFloat,
+        float minFloat,
+        float maxFloat) {
+      this(
+          name,
+          label,
+          description,
+          ParameterType.FLOAT,
+          (BoundedParameter)
+              new BoundedParameter(label, defaultFloat, minFloat, maxFloat)
+                  .setFormatter(LXParameter.Formatter.DECIMAL_2_TO_8_PLACES)
+                  .setValue(value));
     }
 
-    private ParameterDefinition(String name, String label, String description, boolean value, boolean defaultBoolean) {
-      this(name, label, description, ParameterType.BOOLEAN,
-        new BooleanParameter(label, defaultBoolean)
-        .setValue(value)
-      );
+    private ParameterDefinition(
+        String name, String label, String description, boolean value, boolean defaultBoolean) {
+      this(
+          name,
+          label,
+          description,
+          ParameterType.BOOLEAN,
+          new BooleanParameter(label, defaultBoolean).setValue(value));
     }
 
-    private ParameterDefinition(String name, String label, String description, String value, String defaultStr, List<String> stringOptions) {
-      this(name, label, description, ParameterType.STRING_SELECT,
-        new ObjectParameter<String>(label, stringOptions.toArray(new String[0]), defaultStr)
-        .setValue(value)
-      );
+    private ParameterDefinition(
+        String name,
+        String label,
+        String description,
+        String value,
+        String defaultStr,
+        List<String> stringOptions) {
+      this(
+          name,
+          label,
+          description,
+          ParameterType.STRING_SELECT,
+          new ObjectParameter<String>(label, stringOptions.toArray(new String[0]), defaultStr)
+              .setValue(value));
     }
 
     private void dispose() {
@@ -516,21 +564,20 @@ public class JsonFixture extends LXFixture {
 
     public String getValueAsString() {
       switch (this.type) {
-      case BOOLEAN:
-        return String.valueOf(this.booleanParameter.isOn());
-      case FLOAT:
-        return String.valueOf(this.floatParameter.getValue());
-      case INT:
-        return String.valueOf(this.intParameter.getValuei());
-      case STRING:
-        return this.stringParameter.getString();
-      case STRING_SELECT:
-        return this.stringSelectParameter.getObject();
-      default:
-        return "";
+        case BOOLEAN:
+          return String.valueOf(this.booleanParameter.isOn());
+        case FLOAT:
+          return String.valueOf(this.floatParameter.getValue());
+        case INT:
+          return String.valueOf(this.intParameter.getValuei());
+        case STRING:
+          return this.stringParameter.getString();
+        case STRING_SELECT:
+          return this.stringSelectParameter.getObject();
+        default:
+          return "";
       }
     }
-
   }
 
   private class JsonOutputDefinition {
@@ -552,7 +599,20 @@ public class JsonFixture extends LXFixture {
     private final float fps;
     private final List<JsonSegmentDefinition> segments;
 
-    private JsonOutputDefinition(LXFixture fixture, JsonProtocolDefinition protocol, JsonTransportDefinition transport, JsonByteEncoderDefinition byteOrder, InetAddress address, int port, int universe, int channel, int priority, boolean sequenceEnabled, KinetDatagram.Version kinetVersion, float fps, List<JsonSegmentDefinition> segments) {
+    private JsonOutputDefinition(
+        LXFixture fixture,
+        JsonProtocolDefinition protocol,
+        JsonTransportDefinition transport,
+        JsonByteEncoderDefinition byteOrder,
+        InetAddress address,
+        int port,
+        int universe,
+        int channel,
+        int priority,
+        boolean sequenceEnabled,
+        KinetDatagram.Version kinetVersion,
+        float fps,
+        List<JsonSegmentDefinition> segments) {
       this.fixture = fixture;
       this.protocol = protocol;
       this.transport = transport;
@@ -567,7 +627,6 @@ public class JsonFixture extends LXFixture {
       this.fps = fps;
       this.segments = segments;
     }
-
   }
 
   private class JsonSegmentDefinition {
@@ -585,7 +644,18 @@ public class JsonFixture extends LXFixture {
     // May or may not be specified, if null then the parent output definition is used
     private final JsonByteEncoderDefinition byteEncoder;
 
-    private JsonSegmentDefinition(int start, int num, int stride, int repeat, int padPre, int padPost, boolean reverse, JsonByteEncoderDefinition byteEncoder, byte[] headerBytes, byte[] footerBytes, int outputStride) {
+    private JsonSegmentDefinition(
+        int start,
+        int num,
+        int stride,
+        int repeat,
+        int padPre,
+        int padPost,
+        boolean reverse,
+        JsonByteEncoderDefinition byteEncoder,
+        byte[] headerBytes,
+        byte[] footerBytes,
+        int outputStride) {
       this.start = start;
       this.num = num;
       this.stride = stride;
@@ -600,32 +670,29 @@ public class JsonFixture extends LXFixture {
     }
   }
 
-  /**
-   * Fixture type parameter stores the file name, without the .lxf suffix
-   */
+  /** Fixture type parameter stores the file name, without the .lxf suffix */
   private final StringParameter fixtureType =
-    new StringParameter("Fixture File")
-    .setDescription("Fixture definition path");
+      new StringParameter("Fixture File").setDescription("Fixture definition path");
 
   public final BooleanParameter error =
-    new BooleanParameter("Error", false)
-    .setDescription("Whether there was an error loading this fixture");
+      new BooleanParameter("Error", false)
+          .setDescription("Whether there was an error loading this fixture");
 
   public final StringParameter errorMessage =
-    new StringParameter("Error Message", "")
-    .setDescription("Message describing the error from loading");
+      new StringParameter("Error Message", "")
+          .setDescription("Message describing the error from loading");
 
   public final BooleanParameter warning =
-    new BooleanParameter("Warning", false)
-    .setDescription("Whether there are warnings from the loading of the JSON file");
+      new BooleanParameter("Warning", false)
+          .setDescription("Whether there are warnings from the loading of the JSON file");
 
   public final MutableParameter parametersDisposed =
-    new MutableParameter("Dispose")
-    .setDescription("Monitor for when fixture parameters are disposed");
+      new MutableParameter("Dispose")
+          .setDescription("Monitor for when fixture parameters are disposed");
 
   public final MutableParameter parametersReloaded =
-    new MutableParameter("Reload")
-    .setDescription("Monitor for when fixture parameters are reloaded");
+      new MutableParameter("Reload")
+          .setDescription("Monitor for when fixture parameters are reloaded");
 
   public final List<String> warnings = new CopyOnWriteArrayList<String>();
 
@@ -634,13 +701,17 @@ public class JsonFixture extends LXFixture {
   private final List<LXModel.Mesh> mutableMeshes = new ArrayList<>();
   public final List<LXModel.Mesh> meshes = Collections.unmodifiableList(this.mutableMeshes);
 
-  private final Map<String, List<LXFixture>> componentsById = new HashMap<String, List<LXFixture>>();
+  private final Map<String, List<LXFixture>> componentsById =
+      new HashMap<String, List<LXFixture>>();
   private final List<List<LXFixture>> componentsByIndex = new ArrayList<List<LXFixture>>();
 
-  private final LinkedHashMap<String, ParameterDefinition> definedParameters = new LinkedHashMap<String, ParameterDefinition>();
-  private final LinkedHashMap<String, ParameterDefinition> reloadParameterValues = new LinkedHashMap<String, ParameterDefinition>();
+  private final LinkedHashMap<String, ParameterDefinition> definedParameters =
+      new LinkedHashMap<String, ParameterDefinition>();
+  private final LinkedHashMap<String, ParameterDefinition> reloadParameterValues =
+      new LinkedHashMap<String, ParameterDefinition>();
 
-  // Context in which parameter values are looked up. Typically this is from the fixture itself, but in the case of
+  // Context in which parameter values are looked up. Typically this is from the fixture itself, but
+  // in the case of
   // a sub-fixture, parameter values may come from our parent
   private final JsonFixture jsonParameterContext;
 
@@ -652,6 +723,9 @@ public class JsonFixture extends LXFixture {
 
   private int currentNumInstances = -1;
   private int currentChildInstance = -1;
+
+  // Expression evaluator for mathematical and boolean expressions
+  private final ExpressionEvaluator expressionEvaluator = new StringExpressionEvaluator();
 
   public JsonFixture(LX lx) {
     this(lx, null);
@@ -766,7 +840,8 @@ public class JsonFixture extends LXFixture {
   }
 
   private File _getMeshFile(String meshType) {
-    return this.lx.getMediaFile(LX.Media.FIXTURES, meshType.replace(PATH_SEPARATOR, File.separator), false);
+    return this.lx.getMediaFile(
+        LX.Media.FIXTURES, meshType.replace(PATH_SEPARATOR, File.separator), false);
   }
 
   private File getMeshFile(String meshType) {
@@ -782,7 +857,8 @@ public class JsonFixture extends LXFixture {
   }
 
   private File getFixtureFile(String fixtureType) {
-    return this.lx.getMediaFile(LX.Media.FIXTURES, fixtureType.replace(PATH_SEPARATOR, File.separator) + ".lxf", false);
+    return this.lx.getMediaFile(
+        LX.Media.FIXTURES, fixtureType.replace(PATH_SEPARATOR, File.separator) + ".lxf", false);
   }
 
   private void loadFixture(boolean loadParameters) {
@@ -843,7 +919,9 @@ public class JsonFixture extends LXFixture {
       setError(jpx, message);
       setErrorLabel(fixtureType);
     } catch (Exception x) {
-      setError(x, "Error loading fixture from " + fixtureFile.getName() + ": " + x.getLocalizedMessage());
+      setError(
+          x,
+          "Error loading fixture from " + fixtureFile.getName() + ": " + x.getLocalizedMessage());
       setErrorLabel(fixtureType);
     }
   }
@@ -871,12 +949,19 @@ public class JsonFixture extends LXFixture {
     LX.error("Fixture " + this.fixtureType.getString() + ".lxf: " + warning);
   }
 
-  private void warnDuplicateKeys(JsonObject obj, String ... keys) {
+  private void warnDuplicateKeys(JsonObject obj, String... keys) {
     String found = null;
     for (String key : keys) {
       if (obj.has(key)) {
         if (found != null) {
-          addWarning("Should use only one of " + found + " or " + key + " - " + found + " will be ignored.");
+          addWarning(
+              "Should use only one of "
+                  + found
+                  + " or "
+                  + key
+                  + " - "
+                  + found
+                  + " will be ignored.");
         }
         found = key;
       }
@@ -895,18 +980,31 @@ public class JsonFixture extends LXFixture {
 
       if (KEY_INSTANCE.equals(parameterName)) {
         if (returnType == ParameterType.BOOLEAN) {
-          addWarning("Cannot load non-boolean parameter $" + parameterName + " into a boolean type: " + key);
+          addWarning(
+              "Cannot load non-boolean parameter $"
+                  + parameterName
+                  + " into a boolean type: "
+                  + key);
           return null;
         }
         if (this.currentChildInstance < 0) {
-          addWarning("Cannot reference variable $" + parameterName + " when \"" + KEY_INSTANCES + "\" has not been declared");
+          addWarning(
+              "Cannot reference variable $"
+                  + parameterName
+                  + " when \""
+                  + KEY_INSTANCES
+                  + "\" has not been declared");
           return null;
         }
         parameterValue = String.valueOf(this.currentChildInstance);
       } else if (KEY_INSTANCES.equals(parameterName)) {
         parameterValue = String.valueOf(this.currentNumInstances);
         if (returnType == ParameterType.BOOLEAN) {
-          addWarning("Cannot load non-boolean parameter $" + parameterName + " into a boolean type: " + key);
+          addWarning(
+              "Cannot load non-boolean parameter $"
+                  + parameterName
+                  + " into a boolean type: "
+                  + key);
           return null;
         }
       } else {
@@ -918,38 +1016,50 @@ public class JsonFixture extends LXFixture {
         parameter.isReferenced = true;
 
         switch (returnType) {
-        case FLOAT -> {
-          switch (parameter.type) {
-          case FLOAT, INT -> parameterValue = String.valueOf(parameter.parameter.getValue());
-          case BOOLEAN -> parameterValue = String.valueOf(parameter.booleanParameter.isOn());
-          default -> {
-            addWarning("Cannot load non-numeric parameter $" + parameterName + " into a float type: " + key);
-            return null;
+          case FLOAT -> {
+            switch (parameter.type) {
+              case FLOAT, INT -> parameterValue = String.valueOf(parameter.parameter.getValue());
+              case BOOLEAN -> parameterValue = String.valueOf(parameter.booleanParameter.isOn());
+              default -> {
+                addWarning(
+                    "Cannot load non-numeric parameter $"
+                        + parameterName
+                        + " into a float type: "
+                        + key);
+                return null;
+              }
+            }
           }
+          case INT -> {
+            switch (parameter.type) {
+              case INT -> parameterValue = String.valueOf(parameter.intParameter.getValuei());
+              case FLOAT -> parameterValue = String.valueOf(parameter.floatParameter.getValue());
+              case BOOLEAN -> parameterValue = String.valueOf(parameter.booleanParameter.isOn());
+              default -> {
+                addWarning(
+                    "Cannot load non-numeric parameter $"
+                        + parameterName
+                        + " into an integer type: "
+                        + key);
+                return null;
+              }
+            }
           }
-        }
-        case INT -> {
-          switch (parameter.type) {
-          case INT -> parameterValue = String.valueOf(parameter.intParameter.getValuei());
-          case FLOAT -> parameterValue = String.valueOf(parameter.floatParameter.getValue());
-          case BOOLEAN -> parameterValue = String.valueOf(parameter.booleanParameter.isOn());
-          default -> {
-            addWarning("Cannot load non-numeric parameter $" + parameterName + " into an integer type: " + key);
-            return null;
+          case STRING, STRING_SELECT -> {
+            parameterValue = parameter.getValueAsString();
           }
+          case BOOLEAN -> {
+            if (parameter.type == ParameterType.BOOLEAN) {
+              parameterValue = String.valueOf(parameter.booleanParameter.isOn());
+            } else {
+              addWarning(
+                  "Cannot load non-boolean parameter $"
+                      + parameterName
+                      + " into a boolean type: "
+                      + key);
+              return null;
+            }
           }
-        }
-        case STRING, STRING_SELECT -> {
-          parameterValue = parameter.getValueAsString();
-        }
-        case BOOLEAN -> {
-          if (parameter.type == ParameterType.BOOLEAN) {
-            parameterValue = String.valueOf(parameter.booleanParameter.isOn());
-          } else {
-            addWarning("Cannot load non-boolean parameter $" + parameterName + " into a boolean type: " + key);
-            return null;
-          }
-        }
         }
       }
       result.append(expression, index, matcher.start());
@@ -962,7 +1072,8 @@ public class JsonFixture extends LXFixture {
     return result.toString();
   }
 
-  private float evaluateVariableExpression(JsonObject obj, String key, String expression, ParameterType type) {
+  private float evaluateVariableExpression(
+      JsonObject obj, String key, String expression, ParameterType type) {
     String substitutedExpression = replaceVariables(key, expression, type);
     if (substitutedExpression == null) {
       return 0;
@@ -985,72 +1096,6 @@ public class JsonFixture extends LXFixture {
     }
   }
 
-  private enum SimpleFunction {
-    sin(f -> { return (float) Math.sin(Math.toRadians(f)); }),
-    cos(f -> { return (float) Math.cos(Math.toRadians(f)); }),
-    tan(f -> { return (float) Math.tan(Math.toRadians(f)); }),
-    asin(f -> { return (float) Math.toDegrees(Math.asin(f)); }),
-    acos(f -> { return (float) Math.toDegrees(Math.acos(f)); }),
-    atan(f -> { return (float) Math.toDegrees(Math.atan(f)); }),
-    deg(f -> { return (float) Math.toDegrees(f); }),
-    rad(f -> { return (float) Math.toRadians(f); }),
-    abs(f -> { return Math.abs(f); }),
-    sqrt(f -> { return (float) Math.sqrt(f); }),
-    floor(f -> { return (float) Math.floor(f); }),
-    ceil(f -> { return (float) Math.ceil(f); }),
-    round(f -> { return Math.round(f); });
-
-    private interface Compute {
-      public float compute(float f);
-    }
-
-    private final Compute compute;
-
-    private SimpleFunction(Compute compute) {
-      this.compute = compute;
-    }
-
-  }
-
-  private static final String OPERATOR_CHARS = "^*/+-%<>=!&|";
-
-  private static boolean isUnaryMinus(char[] chars, int index) {
-    // Check it's actually a minus
-    if (chars[index] != '-') {
-      return false;
-    }
-
-    // If at the very front of the thing, it's unary!
-    if (index == 0) {
-      return true;
-    }
-
-    // Check if preceded by another simple operator, e.g. 4+-4
-    if (OPERATOR_CHARS.indexOf(chars[index-1]) >= 0) {
-      return true;
-    }
-    // Check if preceded by a simple function token, which will no longer have
-    // parentheses, e.g. sin(-4) will have become sin-4 after parenthetical resolution
-    for (SimpleFunction function : SimpleFunction.values()) {
-      final String name = function.name();
-      final int len = name.length();
-      if ((index >= len) && new String(chars, index-len, len).equals(name)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  // Super-trivial hacked up implementation of *very* basic math expressions, which has now
-  // got some functions tacked on. If this slippery slope keeps sliding will need to get a
-  // real expression parsing + evaluation library involved at some point...
-  private float _evaluateNumericExpression(String expression) {
-    if (_evaluateExpression(expression) instanceof ExpressionResult.Numeric numeric) {
-      return numeric.number;
-    }
-    throw new IllegalArgumentException("Expected expression to be numeric: " + expression);
-  }
-
   private boolean evaluateBooleanExpression(JsonObject obj, String key, String expression) {
     String substitutedExpression = replaceVariables(key, expression, ParameterType.BOOLEAN);
     if (substitutedExpression == null) {
@@ -1065,230 +1110,16 @@ public class JsonFixture extends LXFixture {
     }
   }
 
+  // Super-trivial hacked up implementation of *very* basic math expressions, which has now
+  // got some functions tacked on. If this slippery slope keeps sliding will need to get a
+  // real expression parsing + evaluation library involved at some point...
+  private float _evaluateNumericExpression(String expression) {
+    return expressionEvaluator.evaluateNumeric(expression);
+  }
+
   private boolean _evaluateBooleanExpression(String expression) {
-    if (_evaluateExpression(expression) instanceof ExpressionResult.Boolean bool) {
-      return bool.bool;
-    }
-    throw new IllegalArgumentException("Expected expression to be boolean: " + expression);
+    return expressionEvaluator.evaluateBoolean(expression);
   }
-
-  private static abstract class ExpressionResult {
-
-    private static class Numeric extends ExpressionResult {
-      private final float number;
-      private Numeric(float number) {
-        this.number = number;
-      }
-
-      @Override
-      public String toString() {
-        return String.valueOf(this.number);
-      }
-    }
-
-    private static class Boolean extends ExpressionResult {
-
-      private static final Boolean TRUE = new Boolean(true);
-      private static final Boolean FALSE = new Boolean(false);
-
-      private final boolean bool;
-      private Boolean(boolean bool) {
-        this.bool = bool;
-      }
-
-      @Override
-      public String toString() {
-        return String.valueOf(this.bool);
-      }
-    }
-  }
-
-  private static final String[][] EXPRESSION_OPERATORS = {
-    { "||", "|" }, // Both forms are logical, not bitwise
-    { "&&", "&" }, // Both forms are logical, not bitwise
-    { "<=", ">=", "<", ">" },
-    { "==", "!=" },
-    { "+", "-" },
-    { "*", "/", "%" },
-    { "^" }
-  };
-
-  private int _getOperatorIndex(String expression, char[] chars, String operator) {
-    if ("-".equals(operator)) {
-      for (int index = chars.length - 1; index > 0; --index) {
-        // Skip over the tricky unary minus operator! If preceded by another operator,
-        // then it's actually just a negative sign which will be handled later. Do not
-        // process it as a subtraction.
-        if ((chars[index] == '-') && !isUnaryMinus(chars, index)) {
-          return index;
-        }
-      }
-      return -1;
-    }
-    return expression.lastIndexOf(operator);
-  }
-
-  /**
-   * Expressions can have ambiguous types when nested with parentheses! This is getting
-   * out of control and I really should have just used a proper expression parsing library
-   * of some sort (-mcslee, June 2025, and yet bound to continue bolting onto this...)
-   *
-   * @param expression Portion of expression to evaluate
-   * @return ExpressionResult, which may be boolean or numeric
-   */
-  private ExpressionResult _evaluateExpression(String expression) {
-    char[] chars = expression.toCharArray();
-
-    // Parentheses pass
-    int openParen = -1;
-    for (int i = 0; i < chars.length; ++i) {
-      if (chars[i] == '(') {
-        openParen = i;
-      } else if (chars[i] == ')') {
-        if (openParen < 0) {
-          throw new IllegalArgumentException("Mismatched parentheses in expression: " + expression);
-        }
-
-        // Whenever we find a closed paren, evaluate just this one parenthetical.
-        // This will naturally work from in->out on nesting, since every closed-paren
-        // catches the open-paren that was closest to it.
-        ExpressionResult result = _evaluateExpression(expression.substring(openParen+1, i));
-        if ((openParen == 0) && (i == chars.length-1)) {
-          // Whole thing in parentheses? Just return!
-          return result;
-        }
-
-        // Evaluate expression recursively with this parenthetical removed
-        return _evaluateExpression(
-          expression.substring(0, openParen) +
-          result.toString() +
-          expression.substring(i + 1)
-        );
-      }
-    }
-
-    // Ternary conditional, lowest precedence, right->left associative
-    final int condition = expression.indexOf('?');
-    if (condition > 0) {
-      final int end = expression.lastIndexOf(':');
-      if (end <= condition) {
-        throw new IllegalArgumentException("Mismatched ternary conditional ?: in expression: " + expression);
-      }
-      return _evaluateBooleanExpression(expression.substring(0, condition)) ?
-        _evaluateExpression(expression.substring(condition+1, end)) :
-        _evaluateExpression(expression.substring(end+1));
-    }
-
-    // Left->right associative operators, working up the precedence ladder
-    for (String[] operators : EXPRESSION_OPERATORS) {
-      int lastIndex = -1;
-      String operator = null;
-      for (String candidate : operators) {
-        int candidateIndex = _getOperatorIndex(expression, chars, candidate);
-        if (candidateIndex > lastIndex) {
-          operator = candidate;
-          lastIndex = candidateIndex;
-        }
-      }
-      if (operator != null) {
-        String left = expression.substring(0, lastIndex);
-        String right = expression.substring(lastIndex + operator.length());
-        return switch (operator) {
-          case "&&", "&" -> new ExpressionResult.Boolean(
-            _evaluateBooleanExpression(left) &&
-            _evaluateBooleanExpression(right)
-          );
-          case "||", "|" -> new ExpressionResult.Boolean(
-            _evaluateBooleanExpression(left) ||
-            _evaluateBooleanExpression(right)
-          );
-          case "<=" -> new ExpressionResult.Boolean(
-            _evaluateNumericExpression(left) <=
-            _evaluateNumericExpression(right)
-          );
-          case "<" -> new ExpressionResult.Boolean(
-            _evaluateNumericExpression(left) <
-            _evaluateNumericExpression(right)
-          );
-          case ">=" -> new ExpressionResult.Boolean(
-            _evaluateNumericExpression(left) >=
-            _evaluateNumericExpression(right)
-          );
-          case ">" -> new ExpressionResult.Boolean(
-            _evaluateNumericExpression(left) >
-            _evaluateNumericExpression(right)
-          );
-          case "==" -> new ExpressionResult.Boolean(
-            _evaluateNumericExpression(left) ==
-            _evaluateNumericExpression(right)
-          );
-          case "!=" -> new ExpressionResult.Boolean(
-            _evaluateNumericExpression(left) !=
-            _evaluateNumericExpression(right)
-          );
-          case "+" -> new ExpressionResult.Numeric(
-            _evaluateNumericExpression(left) +
-            _evaluateNumericExpression(right)
-          );
-          case "-" -> new ExpressionResult.Numeric(
-            _evaluateNumericExpression(left) -
-            _evaluateNumericExpression(right)
-          );
-          case "*" -> new ExpressionResult.Numeric(
-            _evaluateNumericExpression(left) *
-            _evaluateNumericExpression(right)
-          );
-          case "/" -> new ExpressionResult.Numeric(
-            _evaluateNumericExpression(left) /
-            _evaluateNumericExpression(right)
-          );
-          case "%" -> new ExpressionResult.Numeric(
-            _evaluateNumericExpression(left) %
-            _evaluateNumericExpression(right)
-          );
-          case "^" -> new ExpressionResult.Numeric((float) Math.pow(
-            _evaluateNumericExpression(left),
-            _evaluateNumericExpression(right)
-          ));
-
-          default -> throw new IllegalStateException("Unrecognized operator: " + operator);
-        };
-      }
-    }
-
-    // Dreaded nasty unary operators!
-    String trimmed = expression.trim();
-    if (!trimmed.isEmpty()) {
-      final char unary = trimmed.charAt(0);
-      if (unary == '-') {
-        // Float.parseFloat() would handle one of these fine, but it won't handle
-        // them potentially stacking up at the front, e.g. if multiple expression
-        // resolutions have resulted in something like ---4, so do the negations
-        // manually one by one
-        return new ExpressionResult.Numeric(-_evaluateNumericExpression(expression.substring(1)));
-      } else if (unary == '!') {
-        return new ExpressionResult.Boolean(!_evaluateBooleanExpression(expression.substring(1)));
-      }
-
-      // Check for simple function operators
-      for (SimpleFunction function : SimpleFunction.values()) {
-        final String name = function.name();
-        if (trimmed.startsWith(name)) {
-          float argument = _evaluateNumericExpression(expression.substring(name.length()));
-          return new ExpressionResult.Numeric(function.compute.compute(argument));
-        }
-      }
-    }
-
-    // Sort out what we got here
-    return switch (trimmed.toLowerCase()) {
-      case "" -> throw new IllegalArgumentException("Cannot evaluate empty expression: " + expression);
-      case "true" -> ExpressionResult.Boolean.TRUE;
-      case "false" -> ExpressionResult.Boolean.FALSE;
-      default -> new ExpressionResult.Numeric(Float.parseFloat(trimmed));
-    };
-  }
-
 
   private float loadFloat(JsonObject obj, String key, boolean variablesAllowed) {
     return loadFloat(obj, key, variablesAllowed, key + " should be primitive float value");
@@ -1300,7 +1131,8 @@ public class JsonFixture extends LXFixture {
       if (floatElem.isJsonPrimitive()) {
         JsonPrimitive floatPrimitive = floatElem.getAsJsonPrimitive();
         if (variablesAllowed && floatPrimitive.isString()) {
-          return evaluateVariableExpression(obj, key, floatPrimitive.getAsString(), ParameterType.FLOAT);
+          return evaluateVariableExpression(
+              obj, key, floatPrimitive.getAsString(), ParameterType.FLOAT);
         }
         return floatElem.getAsFloat();
       }
@@ -1309,7 +1141,8 @@ public class JsonFixture extends LXFixture {
     return 0f;
   }
 
-  private boolean loadBoolean(JsonObject obj, String key, boolean variablesAllowed, String warning) {
+  private boolean loadBoolean(
+      JsonObject obj, String key, boolean variablesAllowed, String warning) {
     if (obj.has(key)) {
       JsonElement boolElem = obj.get(key);
       if (boolElem.isJsonPrimitive()) {
@@ -1330,7 +1163,8 @@ public class JsonFixture extends LXFixture {
       if (intElem.isJsonPrimitive()) {
         JsonPrimitive intPrimitive = intElem.getAsJsonPrimitive();
         if (variablesAllowed && intPrimitive.isString()) {
-          return (int) evaluateVariableExpression(obj, key, intPrimitive.getAsString(), ParameterType.INT);
+          return (int)
+              evaluateVariableExpression(obj, key, intPrimitive.getAsString(), ParameterType.INT);
         }
         return intElem.getAsInt();
       }
@@ -1353,10 +1187,7 @@ public class JsonFixture extends LXFixture {
       addWarning(warning);
     }
     return new LXVector(
-      loadFloat(obj, KEY_X, true),
-      loadFloat(obj, KEY_Y, true),
-      loadFloat(obj, KEY_Z, true)
-    );
+        loadFloat(obj, KEY_X, true), loadFloat(obj, KEY_Y, true), loadFloat(obj, KEY_Z, true));
   }
 
   private String loadString(JsonObject obj, String key, boolean variablesAllowed, String warning) {
@@ -1430,7 +1261,8 @@ public class JsonFixture extends LXFixture {
   }
 
   private void loadTransforms(LXFixture fixture, JsonObject obj) {
-    final JsonArray transformsArr = loadArray(obj, KEY_TRANSFORMS, KEY_TRANSFORMS + " must be an array");
+    final JsonArray transformsArr =
+        loadArray(obj, KEY_TRANSFORMS, KEY_TRANSFORMS + " must be an array");
     if (transformsArr == null) {
       return;
     }
@@ -1438,14 +1270,21 @@ public class JsonFixture extends LXFixture {
       if (transformElem.isJsonObject()) {
         loadTransform(fixture, transformElem.getAsJsonObject());
       } else if (!transformElem.isJsonNull()) {
-        addWarning(KEY_TRANSFORMS + " should only contain transform elements in JSON object format, found invalid: " + transformElem);
+        addWarning(
+            KEY_TRANSFORMS
+                + " should only contain transform elements in JSON object format, found invalid: "
+                + transformElem);
       }
     }
   }
 
-  private static final String[] TRANSFORM_TRANSLATE = { KEY_X, KEY_Y, KEY_Z };
-  private static final String[] TRANSFORM_ROTATE = { KEY_YAW, KEY_PITCH, KEY_ROLL, KEY_ROTATE_X, KEY_ROTATE_Y, KEY_ROTATE_Z };
-  private static final String[] TRANSFORM_SCALE = { KEY_SCALE, KEY_SCALE_X, KEY_SCALE_Y, KEY_SCALE_Z };
+  private static final String[] TRANSFORM_TRANSLATE = {KEY_X, KEY_Y, KEY_Z};
+  private static final String[] TRANSFORM_ROTATE = {
+    KEY_YAW, KEY_PITCH, KEY_ROLL, KEY_ROTATE_X, KEY_ROTATE_Y, KEY_ROTATE_Z
+  };
+  private static final String[] TRANSFORM_SCALE = {
+    KEY_SCALE, KEY_SCALE_X, KEY_SCALE_Y, KEY_SCALE_Z
+  };
 
   private static final boolean isTransform(JsonObject obj, String[] keys) {
     for (String key : keys) {
@@ -1458,7 +1297,12 @@ public class JsonFixture extends LXFixture {
 
   private void loadTransform(LXFixture fixture, JsonObject obj) {
     if (obj.has(KEY_ENABLED)) {
-      boolean enabled = loadBoolean(obj, KEY_ENABLED, true, "Transform must specify boolean expression for " + KEY_ENABLED);
+      boolean enabled =
+          loadBoolean(
+              obj,
+              KEY_ENABLED,
+              true,
+              "Transform must specify boolean expression for " + KEY_ENABLED);
       if (!enabled) {
         return;
       }
@@ -1517,13 +1361,16 @@ public class JsonFixture extends LXFixture {
       fixture.addTransform(new Transform(Transform.Type.ROTATE_Z, loadFloat(obj, KEY_ROLL, true)));
     }
     if (obj.has(KEY_ROTATE_X)) {
-      fixture.addTransform(new Transform(Transform.Type.ROTATE_X, loadFloat(obj, KEY_ROTATE_X, true)));
+      fixture.addTransform(
+          new Transform(Transform.Type.ROTATE_X, loadFloat(obj, KEY_ROTATE_X, true)));
     }
     if (obj.has(KEY_ROTATE_Y)) {
-      fixture.addTransform(new Transform(Transform.Type.ROTATE_Y, loadFloat(obj, KEY_ROTATE_Y, true)));
+      fixture.addTransform(
+          new Transform(Transform.Type.ROTATE_Y, loadFloat(obj, KEY_ROTATE_Y, true)));
     }
     if (obj.has(KEY_ROTATE_Z)) {
-      fixture.addTransform(new Transform(Transform.Type.ROTATE_Z, loadFloat(obj, KEY_ROTATE_Z, true)));
+      fixture.addTransform(
+          new Transform(Transform.Type.ROTATE_Z, loadFloat(obj, KEY_ROTATE_Z, true)));
     }
 
     if (obj.has(KEY_SCALE)) {
@@ -1531,30 +1378,37 @@ public class JsonFixture extends LXFixture {
       if (scaleElem.isJsonObject()) {
         JsonObject scale = scaleElem.getAsJsonObject();
         if (scale.has(KEY_X)) {
-          fixture.addTransform(new Transform(Transform.Type.SCALE_X, loadFloat(scale, KEY_X, true)));
+          fixture.addTransform(
+              new Transform(Transform.Type.SCALE_X, loadFloat(scale, KEY_X, true)));
         }
         if (scale.has(KEY_Y)) {
-          fixture.addTransform(new Transform(Transform.Type.SCALE_Y, loadFloat(scale, KEY_Y, true)));
+          fixture.addTransform(
+              new Transform(Transform.Type.SCALE_Y, loadFloat(scale, KEY_Y, true)));
         }
         if (scale.has(KEY_Z)) {
-          fixture.addTransform(new Transform(Transform.Type.SCALE_Z, loadFloat(scale, KEY_Z, true)));
+          fixture.addTransform(
+              new Transform(Transform.Type.SCALE_Z, loadFloat(scale, KEY_Z, true)));
         }
       } else if (scaleElem.isJsonPrimitive()) {
         final float scale = loadFloat(obj, KEY_SCALE, true);
         fixture.addTransform(new Transform(Transform.Type.SCALE, scale));
       } else {
-        addWarning("Transform element " + KEY_SCALE + " must be a float or JSON object: " + scaleElem);
+        addWarning(
+            "Transform element " + KEY_SCALE + " must be a float or JSON object: " + scaleElem);
         return;
       }
     }
     if (obj.has(KEY_SCALE_X)) {
-      fixture.addTransform(new Transform(Transform.Type.SCALE_X, loadFloat(obj, KEY_SCALE_X, true)));
+      fixture.addTransform(
+          new Transform(Transform.Type.SCALE_X, loadFloat(obj, KEY_SCALE_X, true)));
     }
     if (obj.has(KEY_SCALE_Y)) {
-      fixture.addTransform(new Transform(Transform.Type.SCALE_Y, loadFloat(obj, KEY_SCALE_Y, true)));
+      fixture.addTransform(
+          new Transform(Transform.Type.SCALE_Y, loadFloat(obj, KEY_SCALE_Y, true)));
     }
     if (obj.has(KEY_SCALE_Z)) {
-      fixture.addTransform(new Transform(Transform.Type.SCALE_Z, loadFloat(obj, KEY_SCALE_Z, true)));
+      fixture.addTransform(
+          new Transform(Transform.Type.SCALE_Z, loadFloat(obj, KEY_SCALE_Z, true)));
     }
   }
 
@@ -1580,13 +1434,14 @@ public class JsonFixture extends LXFixture {
     if (this.label.getString().equals(LABEL_PLACEHOLDER)) {
       int lastSeparator = fixtureType.lastIndexOf(PATH_SEPARATOR);
       if (lastSeparator >= 0) {
-        fixtureType = fixtureType.substring(lastSeparator+1);
+        fixtureType = fixtureType.substring(lastSeparator + 1);
       }
       this.label.setValue(fixtureType);
     }
   }
 
-  private void loadTags(LXFixture fixture, JsonObject obj, boolean includeParent, boolean replaceVariables) {
+  private void loadTags(
+      LXFixture fixture, JsonObject obj, boolean includeParent, boolean replaceVariables) {
     List<String> validTags = _loadTags(obj, replaceVariables, this);
     if (includeParent) {
       for (String tag : _loadTags(this.jsonParameterValues, true, this.jsonParameterContext)) {
@@ -1600,14 +1455,22 @@ public class JsonFixture extends LXFixture {
     fixture.setTags(validTags);
   }
 
-  private List<String> _loadTags(JsonObject obj, boolean replaceVariables, JsonFixture variableContext) {
+  private List<String> _loadTags(
+      JsonObject obj, boolean replaceVariables, JsonFixture variableContext) {
     warnDuplicateKeys(obj, KEY_MODEL_KEY, KEY_MODEL_KEYS, KEY_TAG, KEY_TAGS);
     String keyTags = obj.has(KEY_TAGS) ? KEY_TAGS : KEY_MODEL_KEYS;
     String keyTag = obj.has(KEY_TAG) ? KEY_TAG : KEY_MODEL_KEY;
     List<String> validTags = new ArrayList<String>();
 
     if (obj.has(KEY_MODEL_KEY) || obj.has(KEY_MODEL_KEYS)) {
-      addWarning(KEY_MODEL_KEY + "/" + KEY_MODEL_KEYS + " are deprecated, please update to " + KEY_TAG + "/" + KEY_TAGS);
+      addWarning(
+          KEY_MODEL_KEY
+              + "/"
+              + KEY_MODEL_KEYS
+              + " are deprecated, please update to "
+              + KEY_TAG
+              + "/"
+              + KEY_TAGS);
     }
 
     if (obj.has(keyTags)) {
@@ -1650,13 +1513,16 @@ public class JsonFixture extends LXFixture {
   }
 
   private void loadParameters(JsonObject obj) {
-    JsonObject parametersObj = loadObject(obj, KEY_PARAMETERS, KEY_PARAMETERS + " must be a JSON object");
+    JsonObject parametersObj =
+        loadObject(obj, KEY_PARAMETERS, KEY_PARAMETERS + " must be a JSON object");
     if (parametersObj == null) {
       return;
     }
     for (String parameterName : parametersObj.keySet()) {
       if (!parameterName.matches("^[a-zA-Z0-9]+$")) {
-        addWarning("Invalid parameter name, must be non-empty only containing ASCII alphanumerics: " + parameterName);
+        addWarning(
+            "Invalid parameter name, must be non-empty only containing ASCII alphanumerics: "
+                + parameterName);
         continue;
       }
       if (parameterName.equals(KEY_INSTANCES) || parameterName.equals(KEY_INSTANCE)) {
@@ -1670,20 +1536,38 @@ public class JsonFixture extends LXFixture {
       }
       JsonElement parameterElem = parametersObj.get(parameterName);
       if (!parameterElem.isJsonObject()) {
-        addWarning("Definition for parameter " + parameterName + " must be a JSON object specifying " + KEY_PARAMETER_TYPE + " and " + KEY_PARAMETER_DEFAULT);
+        addWarning(
+            "Definition for parameter "
+                + parameterName
+                + " must be a JSON object specifying "
+                + KEY_PARAMETER_TYPE
+                + " and "
+                + KEY_PARAMETER_DEFAULT);
         continue;
       }
       JsonObject parameterObj = parameterElem.getAsJsonObject();
       if (parameterObj.has(KEY_PARAMETER_LABEL)) {
-        String rawLabel = loadString(parameterObj, KEY_PARAMETER_LABEL, false, "Parameter " + KEY_PARAMETER_LABEL + " must be valid String");
+        String rawLabel =
+            loadString(
+                parameterObj,
+                KEY_PARAMETER_LABEL,
+                false,
+                "Parameter " + KEY_PARAMETER_LABEL + " must be valid String");
         if (!rawLabel.matches("^[a-zA-Z0-9 ]+$")) {
-          addWarning("Invalid parameter label, must be non-empty only containing ASCII alphanumerics: " + rawLabel);
+          addWarning(
+              "Invalid parameter label, must be non-empty only containing ASCII alphanumerics: "
+                  + rawLabel);
         } else {
           parameterLabel = rawLabel;
         }
       }
 
-      String parameterDescription = loadString(parameterObj, KEY_PARAMETER_DESCRIPTION, false, "Parameter " + KEY_PARAMETER_DESCRIPTION + " must be strign value.");
+      String parameterDescription =
+          loadString(
+              parameterObj,
+              KEY_PARAMETER_DESCRIPTION,
+              false,
+              "Parameter " + KEY_PARAMETER_DESCRIPTION + " must be strign value.");
 
       // Ensure default value is present
       if (!parameterObj.has(KEY_PARAMETER_DEFAULT)) {
@@ -1692,11 +1576,21 @@ public class JsonFixture extends LXFixture {
       }
       JsonElement defaultElem = parameterObj.get(KEY_PARAMETER_DEFAULT);
       if (!defaultElem.isJsonPrimitive()) {
-        addWarning("Parameter " + parameterName + " must specify primitive value for " + KEY_PARAMETER_DEFAULT);
+        addWarning(
+            "Parameter "
+                + parameterName
+                + " must specify primitive value for "
+                + KEY_PARAMETER_DEFAULT);
         continue;
       }
 
-      String typeStr = loadString(parameterObj, KEY_PARAMETER_TYPE, false, "Parameter " + parameterName + " must specify valid type string");;
+      String typeStr =
+          loadString(
+              parameterObj,
+              KEY_PARAMETER_TYPE,
+              false,
+              "Parameter " + parameterName + " must specify valid type string");
+      ;
       ParameterType type = ParameterType.get(typeStr);
       if (type == null) {
         addWarning("Parameter " + parameterName + " must specify valid type string");
@@ -1715,98 +1609,165 @@ public class JsonFixture extends LXFixture {
       }
 
       switch (type) {
-      case FLOAT:
-        final float defaultFloat = defaultElem.getAsFloat();
-        float floatValue = defaultFloat;
-        if (this.jsonParameterValues.has(parameterName)) {
-          floatValue = this.jsonParameterContext.loadFloat(this.jsonParameterValues, parameterName, true);
-        } else if (reloadDefinition != null) {
-          floatValue = reloadDefinition.floatParameter.getValuef();
-        }
-        float minFloat = -Float.MAX_VALUE;
-        float maxFloat = Float.MAX_VALUE;
-        if (parameterObj.has(KEY_PARAMETER_MIN)) {
-          minFloat = loadFloat (parameterObj, KEY_PARAMETER_MIN, false, "Parameter min value must be a float");
-        }
-        if (parameterObj.has(KEY_PARAMETER_MAX)) {
-          maxFloat = loadFloat(parameterObj, KEY_PARAMETER_MAX, false, "Parameter min value must be a float");
-        }
-        if (minFloat > maxFloat) {
-          addWarning("Parameter minimum may not be greater than maximum: " + minFloat + ">" + maxFloat);
-          break;
-        }
-        addJsonParameter(new ParameterDefinition(parameterName, parameterLabel, parameterDescription, floatValue, defaultFloat, minFloat, maxFloat));
-        break;
-      case INT:
-        int minInt = 0;
-        int maxInt = 1 << 16;
-        if (parameterObj.has(KEY_PARAMETER_MIN)) {
-          minInt = loadInt(parameterObj, KEY_PARAMETER_MIN, false, "Parameter min value must be an integer");
-        }
-        if (parameterObj.has(KEY_PARAMETER_MAX)) {
-          maxInt = loadInt(parameterObj, KEY_PARAMETER_MAX, false, "Parameter min value must be an integer");
-        }
-        final int defaultInt = defaultElem.getAsInt();
-        int intValue = defaultInt;
-        if (minInt > maxInt) {
-          addWarning("Parameter minimum may not be greater than maximum: " + minInt + ">" + maxInt);
-          break;
-        }
-        if (this.jsonParameterValues.has(parameterName)) {
-          intValue = this.jsonParameterContext.loadInt(this.jsonParameterValues, parameterName, true, "Child parameter should be an int: " + parameterName);
-        } else if (reloadDefinition != null) {
-          intValue = LXUtils.constrain(reloadDefinition.intParameter.getValuei(), minInt, maxInt);
-        }
-        addJsonParameter(new ParameterDefinition(parameterName, parameterLabel, parameterDescription, intValue, defaultInt, minInt, maxInt));
-        break;
-      case STRING:
-        final String defaultString = defaultElem.getAsString();
-        String stringValue = defaultString;
-        if (this.jsonParameterValues.has(parameterName)) {
-          stringValue = this.jsonParameterContext.loadString(this.jsonParameterValues, parameterName, true, "Child parameter should be an string: " + parameterName);
-        } else if (reloadDefinition != null) {
-          stringValue = reloadDefinition.stringParameter.getString();
-        }
-        addJsonParameter(new ParameterDefinition(parameterName, parameterLabel, parameterDescription, stringValue, defaultString));
-        break;
-      case STRING_SELECT:
-        final String defaultStringSelect = defaultElem.getAsString();
-        String stringSelectValue = defaultStringSelect;
-        if (this.jsonParameterValues.has(parameterName)) {
-          stringSelectValue = this.jsonParameterContext.loadString(this.jsonParameterValues, parameterName, true, "Child parameter should be an string: " + parameterName);
-        } else if (reloadDefinition != null) {
-          stringSelectValue = reloadDefinition.stringSelectParameter.getObject();
-        }
-        List<String> stringOptions = new ArrayList<String>();
-        JsonArray optionsArray = loadArray(parameterObj, KEY_PARAMETER_OPTIONS);
-        for (JsonElement optionElem : optionsArray) {
-          if (optionElem.isJsonPrimitive()) {
-            stringOptions.add(optionElem.getAsString());
-          } else {
-            addWarning(KEY_PARAMETER_OPTIONS + " should only string options");
+        case FLOAT:
+          final float defaultFloat = defaultElem.getAsFloat();
+          float floatValue = defaultFloat;
+          if (this.jsonParameterValues.has(parameterName)) {
+            floatValue =
+                this.jsonParameterContext.loadFloat(this.jsonParameterValues, parameterName, true);
+          } else if (reloadDefinition != null) {
+            floatValue = reloadDefinition.floatParameter.getValuef();
           }
-        }
-        if (stringOptions.isEmpty()) {
-          addWarning(KEY_PARAMETER_OPTIONS + " must not be empty");
+          float minFloat = -Float.MAX_VALUE;
+          float maxFloat = Float.MAX_VALUE;
+          if (parameterObj.has(KEY_PARAMETER_MIN)) {
+            minFloat =
+                loadFloat(
+                    parameterObj, KEY_PARAMETER_MIN, false, "Parameter min value must be a float");
+          }
+          if (parameterObj.has(KEY_PARAMETER_MAX)) {
+            maxFloat =
+                loadFloat(
+                    parameterObj, KEY_PARAMETER_MAX, false, "Parameter min value must be a float");
+          }
+          if (minFloat > maxFloat) {
+            addWarning(
+                "Parameter minimum may not be greater than maximum: " + minFloat + ">" + maxFloat);
+            break;
+          }
+          addJsonParameter(
+              new ParameterDefinition(
+                  parameterName,
+                  parameterLabel,
+                  parameterDescription,
+                  floatValue,
+                  defaultFloat,
+                  minFloat,
+                  maxFloat));
           break;
-        } else if (!stringOptions.contains(stringSelectValue)) {
-          addWarning(KEY_PARAMETER_OPTIONS + " must contain default value " + stringSelectValue);
-          stringValue = stringOptions.get(0);
-        }
-        addJsonParameter(new ParameterDefinition(parameterName, parameterLabel, parameterDescription, stringSelectValue, defaultStringSelect, stringOptions));
-        break;
-      case BOOLEAN:
-        final boolean defaultBoolean = defaultElem.getAsBoolean();
-        boolean booleanValue = defaultBoolean;
-        if (this.jsonParameterValues.has(parameterName)) {
-          booleanValue = this.jsonParameterContext.loadBoolean(this.jsonParameterValues, parameterName, true, "Child parameter should be a boolean: " + parameterName);
-        } else if (reloadDefinition != null) {
-          booleanValue = reloadDefinition.booleanParameter.isOn();
-        }
-        addJsonParameter(new ParameterDefinition(parameterName, parameterLabel, parameterDescription, booleanValue, defaultBoolean));
-        break;
+        case INT:
+          int minInt = 0;
+          int maxInt = 1 << 16;
+          if (parameterObj.has(KEY_PARAMETER_MIN)) {
+            minInt =
+                loadInt(
+                    parameterObj,
+                    KEY_PARAMETER_MIN,
+                    false,
+                    "Parameter min value must be an integer");
+          }
+          if (parameterObj.has(KEY_PARAMETER_MAX)) {
+            maxInt =
+                loadInt(
+                    parameterObj,
+                    KEY_PARAMETER_MAX,
+                    false,
+                    "Parameter min value must be an integer");
+          }
+          final int defaultInt = defaultElem.getAsInt();
+          int intValue = defaultInt;
+          if (minInt > maxInt) {
+            addWarning(
+                "Parameter minimum may not be greater than maximum: " + minInt + ">" + maxInt);
+            break;
+          }
+          if (this.jsonParameterValues.has(parameterName)) {
+            intValue =
+                this.jsonParameterContext.loadInt(
+                    this.jsonParameterValues,
+                    parameterName,
+                    true,
+                    "Child parameter should be an int: " + parameterName);
+          } else if (reloadDefinition != null) {
+            intValue = LXUtils.constrain(reloadDefinition.intParameter.getValuei(), minInt, maxInt);
+          }
+          addJsonParameter(
+              new ParameterDefinition(
+                  parameterName,
+                  parameterLabel,
+                  parameterDescription,
+                  intValue,
+                  defaultInt,
+                  minInt,
+                  maxInt));
+          break;
+        case STRING:
+          final String defaultString = defaultElem.getAsString();
+          String stringValue = defaultString;
+          if (this.jsonParameterValues.has(parameterName)) {
+            stringValue =
+                this.jsonParameterContext.loadString(
+                    this.jsonParameterValues,
+                    parameterName,
+                    true,
+                    "Child parameter should be an string: " + parameterName);
+          } else if (reloadDefinition != null) {
+            stringValue = reloadDefinition.stringParameter.getString();
+          }
+          addJsonParameter(
+              new ParameterDefinition(
+                  parameterName, parameterLabel, parameterDescription, stringValue, defaultString));
+          break;
+        case STRING_SELECT:
+          final String defaultStringSelect = defaultElem.getAsString();
+          String stringSelectValue = defaultStringSelect;
+          if (this.jsonParameterValues.has(parameterName)) {
+            stringSelectValue =
+                this.jsonParameterContext.loadString(
+                    this.jsonParameterValues,
+                    parameterName,
+                    true,
+                    "Child parameter should be an string: " + parameterName);
+          } else if (reloadDefinition != null) {
+            stringSelectValue = reloadDefinition.stringSelectParameter.getObject();
+          }
+          List<String> stringOptions = new ArrayList<String>();
+          JsonArray optionsArray = loadArray(parameterObj, KEY_PARAMETER_OPTIONS);
+          for (JsonElement optionElem : optionsArray) {
+            if (optionElem.isJsonPrimitive()) {
+              stringOptions.add(optionElem.getAsString());
+            } else {
+              addWarning(KEY_PARAMETER_OPTIONS + " should only string options");
+            }
+          }
+          if (stringOptions.isEmpty()) {
+            addWarning(KEY_PARAMETER_OPTIONS + " must not be empty");
+            break;
+          } else if (!stringOptions.contains(stringSelectValue)) {
+            addWarning(KEY_PARAMETER_OPTIONS + " must contain default value " + stringSelectValue);
+            stringValue = stringOptions.get(0);
+          }
+          addJsonParameter(
+              new ParameterDefinition(
+                  parameterName,
+                  parameterLabel,
+                  parameterDescription,
+                  stringSelectValue,
+                  defaultStringSelect,
+                  stringOptions));
+          break;
+        case BOOLEAN:
+          final boolean defaultBoolean = defaultElem.getAsBoolean();
+          boolean booleanValue = defaultBoolean;
+          if (this.jsonParameterValues.has(parameterName)) {
+            booleanValue =
+                this.jsonParameterContext.loadBoolean(
+                    this.jsonParameterValues,
+                    parameterName,
+                    true,
+                    "Child parameter should be a boolean: " + parameterName);
+          } else if (reloadDefinition != null) {
+            booleanValue = reloadDefinition.booleanParameter.isOn();
+          }
+          addJsonParameter(
+              new ParameterDefinition(
+                  parameterName,
+                  parameterLabel,
+                  parameterDescription,
+                  booleanValue,
+                  defaultBoolean));
+          break;
       }
-
     }
   }
 
@@ -1816,12 +1777,21 @@ public class JsonFixture extends LXFixture {
     if (pointsArr == null) {
       return;
     }
-    addWarning(KEY_POINTS + " is deprecated. Define an element of type " + TYPE_POINTS + " in the " + KEY_COMPONENTS + " array");
+    addWarning(
+        KEY_POINTS
+            + " is deprecated. Define an element of type "
+            + TYPE_POINTS
+            + " in the "
+            + KEY_COMPONENTS
+            + " array");
     for (JsonElement pointElem : pointsArr) {
       if (pointElem.isJsonObject()) {
         loadChild(pointElem.getAsJsonObject(), ChildType.POINT, null);
       } else if (!pointElem.isJsonNull()) {
-        addWarning(KEY_POINTS + " should only contain point elements in JSON object format, found invalid: " + pointElem);
+        addWarning(
+            KEY_POINTS
+                + " should only contain point elements in JSON object format, found invalid: "
+                + pointElem);
       }
     }
   }
@@ -1832,12 +1802,21 @@ public class JsonFixture extends LXFixture {
     if (stripsArr == null) {
       return;
     }
-    addWarning(KEY_STRIPS + " is deprecated. Define elements of type " + TYPE_STRIP +" in the " + KEY_COMPONENTS + " array");
+    addWarning(
+        KEY_STRIPS
+            + " is deprecated. Define elements of type "
+            + TYPE_STRIP
+            + " in the "
+            + KEY_COMPONENTS
+            + " array");
     for (JsonElement stripElem : stripsArr) {
       if (stripElem.isJsonObject()) {
         loadChild(stripElem.getAsJsonObject(), ChildType.STRIP, null);
       } else if (!stripElem.isJsonNull()) {
-        addWarning(KEY_STRIPS + " should only contain strip elements in JSON object format, found invalid: " + stripElem);
+        addWarning(
+            KEY_STRIPS
+                + " should only contain strip elements in JSON object format, found invalid: "
+                + stripElem);
       }
     }
   }
@@ -1848,12 +1827,21 @@ public class JsonFixture extends LXFixture {
     if (arcsArr == null) {
       return;
     }
-    addWarning(KEY_ARCS + " is deprecated. Define elements of type " + TYPE_ARC + " in the " + KEY_COMPONENTS + " array");
+    addWarning(
+        KEY_ARCS
+            + " is deprecated. Define elements of type "
+            + TYPE_ARC
+            + " in the "
+            + KEY_COMPONENTS
+            + " array");
     for (JsonElement arcElem : arcsArr) {
       if (arcElem.isJsonObject()) {
         loadChild(arcElem.getAsJsonObject(), ChildType.ARC, null);
       } else if (!arcElem.isJsonNull()) {
-        addWarning(KEY_ARCS + " should only contain arc elements in JSON object format, found invalid: " + arcElem);
+        addWarning(
+            KEY_ARCS
+                + " should only contain arc elements in JSON object format, found invalid: "
+                + arcElem);
       }
     }
   }
@@ -1864,12 +1852,19 @@ public class JsonFixture extends LXFixture {
     if (childrenArr == null) {
       return;
     }
-    addWarning(KEY_CHILDREN + " is deprecated. Define elements of specific type in the " + KEY_COMPONENTS + " array");
+    addWarning(
+        KEY_CHILDREN
+            + " is deprecated. Define elements of specific type in the "
+            + KEY_COMPONENTS
+            + " array");
     for (JsonElement childElem : childrenArr) {
       if (childElem.isJsonObject()) {
         loadChild(childElem.getAsJsonObject());
       } else if (!childElem.isJsonNull()) {
-        addWarning(KEY_CHILDREN + " should only contain child elements in JSON object format, found invalid: " + childElem);
+        addWarning(
+            KEY_CHILDREN
+                + " should only contain child elements in JSON object format, found invalid: "
+                + childElem);
       }
     }
   }
@@ -1883,9 +1878,14 @@ public class JsonFixture extends LXFixture {
     List<LXVector> coords = new ArrayList<LXVector>();
     for (JsonElement coordElem : coordsArr) {
       if (coordElem.isJsonObject()) {
-        coords.add(loadVector(coordElem.getAsJsonObject(), "Coordinate should specify at least one x/y/z value"));
+        coords.add(
+            loadVector(
+                coordElem.getAsJsonObject(), "Coordinate should specify at least one x/y/z value"));
       } else if (!coordElem.isJsonNull()) {
-        addWarning(KEY_COORDINATES + " should only contain point elements in JSON object format, found invalid: " + coordElem);
+        addWarning(
+            KEY_COORDINATES
+                + " should only contain point elements in JSON object format, found invalid: "
+                + coordElem);
       }
     }
     if (coords.isEmpty()) {
@@ -1901,13 +1901,22 @@ public class JsonFixture extends LXFixture {
       addWarning("Strip must specify " + KEY_NUM_POINTS);
       return null;
     }
-    int numPoints = loadInt(stripObj, KEY_NUM_POINTS, true, "Strip must specify a positive integer for " + KEY_NUM_POINTS);
+    int numPoints =
+        loadInt(
+            stripObj,
+            KEY_NUM_POINTS,
+            true,
+            "Strip must specify a positive integer for " + KEY_NUM_POINTS);
     if (numPoints <= 0) {
       addWarning("Strip must specify positive integer value for " + KEY_NUM_POINTS);
       return null;
     }
     if (numPoints > StripFixture.MAX_POINTS) {
-      addWarning("Single strip may not define more than " + StripFixture.MAX_POINTS + " points, tried to define " + numPoints);
+      addWarning(
+          "Single strip may not define more than "
+              + StripFixture.MAX_POINTS
+              + " points, tried to define "
+              + numPoints);
       return null;
     }
 
@@ -1918,16 +1927,29 @@ public class JsonFixture extends LXFixture {
     // Strip spacing default to 1
     float spacing = 1f;
 
-    // Load the strip direction if specified (which implies a spacing, but spacing can be overridden explicitly)
+    // Load the strip direction if specified (which implies a spacing, but spacing can be overridden
+    // explicitly)
     if (stripObj.has(KEY_DIRECTION)) {
       if (stripObj.has(KEY_END)) {
-        addWarning("Strip object should not specify both " + KEY_DIRECTION + " and " + KEY_END + ", ignoring " + KEY_DIRECTION);
+        addWarning(
+            "Strip object should not specify both "
+                + KEY_DIRECTION
+                + " and "
+                + KEY_END
+                + ", ignoring "
+                + KEY_DIRECTION);
       } else if (stripObj.has(KEY_YAW) || stripObj.has(KEY_PITCH) || stripObj.has(KEY_ROLL)) {
-        addWarning("Strip object should not specify both " + KEY_DIRECTION + " and yaw/pitch/roll, ignoring " + KEY_DIRECTION);
+        addWarning(
+            "Strip object should not specify both "
+                + KEY_DIRECTION
+                + " and yaw/pitch/roll, ignoring "
+                + KEY_DIRECTION);
       } else {
-        JsonObject directionObj = loadObject(stripObj, KEY_DIRECTION, "Strip direction should be a vector object");
+        JsonObject directionObj =
+            loadObject(stripObj, KEY_DIRECTION, "Strip direction should be a vector object");
         if (directionObj != null) {
-          LXVector direction = loadVector(directionObj, "Strip direction should specify at least one x/y/z value");
+          LXVector direction =
+              loadVector(directionObj, "Strip direction should specify at least one x/y/z value");
           if (direction.isZero()) {
             addWarning("Strip direction vector should not be all 0");
           } else {
@@ -1943,9 +1965,16 @@ public class JsonFixture extends LXFixture {
     // Explicit spacing specified?
     if (stripObj.has(KEY_SPACING)) {
       if (stripObj.has(KEY_END)) {
-        addWarning("Strip object should not specify both " + KEY_SPACING + " and " + KEY_END + ", ignoring " + KEY_SPACING);
+        addWarning(
+            "Strip object should not specify both "
+                + KEY_SPACING
+                + " and "
+                + KEY_END
+                + ", ignoring "
+                + KEY_SPACING);
       } else {
-        float testSpacing = loadFloat(stripObj, KEY_SPACING, true, "Strip must specify a positive " + KEY_SPACING);
+        float testSpacing =
+            loadFloat(stripObj, KEY_SPACING, true, "Strip must specify a positive " + KEY_SPACING);
         if (testSpacing >= 0) {
           spacing = testSpacing;
         } else {
@@ -1957,19 +1986,24 @@ public class JsonFixture extends LXFixture {
     // End-point specified
     if (stripObj.has(KEY_END)) {
       if (stripObj.has(KEY_YAW) || stripObj.has(KEY_PITCH) || stripObj.has(KEY_ROLL)) {
-        addWarning("Strip object should not specify both " + KEY_END + " and yaw/pitch/roll, ignoring " + KEY_END);
+        addWarning(
+            "Strip object should not specify both "
+                + KEY_END
+                + " and yaw/pitch/roll, ignoring "
+                + KEY_END);
       } else {
-        JsonObject endObj = loadObject(stripObj, KEY_END, "Strip " + KEY_END + " should be a vector object");
+        JsonObject endObj =
+            loadObject(stripObj, KEY_END, "Strip " + KEY_END + " should be a vector object");
         if (endObj != null) {
           LXVector direction =
-            loadVector(endObj, "Strip " + KEY_END + " should specify at least one x/y/z value")
-            .sub(loadVector(stripObj, null));
+              loadVector(endObj, "Strip " + KEY_END + " should specify at least one x/y/z value")
+                  .sub(loadVector(stripObj, null));
           if (direction.isZero()) {
             addWarning("Strip " + KEY_END + " vector cannot match strip origin");
           } else {
             float magnitude = direction.mag();
             if (numPoints > 1) {
-              spacing = magnitude / (numPoints-1);
+              spacing = magnitude / (numPoints - 1);
             }
             strip.yaw.setValue(Math.toDegrees(Math.atan2(-direction.z, direction.x)));
             strip.roll.setValue(Math.toDegrees(Math.asin(direction.y / magnitude)));
@@ -1989,7 +2023,12 @@ public class JsonFixture extends LXFixture {
       addWarning("Arc must specify " + KEY_NUM_POINTS + ", key was not found");
       return null;
     }
-    int numPoints = loadInt(arcObj, KEY_NUM_POINTS, true, "Arc must specify a positive integer for " + KEY_NUM_POINTS);
+    int numPoints =
+        loadInt(
+            arcObj,
+            KEY_NUM_POINTS,
+            true,
+            "Arc must specify a positive integer for " + KEY_NUM_POINTS);
     if (numPoints <= 0) {
       addWarning("Arc must specify positive integer value for " + KEY_NUM_POINTS);
       return null;
@@ -2005,7 +2044,8 @@ public class JsonFixture extends LXFixture {
       return null;
     }
 
-    float degrees = loadFloat(arcObj, KEY_DEGREES, true, "Arc must specify number of degrees to cover");
+    float degrees =
+        loadFloat(arcObj, KEY_DEGREES, true, "Arc must specify number of degrees to cover");
     if (degrees <= 0) {
       addWarning("Arc must specify positive value for " + KEY_DEGREES);
       return null;
@@ -2019,13 +2059,22 @@ public class JsonFixture extends LXFixture {
     // Arc position mode
     ArcFixture.PositionMode positionMode = ArcFixture.PositionMode.ORIGIN;
     if (arcObj.has(KEY_ARC_MODE)) {
-      String arcMode = loadString(arcObj, KEY_ARC_MODE, true, "Arc " + KEY_ARC_MODE + " must be a string");
+      String arcMode =
+          loadString(arcObj, KEY_ARC_MODE, true, "Arc " + KEY_ARC_MODE + " must be a string");
       if (VALUE_ARC_MODE_CENTER.equals(arcMode)) {
         positionMode = ArcFixture.PositionMode.CENTER;
       } else if (VALUE_ARC_MODE_ORIGIN.equals(arcMode)) {
         positionMode = ArcFixture.PositionMode.ORIGIN;
       } else if (arcMode != null) {
-        addWarning("Arc " + KEY_ARC_MODE + " must be one of " + VALUE_ARC_MODE_CENTER + " or " + VALUE_ARC_MODE_ORIGIN + " - invalid value " + arcMode);
+        addWarning(
+            "Arc "
+                + KEY_ARC_MODE
+                + " must be one of "
+                + VALUE_ARC_MODE_CENTER
+                + " or "
+                + VALUE_ARC_MODE_ORIGIN
+                + " - invalid value "
+                + arcMode);
       }
     }
     arc.positionMode.setValue(positionMode);
@@ -2033,11 +2082,16 @@ public class JsonFixture extends LXFixture {
     // Load the strip direction, one of two ways
     if (arcObj.has(KEY_NORMAL)) {
       if (arcObj.has(KEY_DIRECTION) || arcObj.has(KEY_YAW) || arcObj.has(KEY_PITCH)) {
-        addWarning("Arc object should not specify both " + KEY_NORMAL + " and direction/yaw/pitch, only using " + KEY_NORMAL);
+        addWarning(
+            "Arc object should not specify both "
+                + KEY_NORMAL
+                + " and direction/yaw/pitch, only using "
+                + KEY_NORMAL);
       }
       JsonObject normalObj = loadObject(arcObj, KEY_NORMAL, "Arc normal should be a vector object");
       if (normalObj != null) {
-        LXVector normal = loadVector(normalObj, "Arc normal should specify at least one x/y/z value");
+        LXVector normal =
+            loadVector(normalObj, "Arc normal should specify at least one x/y/z value");
         if (normal.isZero()) {
           addWarning("Arc normal vector should not be all 0");
         } else {
@@ -2048,16 +2102,23 @@ public class JsonFixture extends LXFixture {
       }
     } else if (arcObj.has(KEY_DIRECTION)) {
       if (arcObj.has(KEY_YAW) || arcObj.has(KEY_ROLL) || arcObj.has(KEY_NORMAL)) {
-        addWarning("Arc object should not specify both " + KEY_DIRECTION + " and yaw/roll/normal, only using " + KEY_DIRECTION);
+        addWarning(
+            "Arc object should not specify both "
+                + KEY_DIRECTION
+                + " and yaw/roll/normal, only using "
+                + KEY_DIRECTION);
       }
-      JsonObject directionObj = loadObject(arcObj, KEY_DIRECTION, "Arc direction should be a vector object");
+      JsonObject directionObj =
+          loadObject(arcObj, KEY_DIRECTION, "Arc direction should be a vector object");
       if (directionObj != null) {
-        LXVector direction = loadVector(directionObj, "Arc direction should specify at least one x/y/z value");
+        LXVector direction =
+            loadVector(directionObj, "Arc direction should specify at least one x/y/z value");
         if (direction.isZero()) {
           addWarning("Arc direction vector should not be all 0");
         } else {
           arc.yaw.setValue(Math.toDegrees(Math.atan2(-direction.z, direction.x))); // yaw
-          arc.pitch.setValue(Math.toDegrees(Math.toRadians(loadFloat(arcObj, KEY_PITCH, true)))); // pitch
+          arc.pitch.setValue(
+              Math.toDegrees(Math.toRadians(loadFloat(arcObj, KEY_PITCH, true)))); // pitch
           arc.roll.setValue(Math.toDegrees(Math.asin(direction.y / direction.mag()))); // roll
         }
       }
@@ -2067,7 +2128,8 @@ public class JsonFixture extends LXFixture {
   }
 
   private LXFixture loadNative(JsonObject nativeObj) {
-    String className = loadString(nativeObj, KEY_CLASS, true, "Fixture type must specify " + KEY_CLASS);
+    String className =
+        loadString(nativeObj, KEY_CLASS, true, "Fixture type must specify " + KEY_CLASS);
     if (LXUtils.isEmpty(className)) {
       addWarning("Fixture type must specify " + KEY_CLASS);
       return null;
@@ -2091,7 +2153,12 @@ public class JsonFixture extends LXFixture {
             if (paramsObj.has(enumPath)) {
               JsonElement enumParam = paramsObj.get(enumPath);
               if (enumParam.isJsonPrimitive() && enumParam.getAsJsonPrimitive().isString()) {
-                paramsObj.addProperty(enumPath, replaceVariables(enumPath, enumParam.getAsJsonPrimitive().getAsString(), ParameterType.STRING));
+                paramsObj.addProperty(
+                    enumPath,
+                    replaceVariables(
+                        enumPath,
+                        enumParam.getAsJsonPrimitive().getAsString(),
+                        ParameterType.STRING));
               }
             }
           }
@@ -2102,21 +2169,24 @@ public class JsonFixture extends LXFixture {
             if (param.isJsonPrimitive() && param.getAsJsonPrimitive().isString()) {
               String primitive = param.getAsJsonPrimitive().getAsString();
               if (parameter instanceof StringParameter) {
-                paramsObj.addProperty(path, replaceVariables(path, primitive, ParameterType.STRING));
+                paramsObj.addProperty(
+                    path, replaceVariables(path, primitive, ParameterType.STRING));
               } else if (parameter instanceof BooleanParameter) {
                 boolean boolVal = evaluateBooleanExpression(paramsObj, path, primitive);
                 paramsObj.addProperty(path, boolVal);
               } else if (parameter instanceof DiscreteParameter) {
-                int intVal = (int) evaluateVariableExpression(paramsObj, path, primitive, ParameterType.INT);
+                int intVal =
+                    (int) evaluateVariableExpression(paramsObj, path, primitive, ParameterType.INT);
                 paramsObj.addProperty(path, intVal);
               } else {
-                int floatVal = (int) evaluateVariableExpression(paramsObj, path, primitive, ParameterType.FLOAT);
+                int floatVal =
+                    (int)
+                        evaluateVariableExpression(paramsObj, path, primitive, ParameterType.FLOAT);
                 paramsObj.addProperty(path, floatVal);
               }
             }
             LXSerializable.Utils.loadParameter(parameter, paramsObj, path);
           }
-
         }
         fixture.isLoading = false;
       }
@@ -2138,7 +2208,10 @@ public class JsonFixture extends LXFixture {
         this.componentsByIndex.add(null);
         loadChild(componentElem.getAsJsonObject());
       } else if (!componentElem.isJsonNull()) {
-        addWarning(KEY_COMPONENTS + " should only contain child elements in JSON object format, found invalid: " + componentElem);
+        addWarning(
+            KEY_COMPONENTS
+                + " should only contain child elements in JSON object format, found invalid: "
+                + componentElem);
       }
     }
   }
@@ -2155,7 +2228,12 @@ public class JsonFixture extends LXFixture {
     }
 
     if (childObj.has(KEY_ENABLED)) {
-      boolean enabled = loadBoolean(childObj, KEY_ENABLED, true, "Child object must specify boolean expression for " + KEY_ENABLED);
+      boolean enabled =
+          loadBoolean(
+              childObj,
+              KEY_ENABLED,
+              true,
+              "Child object must specify boolean expression for " + KEY_ENABLED);
       if (!enabled) {
         return;
       }
@@ -2163,13 +2241,19 @@ public class JsonFixture extends LXFixture {
 
     if (childObj.has(KEY_INSTANCES)) {
 
-      int numInstances = loadInt(childObj, KEY_INSTANCES, true, "Child object must specify positive number of instances");
+      int numInstances =
+          loadInt(
+              childObj,
+              KEY_INSTANCES,
+              true,
+              "Child object must specify positive number of instances");
       if (numInstances <= 0) {
         addWarning("Child object specifies illegal number of instances: " + numInstances);
         return;
       }
       if (numInstances >= MAX_INSTANCES) {
-        addWarning("Child object specifies too many instances: " + numInstances + " >= " + MAX_INSTANCES);
+        addWarning(
+            "Child object specifies too many instances: " + numInstances + " >= " + MAX_INSTANCES);
         return;
       }
 
@@ -2217,54 +2301,54 @@ public class JsonFixture extends LXFixture {
   private void loadChild(JsonObject childObj, ChildType type, String jsonType) {
     LXFixture child = null;
     switch (type) {
-    case POINT:
-      child = new PointFixture(this.lx);
-      break;
-    case POINTS:
-      child = loadPoints(childObj);
-      break;
-    case STRIP:
-      child = loadStrip(childObj);
-      break;
-    case ARC:
-      child = loadArc(childObj);
-      break;
-    case CLASS:
-      child = loadNative(childObj);
-      break;
-    case JSON:
-      if ((jsonType == null) || jsonType.isEmpty() || jsonType.equals(PATH_SEPARATOR)) {
-        throw new IllegalArgumentException("May not create JsonFixture with null or empty type");
-      }
-      if (jsonType.charAt(0) == PATH_SEPARATOR_CHAR) {
-        // If the provided fixture type is absolute, always go absolute
-        jsonType = jsonType.substring(0);
-      } else {
-        // Otherwise, check first relative to the folder that we are currently in
-        final String prefix = getChildPrefix();
-        if (prefix != null) {
-          String prefixedType = prefix + PATH_SEPARATOR + jsonType;
-          File file = getFixtureFile(prefixedType);
-          if (file.exists()) {
-            jsonType = prefixedType;
+      case POINT:
+        child = new PointFixture(this.lx);
+        break;
+      case POINTS:
+        child = loadPoints(childObj);
+        break;
+      case STRIP:
+        child = loadStrip(childObj);
+        break;
+      case ARC:
+        child = loadArc(childObj);
+        break;
+      case CLASS:
+        child = loadNative(childObj);
+        break;
+      case JSON:
+        if ((jsonType == null) || jsonType.isEmpty() || jsonType.equals(PATH_SEPARATOR)) {
+          throw new IllegalArgumentException("May not create JsonFixture with null or empty type");
+        }
+        if (jsonType.charAt(0) == PATH_SEPARATOR_CHAR) {
+          // If the provided fixture type is absolute, always go absolute
+          jsonType = jsonType.substring(0);
+        } else {
+          // Otherwise, check first relative to the folder that we are currently in
+          final String prefix = getChildPrefix();
+          if (prefix != null) {
+            String prefixedType = prefix + PATH_SEPARATOR + jsonType;
+            File file = getFixtureFile(prefixedType);
+            if (file.exists()) {
+              jsonType = prefixedType;
+            }
           }
         }
-      }
-      JsonFixture jsonChild = new JsonFixture(this.lx, this, childObj, jsonType);
-      child = jsonChild;
-      if (jsonChild.error.isOn()) {
-        setError(jsonChild.errorMessage.getString());
-        return;
-      }
-      if (jsonChild.warning.isOn() ) {
-        this.warnings.addAll(jsonChild.warnings);
-        if (this.warning.isOn()) {
-          this.warning.bang();
-        } else {
-          this.warning.setValue(true);
+        JsonFixture jsonChild = new JsonFixture(this.lx, this, childObj, jsonType);
+        child = jsonChild;
+        if (jsonChild.error.isOn()) {
+          setError(jsonChild.errorMessage.getString());
+          return;
         }
-      }
-      break;
+        if (jsonChild.warning.isOn()) {
+          this.warnings.addAll(jsonChild.warnings);
+          if (this.warning.isOn()) {
+            this.warning.bang();
+          } else {
+            this.warning.setValue(true);
+          }
+        }
+        break;
     }
 
     if (child != null) {
@@ -2310,7 +2394,9 @@ public class JsonFixture extends LXFixture {
             this.componentsById.get(childId).add(child);
           }
           // Also add tracking to individual child instances
-          this.componentsById.putIfAbsent(childId + "[" + this.currentChildInstance + "]", Arrays.asList(new LXFixture[] { child }));
+          this.componentsById.putIfAbsent(
+              childId + "[" + this.currentChildInstance + "]",
+              Arrays.asList(new LXFixture[] {child}));
         }
       }
 
@@ -2335,13 +2421,17 @@ public class JsonFixture extends LXFixture {
     if (outputObj != null) {
       loadOutput(fixture, outputObj);
     }
-    JsonArray outputsArr = loadArray(obj, KEY_OUTPUTS, KEY_OUTPUTS + " must be an array of outputs");
+    JsonArray outputsArr =
+        loadArray(obj, KEY_OUTPUTS, KEY_OUTPUTS + " must be an array of outputs");
     if (outputsArr != null) {
       for (JsonElement outputElem : outputsArr) {
         if (outputElem.isJsonObject()) {
           loadOutput(fixture, outputElem.getAsJsonObject());
         } else if (!outputElem.isJsonNull()) {
-          addWarning(KEY_OUTPUTS + " should only contain output elements in JSON object format, found invalid: " + outputElem);
+          addWarning(
+              KEY_OUTPUTS
+                  + " should only contain output elements in JSON object format, found invalid: "
+                  + outputElem);
         }
       }
     }
@@ -2349,7 +2439,12 @@ public class JsonFixture extends LXFixture {
 
   private void loadOutput(LXFixture fixture, JsonObject outputObj) {
     if (outputObj.has(KEY_ENABLED)) {
-      boolean enabled = loadBoolean(outputObj, KEY_ENABLED, true, "Output field '" + KEY_ENABLED + "' must be a valid boolean expression");
+      boolean enabled =
+          loadBoolean(
+              outputObj,
+              KEY_ENABLED,
+              true,
+              "Output field '" + KEY_ENABLED + "' must be a valid boolean expression");
       if (!enabled) {
         return;
       }
@@ -2364,7 +2459,8 @@ public class JsonFixture extends LXFixture {
       }
     }
 
-    final String protocolStr = loadString(outputObj, KEY_PROTOCOL, true, "Output must specify a valid " + KEY_PROTOCOL);
+    final String protocolStr =
+        loadString(outputObj, KEY_PROTOCOL, true, "Output must specify a valid " + KEY_PROTOCOL);
     JsonProtocolDefinition protocol = JsonProtocolDefinition.get(protocolStr);
     if (protocol == null) {
       addWarning("Output definition must define a valid protocol, not recognized: " + protocolStr);
@@ -2374,7 +2470,9 @@ public class JsonFixture extends LXFixture {
     JsonTransportDefinition transport = JsonTransportDefinition.UDP;
     if (outputObj.has(KEY_TRANSPORT)) {
       if (protocol == JsonProtocolDefinition.OPC) {
-        transport = JsonTransportDefinition.get(loadString(outputObj, KEY_TRANSPORT, true, "Output must specify valid transport"));
+        transport =
+            JsonTransportDefinition.get(
+                loadString(outputObj, KEY_TRANSPORT, true, "Output must specify valid transport"));
         if (transport == null) {
           transport = JsonTransportDefinition.UDP;
           addWarning("Output should define a valid transport");
@@ -2410,27 +2508,43 @@ public class JsonFixture extends LXFixture {
     }
 
     String universeKey = protocol.universeKey;
-    int universe = loadInt(outputObj, universeKey, true, "Output " + universeKey + " must be a valid integer");
+    int universe =
+        loadInt(outputObj, universeKey, true, "Output " + universeKey + " must be a valid integer");
     if (universe < 0) {
       addWarning("Output " + universeKey + " may not be negative");
       return;
     }
 
     String channelKey = protocol.channelKey;
-    int channel = loadInt(outputObj, channelKey, true, "Output " + channelKey + " must be a valid integer");
+    int channel =
+        loadInt(outputObj, channelKey, true, "Output " + channelKey + " must be a valid integer");
     if (channel < 0) {
       addWarning("Output " + channelKey + " may not be negative");
       return;
     } else if (channel >= protocol.protocol.maxChannels) {
-      addWarning("Output " + channelKey + " may not be greater than " + protocol.protocol + " limit " + channel + " > " + protocol.protocol.maxChannels);
+      addWarning(
+          "Output "
+              + channelKey
+              + " may not be greater than "
+              + protocol.protocol
+              + " limit "
+              + channel
+              + " > "
+              + protocol.protocol.maxChannels);
       return;
     }
 
     int priority = StreamingACNDatagram.DEFAULT_PRIORITY;
     if (outputObj.has(KEY_PRIORITY)) {
-      final int jsonPriority = loadInt(outputObj, KEY_PRIORITY, true, "Output " + KEY_PRIORITY + " must be a valid integer");
+      final int jsonPriority =
+          loadInt(
+              outputObj, KEY_PRIORITY, true, "Output " + KEY_PRIORITY + " must be a valid integer");
       if (jsonPriority < 0 || jsonPriority > StreamingACNDatagram.MAX_PRIORITY) {
-        addWarning("Output " + KEY_PRIORITY + " must be within range [0-200], ignoring value: " + jsonPriority);
+        addWarning(
+            "Output "
+                + KEY_PRIORITY
+                + " must be within range [0-200], ignoring value: "
+                + jsonPriority);
       } else {
         priority = jsonPriority;
       }
@@ -2439,7 +2553,12 @@ public class JsonFixture extends LXFixture {
     KinetDatagram.Version kinetVersion = KinetDatagram.Version.PORTOUT;
     if (protocol == JsonProtocolDefinition.KINET) {
       if (outputObj.has(KEY_KINET_VERSION)) {
-        String key = loadString(outputObj, KEY_KINET_VERSION, true, "Output must specify valid KiNET version of PORTOUT or DMXOUT");
+        String key =
+            loadString(
+                outputObj,
+                KEY_KINET_VERSION,
+                true,
+                "Output must specify valid KiNET version of PORTOUT or DMXOUT");
         if (key != null) {
           try {
             kinetVersion = KinetDatagram.Version.valueOf(key.toUpperCase());
@@ -2450,7 +2569,12 @@ public class JsonFixture extends LXFixture {
       }
     }
 
-    final boolean sequenceEnabled = loadBoolean(outputObj, KEY_SEQUENCE_ENABLED, true, "Output " + KEY_SEQUENCE_ENABLED + " must be a valid boolean");
+    final boolean sequenceEnabled =
+        loadBoolean(
+            outputObj,
+            KEY_SEQUENCE_ENABLED,
+            true,
+            "Output " + KEY_SEQUENCE_ENABLED + " must be a valid boolean");
 
     // Top level output byte-order
     JsonByteEncoderDefinition byteOrder = loadByteOrder(outputObj, JsonByteEncoderDefinition.RGB);
@@ -2459,14 +2583,29 @@ public class JsonFixture extends LXFixture {
     List<JsonSegmentDefinition> segments = new ArrayList<JsonSegmentDefinition>();
     loadSegments(fixture, segments, outputObj, byteOrder);
 
-    this.definedOutputs.add(new JsonOutputDefinition(fixture, protocol, transport, byteOrder, address, port, universe, channel, priority, sequenceEnabled, kinetVersion, fps, segments));
+    this.definedOutputs.add(
+        new JsonOutputDefinition(
+            fixture,
+            protocol,
+            transport,
+            byteOrder,
+            address,
+            port,
+            universe,
+            channel,
+            priority,
+            sequenceEnabled,
+            kinetVersion,
+            fps,
+            segments));
   }
 
   private void loadBrightness(LXFixture child, JsonObject childObj) {
     if (childObj.has(KEY_BRIGHTNESS)) {
       float brightness = loadFloat(childObj, KEY_BRIGHTNESS, true);
       if (brightness < 0f || brightness > 1f) {
-        addWarning("Component " + KEY_BRIGHTNESS + " must be in the range 0-1, invalid: " + brightness);
+        addWarning(
+            "Component " + KEY_BRIGHTNESS + " must be in the range 0-1, invalid: " + brightness);
       } else {
         child.brightness.setValue(brightness);
       }
@@ -2482,30 +2621,58 @@ public class JsonFixture extends LXFixture {
         if (!value.isJsonPrimitive()) {
           addWarning("Meta data values must be primtives, key has invalid type: " + key);
         } else {
-          metaData.put(key, replaceVariables(key, value.getAsJsonPrimitive().getAsString(), ParameterType.STRING));
+          metaData.put(
+              key,
+              replaceVariables(
+                  key, value.getAsJsonPrimitive().getAsString(), ParameterType.STRING));
         }
       }
     }
   }
 
-  private static final String[] SEGMENT_KEYS = { KEY_NUM, KEY_START, KEY_COMPONENT_INDEX, KEY_COMPONENT_ID, KEY_STRIDE, KEY_REVERSE, KEY_PAD_PRE, KEY_PAD_POST, KEY_HEADER_BYTES, KEY_FOOTER_BYTES };
+  private static final String[] SEGMENT_KEYS = {
+    KEY_NUM,
+    KEY_START,
+    KEY_COMPONENT_INDEX,
+    KEY_COMPONENT_ID,
+    KEY_STRIDE,
+    KEY_REVERSE,
+    KEY_PAD_PRE,
+    KEY_PAD_POST,
+    KEY_HEADER_BYTES,
+    KEY_FOOTER_BYTES
+  };
 
-  private void loadSegments(LXFixture fixture, List<JsonSegmentDefinition> segments, JsonObject outputObj, JsonByteEncoderDefinition defaultByteOrder) {
+  private void loadSegments(
+      LXFixture fixture,
+      List<JsonSegmentDefinition> segments,
+      JsonObject outputObj,
+      JsonByteEncoderDefinition defaultByteOrder) {
     if (outputObj.has(KEY_SEGMENTS)) {
       // Specifying an array of segments, keys should not be there by default
       for (String segmentKey : SEGMENT_KEYS) {
         if (outputObj.has(segmentKey)) {
-          addWarning(KEY_OUTPUT + " specifies " + KEY_SEGMENTS + ", may not also specify " + segmentKey + ", will be ignored");
+          addWarning(
+              KEY_OUTPUT
+                  + " specifies "
+                  + KEY_SEGMENTS
+                  + ", may not also specify "
+                  + segmentKey
+                  + ", will be ignored");
         }
       }
 
-      JsonArray segmentsArr = loadArray(outputObj, KEY_SEGMENTS, KEY_SEGMENTS + " must be an array of segments");
+      JsonArray segmentsArr =
+          loadArray(outputObj, KEY_SEGMENTS, KEY_SEGMENTS + " must be an array of segments");
       if (segmentsArr != null) {
         for (JsonElement segmentElem : segmentsArr) {
           if (segmentElem.isJsonObject()) {
             loadSegment(fixture, segments, segmentElem.getAsJsonObject(), defaultByteOrder, false);
           } else if (!segmentElem.isJsonNull()) {
-            addWarning(KEY_SEGMENTS + " should only contain segment elements in JSON object format, found invalid: " + segmentElem);
+            addWarning(
+                KEY_SEGMENTS
+                    + " should only contain segment elements in JSON object format, found invalid: "
+                    + segmentElem);
           }
         }
       }
@@ -2515,10 +2682,16 @@ public class JsonFixture extends LXFixture {
     }
   }
 
-  private void loadSegment(LXFixture fixture, List<JsonSegmentDefinition> segments, JsonObject segmentObj, JsonByteEncoderDefinition outputByteOrder, boolean isOutput) {
+  private void loadSegment(
+      LXFixture fixture,
+      List<JsonSegmentDefinition> segments,
+      JsonObject segmentObj,
+      JsonByteEncoderDefinition outputByteOrder,
+      boolean isOutput) {
     int num = JsonOutputDefinition.ALL_POINTS;
 
-    int start = loadInt(segmentObj, KEY_START, true, "Output " + KEY_START + " must be a valid integer");
+    int start =
+        loadInt(segmentObj, KEY_START, true, "Output " + KEY_START + " must be a valid integer");
     if (start < 0) {
       addWarning("Output " + KEY_START + " may not be negative");
       return;
@@ -2529,7 +2702,12 @@ public class JsonFixture extends LXFixture {
         addWarning("Output " + KEY_COMPONENT_ID + " may only be used on custom fixtures");
         return;
       }
-      String componentId = loadString(segmentObj, KEY_COMPONENT_ID, true, "Output " + KEY_COMPONENT_ID + " must be a valid string");
+      String componentId =
+          loadString(
+              segmentObj,
+              KEY_COMPONENT_ID,
+              true,
+              "Output " + KEY_COMPONENT_ID + " must be a valid string");
       if (componentId == null) {
         addWarning("Output " + KEY_COMPONENT_ID + " may not be empty");
         return;
@@ -2547,7 +2725,15 @@ public class JsonFixture extends LXFixture {
         num += childFixture.totalSize();
       }
       if (offset >= num) {
-        addWarning("Output " + KEY_COMPONENT_ID + "=" + componentId + " start value " + offset + " exceeds size " + num);
+        addWarning(
+            "Output "
+                + KEY_COMPONENT_ID
+                + "="
+                + componentId
+                + " start value "
+                + offset
+                + " exceeds size "
+                + num);
         return;
       }
       start += offset;
@@ -2558,18 +2744,27 @@ public class JsonFixture extends LXFixture {
         addWarning("Output " + KEY_COMPONENT_INDEX + " may only be used on custom fixtures");
         return;
       }
-      int componentIndex = loadInt(segmentObj, KEY_COMPONENT_INDEX, true, "Output " + KEY_COMPONENT_INDEX + " must be a valid integer");
+      int componentIndex =
+          loadInt(
+              segmentObj,
+              KEY_COMPONENT_INDEX,
+              true,
+              "Output " + KEY_COMPONENT_INDEX + " must be a valid integer");
       if (componentIndex < 0) {
-        addWarning("Output " + KEY_COMPONENT_INDEX + " may not be negative (" + componentIndex + ")");
+        addWarning(
+            "Output " + KEY_COMPONENT_INDEX + " may not be negative (" + componentIndex + ")");
         return;
       }
       if (componentIndex >= ((JsonFixture) fixture).componentsByIndex.size()) {
-        addWarning("Output " + KEY_COMPONENT_INDEX + " is out of fixture range (" + componentIndex + ")");
+        addWarning(
+            "Output " + KEY_COMPONENT_INDEX + " is out of fixture range (" + componentIndex + ")");
         return;
       }
-      List<LXFixture> childComponents = ((JsonFixture) fixture).componentsByIndex.get(componentIndex);
+      List<LXFixture> childComponents =
+          ((JsonFixture) fixture).componentsByIndex.get(componentIndex);
       if (childComponents == null) {
-        addWarning("Output " + KEY_COMPONENT_INDEX + " in invalid or disabled (" + componentIndex + ")");
+        addWarning(
+            "Output " + KEY_COMPONENT_INDEX + " in invalid or disabled (" + componentIndex + ")");
         return;
       }
       final int offset = start;
@@ -2579,7 +2774,15 @@ public class JsonFixture extends LXFixture {
         num += childFixture.totalSize();
       }
       if (offset >= num) {
-        addWarning("Output " + KEY_COMPONENT_INDEX + "=" + componentIndex + " start value " + offset + " exceeds size " + num);
+        addWarning(
+            "Output "
+                + KEY_COMPONENT_INDEX
+                + "="
+                + componentIndex
+                + " start value "
+                + offset
+                + " exceeds size "
+                + num);
         return;
       }
       start += offset;
@@ -2596,16 +2799,21 @@ public class JsonFixture extends LXFixture {
 
     int stride = DEFAULT_OUTPUT_STRIDE;
     if (segmentObj.has(KEY_STRIDE)) {
-      stride = loadInt(segmentObj, KEY_STRIDE, true, "Output " + KEY_STRIDE + " must be a valid integer");
+      stride =
+          loadInt(
+              segmentObj, KEY_STRIDE, true, "Output " + KEY_STRIDE + " must be a valid integer");
       if (stride <= 0) {
-        addWarning("Output stride must be a positive value, use 'reverse: true' to invert pixel order");
+        addWarning(
+            "Output stride must be a positive value, use 'reverse: true' to invert pixel order");
         return;
       }
     }
 
     int repeat = DEFAULT_OUTPUT_REPEAT;
     if (segmentObj.has(KEY_REPEAT)) {
-      repeat = loadInt(segmentObj, KEY_REPEAT, true, "Output " + KEY_REPEAT + " must be a valid integer");
+      repeat =
+          loadInt(
+              segmentObj, KEY_REPEAT, true, "Output " + KEY_REPEAT + " must be a valid integer");
       if (repeat <= 0) {
         addWarning("Output repeat must be a positive value");
         return;
@@ -2614,29 +2822,48 @@ public class JsonFixture extends LXFixture {
 
     int padPre = 0, padPost = 0;
     if (segmentObj.has(KEY_PAD_PRE)) {
-      padPre = loadInt(segmentObj, KEY_PAD_PRE, true, "Output " + KEY_PAD_PRE + " must be a valid integer");
+      padPre =
+          loadInt(
+              segmentObj, KEY_PAD_PRE, true, "Output " + KEY_PAD_PRE + " must be a valid integer");
     }
     if (segmentObj.has(KEY_PAD_POST)) {
-      padPost = loadInt(segmentObj, KEY_PAD_POST, true, "Output " + KEY_PAD_POST+ " must be a valid integer");
+      padPost =
+          loadInt(
+              segmentObj,
+              KEY_PAD_POST,
+              true,
+              "Output " + KEY_PAD_POST + " must be a valid integer");
     }
     if (padPre < 0 || padPost < 0) {
       addWarning("Output padding must be a non-negative value");
       return;
     }
 
-    boolean reverse = loadBoolean(segmentObj, KEY_REVERSE, true, "Output " + KEY_REVERSE + " must be a valid boolean");
+    boolean reverse =
+        loadBoolean(
+            segmentObj, KEY_REVERSE, true, "Output " + KEY_REVERSE + " must be a valid boolean");
 
     JsonByteEncoderDefinition segmentByteOrder = null;
     if (!isOutput) {
       segmentByteOrder = loadByteOrder(segmentObj, null);
     }
 
-    JsonByteEncoderDefinition byteEncoder = (segmentByteOrder != null) ? segmentByteOrder : outputByteOrder;
+    JsonByteEncoderDefinition byteEncoder =
+        (segmentByteOrder != null) ? segmentByteOrder : outputByteOrder;
     int outputStride = byteEncoder.byteEncoder.getNumBytes();
     if (segmentObj.has(KEY_OUTPUT_STRIDE)) {
-      int customStride = loadInt(segmentObj, KEY_OUTPUT_STRIDE, true, "Output " + KEY_OUTPUT_STRIDE + " must be a valid integer");
+      int customStride =
+          loadInt(
+              segmentObj,
+              KEY_OUTPUT_STRIDE,
+              true,
+              "Output " + KEY_OUTPUT_STRIDE + " must be a valid integer");
       if (customStride < outputStride) {
-        addWarning("Output stride may not be less than byte order size: " + customStride + " < " + outputStride);
+        addWarning(
+            "Output stride may not be less than byte order size: "
+                + customStride
+                + " < "
+                + outputStride);
       } else {
         outputStride = customStride;
       }
@@ -2647,7 +2874,12 @@ public class JsonFixture extends LXFixture {
     // output of the entire segment N times.
     int duplicate = 1;
     if (segmentObj.has(KEY_DUPLICATE)) {
-      duplicate = loadInt(segmentObj, KEY_DUPLICATE, true, "Output " + KEY_DUPLICATE + " must be a valid integer");
+      duplicate =
+          loadInt(
+              segmentObj,
+              KEY_DUPLICATE,
+              true,
+              "Output " + KEY_DUPLICATE + " must be a valid integer");
       if (duplicate <= 0) {
         addWarning("Output duplicate must be a positive value");
         return;
@@ -2659,7 +2891,19 @@ public class JsonFixture extends LXFixture {
     byte[] footerBytes = loadStaticBytes(segmentObj, KEY_FOOTER_BYTES);
 
     // Duplicate the definition N times (typically 1)
-    final JsonSegmentDefinition segment = new JsonSegmentDefinition(start, num, stride, repeat, padPre, padPost, reverse, segmentByteOrder, headerBytes, footerBytes, outputStride);
+    final JsonSegmentDefinition segment =
+        new JsonSegmentDefinition(
+            start,
+            num,
+            stride,
+            repeat,
+            padPre,
+            padPost,
+            reverse,
+            segmentByteOrder,
+            headerBytes,
+            footerBytes,
+            outputStride);
     for (int i = 0; i < duplicate; ++i) {
       segments.add(segment);
     }
@@ -2680,7 +2924,7 @@ public class JsonFixture extends LXFixture {
         try {
           int b = 0;
           for (int offset = 0; offset < hex.length(); offset += 2) {
-            bytes[b++] = (byte) Integer.parseInt(hex.substring(offset, offset+2), 16);
+            bytes[b++] = (byte) Integer.parseInt(hex.substring(offset, offset + 2), 16);
           }
         } catch (NumberFormatException nfx) {
           addWarning("Bad hex byte string " + key + ": " + hex);
@@ -2699,7 +2943,8 @@ public class JsonFixture extends LXFixture {
           final JsonElement byteElem = arr.get(i);
           try {
             // GSON doesn't handle 0x prefixed hex numbers natively, they come back as strings
-            if (byteElem.getAsJsonPrimitive().isString() && byteElem.getAsString().toLowerCase().startsWith("0x")) {
+            if (byteElem.getAsJsonPrimitive().isString()
+                && byteElem.getAsString().toLowerCase().startsWith("0x")) {
               bytes[i] = (byte) Integer.parseInt(byteElem.getAsString().substring(2), 16);
             } else {
               bytes[i] = (byte) byteElem.getAsJsonPrimitive().getAsInt();
@@ -2716,14 +2961,18 @@ public class JsonFixture extends LXFixture {
     return null;
   }
 
-  private JsonByteEncoderDefinition loadByteOrder(JsonObject obj, JsonByteEncoderDefinition defaultByteOrder) {
+  private JsonByteEncoderDefinition loadByteOrder(
+      JsonObject obj, JsonByteEncoderDefinition defaultByteOrder) {
     JsonByteEncoderDefinition byteOrder = defaultByteOrder;
-    String byteOrderStr = loadString(obj, KEY_BYTE_ORDER, true, "Output must specify a valid string " + KEY_BYTE_ORDER);
+    String byteOrderStr =
+        loadString(
+            obj, KEY_BYTE_ORDER, true, "Output must specify a valid string " + KEY_BYTE_ORDER);
     if (byteOrderStr != null) {
       if (byteOrderStr.isEmpty()) {
         addWarning("Output must specify non-empty string value for " + KEY_BYTE_ORDER);
       } else {
-        JsonByteEncoderDefinition definedByteOrder = JsonByteEncoderDefinition.get(this.lx, byteOrderStr);
+        JsonByteEncoderDefinition definedByteOrder =
+            JsonByteEncoderDefinition.get(this.lx, byteOrderStr);
         if (definedByteOrder == null) {
           addWarning("Unrecognized byte order type: " + byteOrderStr);
         } else {
@@ -2757,7 +3006,12 @@ public class JsonFixture extends LXFixture {
   private void loadUIMesh(JsonObject meshObj) {
     boolean meshEnabled = true;
     if (meshObj.has(KEY_ENABLED)) {
-      meshEnabled = loadBoolean(meshObj, KEY_ENABLED, true, KEY_MESH + " property " + KEY_ENABLED + " must be a valid boolean");
+      meshEnabled =
+          loadBoolean(
+              meshObj,
+              KEY_ENABLED,
+              true,
+              KEY_MESH + " property " + KEY_ENABLED + " must be a valid boolean");
     }
     if (!meshEnabled) {
       return;
@@ -2790,17 +3044,18 @@ public class JsonFixture extends LXFixture {
     LXModel.Mesh.Vertex meshLightDirection = new LXModel.Mesh.Vertex(0, 0, 1);
     if (meshObj.has(KEY_MESH_LIGHTING)) {
       final JsonObject meshLightingObj = meshObj.get(KEY_MESH_LIGHTING).getAsJsonObject();
-      meshLighting = new LXModel.Mesh.Lighting(
-        loadFloat(meshLightingObj, KEY_MESH_LIGHTING_AMBIENT, true),
-        loadFloat(meshLightingObj, KEY_MESH_LIGHTING_DIFFUSE, true),
-        loadFloat(meshLightingObj, KEY_MESH_LIGHTING_SPECULAR, true),
-        loadFloat(meshLightingObj, KEY_MESH_LIGHTING_SHININESS, true)
-      );
+      meshLighting =
+          new LXModel.Mesh.Lighting(
+              loadFloat(meshLightingObj, KEY_MESH_LIGHTING_AMBIENT, true),
+              loadFloat(meshLightingObj, KEY_MESH_LIGHTING_DIFFUSE, true),
+              loadFloat(meshLightingObj, KEY_MESH_LIGHTING_SPECULAR, true),
+              loadFloat(meshLightingObj, KEY_MESH_LIGHTING_SHININESS, true));
       if (meshLightingObj.has(KEY_MESH_LIGHTING_COLOR)) {
         meshLightColor = loadColor(meshLightingObj, KEY_MESH_LIGHTING_COLOR);
       }
       if (meshLightingObj.has(KEY_MESH_LIGHTING_DIRECTION)) {
-        JsonObject meshLightingDirectionObj = meshLightingObj.get(KEY_MESH_LIGHTING_DIRECTION).getAsJsonObject();
+        JsonObject meshLightingDirectionObj =
+            meshLightingObj.get(KEY_MESH_LIGHTING_DIRECTION).getAsJsonObject();
         float x = loadFloat(meshLightingDirectionObj, KEY_X, true);
         float y = loadFloat(meshLightingDirectionObj, KEY_Y, true);
         float z = loadFloat(meshLightingDirectionObj, KEY_Z, true);
@@ -2831,13 +3086,19 @@ public class JsonFixture extends LXFixture {
       for (JsonElement vertexElem : verticesArr) {
         JsonObject vertexObj = vertexElem.getAsJsonObject();
         if (vertexObj.has(KEY_INSTANCES)) {
-          int numInstances = loadInt(vertexObj, KEY_INSTANCES, true, "Vertex object must specify positive number of instances");
+          int numInstances =
+              loadInt(
+                  vertexObj,
+                  KEY_INSTANCES,
+                  true,
+                  "Vertex object must specify positive number of instances");
           if (numInstances <= 0) {
             addWarning("Vertex specifies illegal number of instances: " + numInstances);
             return;
           }
           if (numInstances >= MAX_INSTANCES) {
-            addWarning("Vertex specifies too many instances: " + numInstances + " >= " + MAX_INSTANCES);
+            addWarning(
+                "Vertex specifies too many instances: " + numInstances + " >= " + MAX_INSTANCES);
             return;
           }
 
@@ -2874,7 +3135,12 @@ public class JsonFixture extends LXFixture {
       mesh.setLighting(meshLighting);
       mesh.setLightColor(meshLightColor);
       mesh.setLightDirection(meshLightDirection);
-      mesh.invertNormals = loadBoolean(meshObj, KEY_MESH_INVERT_NORMALS, true, "Mesh must specify valid boolean for " + KEY_MESH_INVERT_NORMALS);
+      mesh.invertNormals =
+          loadBoolean(
+              meshObj,
+              KEY_MESH_INVERT_NORMALS,
+              true,
+              "Mesh must specify valid boolean for " + KEY_MESH_INVERT_NORMALS);
       this.mutableMeshes.add(mesh);
     }
   }
@@ -2913,7 +3179,8 @@ public class JsonFixture extends LXFixture {
       case VERTEX -> vertices.add(new LXModel.Mesh.Vertex(vector.x, vector.y, vector.z, u, v));
       case RECT -> loadUIVertexRect(vertexObj, vector, vertices);
       case CUBOID -> loadUIVertexCuboid(vertexObj, vector, vertices);
-    };
+    }
+    ;
   }
 
   private enum MeshRectAxis {
@@ -2935,7 +3202,8 @@ public class JsonFixture extends LXFixture {
     }
   }
 
-  private void loadUIVertexRect(JsonObject vertexObj, LXVector vertex, LXModel.Mesh.VertexList vertices) {
+  private void loadUIVertexRect(
+      JsonObject vertexObj, LXVector vertex, LXModel.Mesh.VertexList vertices) {
     final float width = loadFloat(vertexObj, KEY_MESH_RECT_WIDTH, true);
     final float height = loadFloat(vertexObj, KEY_MESH_RECT_HEIGHT, true);
     if ((width == 0) || (height == 0)) {
@@ -2955,7 +3223,12 @@ public class JsonFixture extends LXFixture {
     _loadUIVertexRect(vertices, vertex, width, height, rectAxis);
   }
 
-  private void _loadUIVertexRect(LXModel.Mesh.VertexList vertices, LXVector vertex, float width, float height, MeshRectAxis rectAxis) {
+  private void _loadUIVertexRect(
+      LXModel.Mesh.VertexList vertices,
+      LXVector vertex,
+      float width,
+      float height,
+      MeshRectAxis rectAxis) {
     switch (rectAxis) {
       case XY -> {
         vertices.add(vertex, 0, 1);
@@ -3008,7 +3281,8 @@ public class JsonFixture extends LXFixture {
     }
   }
 
-  private void loadUIVertexCuboid(JsonObject vertexObj, LXVector vertex, LXModel.Mesh.VertexList vertices) {
+  private void loadUIVertexCuboid(
+      JsonObject vertexObj, LXVector vertex, LXModel.Mesh.VertexList vertices) {
     final float width = loadFloat(vertexObj, KEY_MESH_RECT_WIDTH, true);
     final float height = loadFloat(vertexObj, KEY_MESH_RECT_HEIGHT, true);
     final float depth = loadFloat(vertexObj, KEY_MESH_RECT_DEPTH, true);
@@ -3018,7 +3292,8 @@ public class JsonFixture extends LXFixture {
     }
     _loadUIVertexRect(vertices, vertex, width, height, MeshRectAxis.XY);
     _loadUIVertexRect(vertices, vertex.copy().add(0, height, 0), width, depth, MeshRectAxis.XZ);
-    _loadUIVertexRect(vertices, vertex.copy().add(0, height, depth), width, -height, MeshRectAxis.XY);
+    _loadUIVertexRect(
+        vertices, vertex.copy().add(0, height, depth), width, -height, MeshRectAxis.XY);
     _loadUIVertexRect(vertices, vertex.copy().add(0, 0, depth), width, -depth, MeshRectAxis.XZ);
     _loadUIVertexRect(vertices, vertex.copy().add(0, 0, depth), -depth, height, MeshRectAxis.ZY);
     _loadUIVertexRect(vertices, vertex.copy().add(width, 0, 0), depth, height, MeshRectAxis.ZY);
@@ -3049,7 +3324,8 @@ public class JsonFixture extends LXFixture {
       return;
     }
 
-    // Use this helper, as firstPointIndex values may not necessarily set at this point, if we are in an
+    // Use this helper, as firstPointIndex values may not necessarily set at this point, if we are
+    // in an
     // initial file load and the outputs are being regenerated by a parameter change. Later the
     // LXStructure will rebuild the model and set indices appropriately
     int fixtureOffset = getFixtureOffset(output.fixture);
@@ -3059,46 +3335,62 @@ public class JsonFixture extends LXFixture {
     for (JsonSegmentDefinition segment : output.segments) {
 
       if (segment.start < 0 || (segment.start >= fixtureSize)) {
-        addWarning("Output specifies invalid start position: " + segment.start + " should be between [0, " + (fixtureSize-1) + "]");
+        addWarning(
+            "Output specifies invalid start position: "
+                + segment.start
+                + " should be between [0, "
+                + (fixtureSize - 1)
+                + "]");
         return;
       }
       int num = (segment.num == JsonOutputDefinition.ALL_POINTS) ? fixtureSize : segment.num;
 
-      if (segment.start + segment.stride * (num-1) >= fixtureSize) {
-        addWarning("Output specifies excessive size beyond fixture limits: start=" + segment.start + " num=" + num + " stride=" + segment.stride + " fixtureSize=" + fixtureSize);
+      if (segment.start + segment.stride * (num - 1) >= fixtureSize) {
+        addWarning(
+            "Output specifies excessive size beyond fixture limits: start="
+                + segment.start
+                + " num="
+                + num
+                + " stride="
+                + segment.stride
+                + " fixtureSize="
+                + fixtureSize);
         return;
       }
 
-      segments.add(new Segment(
-        segment.start + fixtureOffset,
-        num,
-        segment.stride,
-        segment.repeat,
-        segment.padPre,
-        segment.padPost,
-        segment.reverse,
-        (segment.byteEncoder != null) ? segment.byteEncoder.byteEncoder : output.byteEncoder.byteEncoder,
-        segment.headerBytes,
-        segment.footerBytes,
-        segment.outputStride
-       ));
+      segments.add(
+          new Segment(
+              segment.start + fixtureOffset,
+              num,
+              segment.stride,
+              segment.repeat,
+              segment.padPre,
+              segment.padPost,
+              segment.reverse,
+              (segment.byteEncoder != null)
+                  ? segment.byteEncoder.byteEncoder
+                  : output.byteEncoder.byteEncoder,
+              segment.headerBytes,
+              segment.footerBytes,
+              segment.outputStride));
     }
 
     // Add an output definition!
-    addOutputDefinition(new OutputDefinition(
-      output.protocol.protocol,
-      output.transport.transport,
-      output.address,
-      (output.port == JsonOutputDefinition.DEFAULT_PORT) ? output.protocol.protocol.defaultPort : output.port,
-      output.universe,
-      output.channel,
-      output.priority,
-      output.sequenceEnabled,
-      output.kinetVersion,
-      output.fps,
-      segments.toArray(new Segment[0])
-    ));
-
+    addOutputDefinition(
+        new OutputDefinition(
+            output.protocol.protocol,
+            output.transport.transport,
+            output.address,
+            (output.port == JsonOutputDefinition.DEFAULT_PORT)
+                ? output.protocol.protocol.defaultPort
+                : output.port,
+            output.universe,
+            output.channel,
+            output.priority,
+            output.sequenceEnabled,
+            output.kinetVersion,
+            output.fps,
+            segments.toArray(new Segment[0])));
   }
 
   private void buildArtSyncDatagram(JsonOutputDefinition output) {
@@ -3145,7 +3437,9 @@ public class JsonFixture extends LXFixture {
 
     // This has been saved, let's call up the values for the JSON parameters we customized
     this.jsonParameterValues =
-      obj.has(KEY_JSON_PARAMETERS) ? obj.get(KEY_JSON_PARAMETERS).getAsJsonObject() : new JsonObject();
+        obj.has(KEY_JSON_PARAMETERS)
+            ? obj.get(KEY_JSON_PARAMETERS).getAsJsonObject()
+            : new JsonObject();
 
     // Now do the normal LXFixture loading, which will trigger regeneration if
     // we're part of a hierarchy
@@ -3164,25 +3458,24 @@ public class JsonFixture extends LXFixture {
     JsonObject jsonParameters = new JsonObject();
     for (ParameterDefinition parameter : this.definedParameters.values()) {
       switch (parameter.type) {
-      case FLOAT:
-        jsonParameters.addProperty(parameter.name, parameter.floatParameter.getValue());
-        break;
-      case INT:
-        jsonParameters.addProperty(parameter.name, parameter.intParameter.getValuei());
-        break;
-      case STRING:
-        jsonParameters.addProperty(parameter.name, parameter.stringParameter.getString());
-        break;
-      case STRING_SELECT:
-        jsonParameters.addProperty(parameter.name, parameter.stringSelectParameter.getObject());
-        break;
-      case BOOLEAN:
-        jsonParameters.addProperty(parameter.name, parameter.booleanParameter.isOn());
-        break;
+        case FLOAT:
+          jsonParameters.addProperty(parameter.name, parameter.floatParameter.getValue());
+          break;
+        case INT:
+          jsonParameters.addProperty(parameter.name, parameter.intParameter.getValuei());
+          break;
+        case STRING:
+          jsonParameters.addProperty(parameter.name, parameter.stringParameter.getString());
+          break;
+        case STRING_SELECT:
+          jsonParameters.addProperty(parameter.name, parameter.stringSelectParameter.getObject());
+          break;
+        case BOOLEAN:
+          jsonParameters.addProperty(parameter.name, parameter.booleanParameter.isOn());
+          break;
       }
     }
     obj.add(KEY_JSON_PARAMETERS, jsonParameters);
     super.save(lx, obj);
   }
-
 }
