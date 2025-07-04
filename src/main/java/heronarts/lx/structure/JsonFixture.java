@@ -691,6 +691,14 @@ public class JsonFixture extends LXFixture {
     super.onParameterChanged(p);
   }
 
+  public String getFixturePath() {
+    String name = this.fixtureType.getString();
+    if (!LXUtils.isEmpty(name)) {
+      return name + ".lxf";
+    }
+    return "";
+  }
+
   private void addJsonParameter(ParameterDefinition parameter) {
     if (this.definedParameters.containsKey(parameter.name)) {
       addWarning("Cannot define two parameters of same name: " + parameter.name);
