@@ -3162,6 +3162,7 @@ public class JsonFixture extends LXFixture {
   // TODO(look): implement adapter shim for JsonObject?
   @Override
   public void load(LX lx, JsonObject obj) {
+    System.out.println(obj.toString());
     // if (this.isJsonSubfixture) {
     //   throw new IllegalStateException("Should never be loading/saving a child JsonSubfixture");
     // }
