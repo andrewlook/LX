@@ -61,4 +61,8 @@ public class ModelBuffer implements LXBuffer {
     this.lx.removeListener(this.modelListener);
   }
 
+  public ModelBuffer unsafeSetArray(int[] array) {
+    this.array = array;
+    return this;
+  }
 }

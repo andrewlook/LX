@@ -36,24 +36,24 @@ public class DissolveBlend extends LXBlend {
   }
 
   @Override
-  public void blend(LXBuffer dst, LXBuffer src, double alpha, LXBuffer output, LXModel model) {
+  public void blend(int[] dst, int[] src, double alpha, int[] output, LXModel model) {
 
     // Multiply the src alpha only by half!
     final int srcAlpha = (int) (alpha * LXColor.BLEND_ALPHA_HALF);
     final int dstAlpha = LXColor.BLEND_ALPHA_FULL - srcAlpha;
     for (LXPoint p : model.points) {
       final int i = p.index;
-      output.getArray()[i] = LXColor.add(LXColor.add(LXColor.CLEAR, dst.getArray()[i], dstAlpha), src.getArray()[i], srcAlpha);
+      output[i] = LXColor.add(LXColor.add(LXColor.CLEAR, dst[i], dstAlpha), src[i], srcAlpha);
     }
   }
 
   @Override
-  public void blend(LXBuffer dst, LXBuffer src, double alpha, LXBuffer output, int start, int num) {
+  public void blend(int[] dst, int[] src, double alpha, int[] output, int start, int num) {
     // Multiply the src alpha only by half!
     final int srcAlpha = (int) (alpha * LXColor.BLEND_ALPHA_HALF);
     final int dstAlpha = LXColor.BLEND_ALPHA_FULL - srcAlpha;
     for (int i = start; i < start + num; ++i) {
-      output.getArray()[i] = LXColor.add(LXColor.add(LXColor.CLEAR, dst.getArray()[i], dstAlpha), src.getArray()[i], srcAlpha);
+      output[i] = LXColor.add(LXColor.add(LXColor.CLEAR, dst[i], dstAlpha), src[i], srcAlpha);
     }
   }
 }

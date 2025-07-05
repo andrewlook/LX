@@ -81,7 +81,7 @@ public abstract class LXBlend extends LXModulatorComponent {
     return getName();
   }
 
-//    public void blend(LXBuffer dst, LXBuffer src, double alpha, LXBuffer buffer, LXModel model) {
+//    public void blend(int[] dst, int[] src, double alpha, LXBuffer buffer, LXModel model) {
 //        blend(dst, src, alpha, buffer.getArray(), model);
 //    }
 
@@ -94,7 +94,7 @@ public abstract class LXBlend extends LXModulatorComponent {
    * @param output Output buffer, which may be the same as src or dst
    * @param model  A model which indicates the set of points to blend
    */
-  public abstract void blend(LXBuffer dst, LXBuffer src, double alpha, LXBuffer output, LXModel model);
+  public abstract void blend(int[] dst, int[] src, double alpha, int[] output, LXModel model);
 
   /**
    * Blends the src buffer onto the destination buffer at the specified alpha amount.
@@ -106,7 +106,7 @@ public abstract class LXBlend extends LXModulatorComponent {
    * @param start  Starting index to blend
    * @param num    Number of pixels to blend
    */
-  public abstract void blend(LXBuffer dst, LXBuffer src, double alpha, LXBuffer output, int start, int num);
+  public abstract void blend(int[] dst, int[] src, double alpha, int[] output, int start, int num);
 
   /**
    * Transitions from one buffer to another. By default, this is used by first
@@ -121,8 +121,8 @@ public abstract class LXBlend extends LXModulatorComponent {
    * @param output Output buffer, which may be the same as from or to
    * @param model  The model with points that should be blended
    */
-  public void lerp(LXBuffer from, LXBuffer to, double amt, LXBuffer output, LXModel model) {
-    LXBuffer dst, src;
+  public void lerp(int[] from, int[] to, double amt, int[] output, LXModel model) {
+    int[] dst, src;
     double alpha;
     if (amt <= 0.5) {
       dst = from;

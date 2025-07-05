@@ -21,9 +21,9 @@ package heronarts.lx.blend;
 import heronarts.lx.LX;
 import heronarts.lx.color.LXColor;
 
-public class MultiplyBlendLX extends LXFunctionalBlend {
+public class MultiplyBlend extends LXFunctionalBlend {
 
-  public MultiplyBlendLX(LX lx) {
+  public MultiplyBlend(LX lx) {
     super(lx, LXColor::multiply);
   }
 

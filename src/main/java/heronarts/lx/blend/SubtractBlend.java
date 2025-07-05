@@ -21,9 +21,9 @@ package heronarts.lx.blend;
 import heronarts.lx.LX;
 import heronarts.lx.color.LXColor;
 
-public class SubtractBlendLX extends LXFunctionalBlend {
+public class SubtractBlend extends LXFunctionalBlend {
 
-  public SubtractBlendLX(LX lx) {
+  public SubtractBlend(LX lx) {
     super(lx, LXColor::subtract);
   }
 }
