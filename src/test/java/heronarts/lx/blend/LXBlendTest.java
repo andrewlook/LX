@@ -44,9 +44,9 @@ class LXBlendTest {
 
   @BeforeEach
   void setUp() {
-    src = new ModelIntArrayBuffer(mockLX).unsafeSetArray(TEST_SOURCE);
-    dst = new ModelIntArrayBuffer(mockLX).unsafeSetArray(TEST_DEST);
-    out = new ModelIntArrayBuffer(mockLX).unsafeSetArray(new int[]{
+    src = new ModelIntArrayBuffer(mockLX).setFromIntArray(TEST_SOURCE);
+    dst = new ModelIntArrayBuffer(mockLX).setFromIntArray(TEST_DEST);
+    out = new ModelIntArrayBuffer(mockLX).setFromIntArray(new int[]{
         LXColor.BLACK,
         LXColor.BLACK,
         LXColor.BLACK,

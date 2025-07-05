@@ -18,18 +18,32 @@
 
 package heronarts.lx.buffer;
 
-public interface LXIntArrayBuffer {
-  public int[] getArray();
+public interface LXIntArrayBuffer extends LXBuffer<LXIntArrayBuffer> {
+  int[] getArray();
 
-  public default LXIntArrayBuffer copyTo(LXIntArrayBuffer that) {
-    final int[] array = getArray();
-    System.arraycopy(array, 0, that.getArray(), 0, array.length);
-    return this;
+  default LXIntArrayBuffer copyTo(LXBuffer<?> that) {
+    if (that instanceof LXIntArrayBuffer) {
+      final int[] array = getArray();
+      System.arraycopy(array, 0, ((LXIntArrayBuffer) that).getArray(), 0, array.length);
+    }
+    return self();
   }
 
-  public default LXIntArrayBuffer copyFrom(LXIntArrayBuffer that) {
-    final int[] array = getArray();
-    System.arraycopy(that.getArray(), 0, array, 0, array.length);
+  default LXIntArrayBuffer copyFrom(LXBuffer<?> that) {
+    if (that instanceof LXIntArrayBuffer) {
+      final int[] array = getArray();
+      System.arraycopy(((LXIntArrayBuffer) that).getArray(), 0, array, 0, array.length);
+    }
+    return self();
+  }
+
+  @Override
+  default int[] toIntArray() {
+    return getArray();
+  }
+
+  @Override
+  default LXIntArrayBuffer self() {
     return this;
   }
 }

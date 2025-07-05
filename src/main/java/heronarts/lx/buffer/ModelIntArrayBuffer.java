@@ -50,21 +50,23 @@ public class ModelIntArrayBuffer implements LXIntArrayBuffer {
     lx.addListener(this.modelListener);
   }
 
-  private void initArray(int size) {
-    this.array = new int[size];
-    Arrays.fill(this.array, this.defaultColor);
-  }
-
   public int[] getArray() {
     return this.array;
+  }
+
+  @Override
+  public void initArray(int numPoints) {
+    this.array = new int[numPoints];
+    Arrays.fill(this.array, this.defaultColor);
   }
 
   public void dispose() {
     this.lx.removeListener(this.modelListener);
   }
 
-  public ModelIntArrayBuffer unsafeSetArray(int[] array) {
-    this.array = array;
+  @Override
+  public ModelIntArrayBuffer setFromIntArray(int[] arr) {
+    this.array = arr;
     return this;
   }
 }

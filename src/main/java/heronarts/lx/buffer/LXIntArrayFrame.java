@@ -21,9 +21,7 @@ public class LXIntArrayFrame implements LXIntArrayBuffer {
   public void setModel(LXModel model) {
     this.model = model;
     if ((this.main == null) || (this.main.length != model.size)) {
-      this.main = new int[model.size];
-      this.cue = new int[model.size];
-      this.aux = new int[model.size];
+       this.initArray(model.size);
     }
   }
 
@@ -76,4 +74,18 @@ public class LXIntArrayFrame implements LXIntArrayBuffer {
   public int[] getAux() {
     return this.aux;
   }
+
+  @Override
+  public void initArray(int numPoints) {
+    this.main = new int[model.size];
+    this.cue = new int[model.size];
+    this.aux = new int[model.size];
+  }
+
+  @Override
+  public LXIntArrayFrame setFromIntArray(int[] arr) {
+    throw new RuntimeException("not implemented");
+  }
+
+
 }
