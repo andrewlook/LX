@@ -18,12 +18,8 @@
 
 package heronarts.lx.effect.color;
 
-import heronarts.lx.LX;
-import heronarts.lx.LXCategory;
-import heronarts.lx.LXComponent;
-import heronarts.lx.LXComponentName;
-import heronarts.lx.ModelBuffer;
-import heronarts.lx.blend.LXBlend;
+import heronarts.lx.*;
+import heronarts.lx.blend.LXFunctionalBlend;
 import heronarts.lx.color.LXColor;
 import heronarts.lx.effect.LXEffect;
 import heronarts.lx.effect.color.ColorMaskEffect.Mode;
@@ -43,18 +39,18 @@ public class GradientMaskEffect extends LXEffect {
   public final GradientPattern.Engine engine;
 
   public final EnumParameter<Mode> mode =
-    new EnumParameter<Mode>("Mode", Mode.MULTIPLY)
-    .setDescription("How to apply the color mask");
+      new EnumParameter<Mode>("Mode", Mode.MULTIPLY)
+          .setDescription("How to apply the color mask");
 
   public final CompoundParameter depth =
-    new CompoundParameter("Depth", 1)
-    .setUnits(CompoundParameter.Units.PERCENT_NORMALIZED)
-    .setDescription("Amount of masking to apply");
+      new CompoundParameter("Depth", 1)
+          .setUnits(CompoundParameter.Units.PERCENT_NORMALIZED)
+          .setDescription("Amount of masking to apply");
 
   public final BooleanParameter cueMask =
-    new BooleanParameter("CUE", false)
-    .setMode(BooleanParameter.Mode.MOMENTARY)
-    .setDescription("Directly render the mask");
+      new BooleanParameter("CUE", false)
+          .setMode(BooleanParameter.Mode.MOMENTARY)
+          .setDescription("Directly render the mask");
 
   public GradientMaskEffect(LX lx) {
     super(lx);
@@ -86,7 +82,7 @@ public class GradientMaskEffect extends LXEffect {
 
     // Mask input colors by the results
     if (!cueMask) {
-      final LXBlend.FunctionalBlend.BlendFunction blend = this.mode.getEnum().function;
+      final LXFunctionalBlend.BlendFunction blend = this.mode.getEnum().function;
       for (LXPoint p : model.points) {
         colors[p.index] = blend.apply(colors[p.index], maskColors[p.index], alpha);
       }

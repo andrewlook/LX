@@ -32,7 +32,7 @@ public class ModelBuffer implements LXBuffer {
     @Override
     public void modelChanged(LX lx, LXModel model) {
       if (array.length != model.size) {
-        initArray(model);
+        initArray(model.size);
       }
     }
   };
@@ -44,12 +44,12 @@ public class ModelBuffer implements LXBuffer {
   public ModelBuffer(LX lx, int defaultColor) {
     this.lx = lx;
     this.defaultColor = defaultColor;
-    initArray(lx.model);
+    initArray(lx.model.size);
     lx.addListener(this.modelListener);
   }
 
-  private void initArray(LXModel model) {
-    this.array = new int[model.size];
+  private void initArray(int size) {
+    this.array = new int[size];
     Arrays.fill(this.array, this.defaultColor);
   }
 

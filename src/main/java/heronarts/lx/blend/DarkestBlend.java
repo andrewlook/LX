@@ -21,8 +21,8 @@ package heronarts.lx.blend;
 import heronarts.lx.LX;
 import heronarts.lx.color.LXColor;
 
-public class DarkestBlend extends LXBlend.FunctionalBlend {
-  public DarkestBlend(LX lx) {
+public class DarkestBlendLX extends LXFunctionalBlend {
+  public DarkestBlendLX(LX lx) {
     super(lx, LXColor::darkest);
   }
 }

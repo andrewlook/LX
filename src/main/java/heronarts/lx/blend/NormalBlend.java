@@ -21,8 +21,8 @@ package heronarts.lx.blend;
 import heronarts.lx.LX;
 import heronarts.lx.color.LXColor;
 
-public class NormalBlend extends LXBlend.FunctionalBlend {
-  public NormalBlend(LX lx) {
+public class NormalBlendLX extends LXFunctionalBlend {
+  public NormalBlendLX(LX lx) {
     super(lx, LXColor::lerp);
   }
 }
