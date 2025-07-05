@@ -21,48 +21,20 @@ package heronarts.lx.buffer;
 import java.util.Arrays;
 
 import heronarts.lx.LX;
-import heronarts.lx.model.LXModel;
 
-public class ModelArrayBuffer implements LXArrayBuffer {
+public class ModelArrayBuffer extends ModelBuffer {
 
-  private final LX lx;
   private int[] array;
   private final int defaultColor;
-
-  private final LX.Listener modelListener = new LX.Listener() {
-    @Override
-    public void modelChanged(LX lx, LXModel model) {
-      if (array.length != model.size) {
-        initArray(model.size);
-      }
-    }
-  };
 
   public ModelArrayBuffer(LX lx) {
     this(lx, 0);
   }
 
   public ModelArrayBuffer(LX lx, int defaultColor) {
-    this.lx = lx;
+    super(lx);
     this.defaultColor = defaultColor;
     initArray(lx.getModel().size);
-    lx.addListener(this.modelListener);
-  }
-
-  public static LXArrayBuffer shimModelBuffer(LX lx) {
-    return shimModelBuffer(lx, 0);
-  }
-
-  public static LXArrayBuffer shimModelBuffer(LX lx, int defaultColor) {
-    if (SHIM_MODEL_DELEGATE) {
-      return new ModelDelegateBuffer(lx, defaultColor);
-    } else {
-      return new ModelArrayBuffer(lx, defaultColor);
-    }
-  }
-
-  public int[] getArray() {
-    return this.array;
   }
 
   @Override
@@ -71,8 +43,9 @@ public class ModelArrayBuffer implements LXArrayBuffer {
     Arrays.fill(this.array, this.defaultColor);
   }
 
-  public void dispose() {
-    this.lx.removeListener(this.modelListener);
+  @Override
+  public int[] getArray() {
+    return this.array;
   }
 
   @Override

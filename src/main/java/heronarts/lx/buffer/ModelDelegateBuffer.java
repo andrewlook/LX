@@ -24,27 +24,18 @@ import heronarts.lx.model.LXModel;
 /**
  * Decoupling LX model-listening behavior from storage implementation.
  */
-public class ModelDelegateBuffer implements LXArrayBuffer {
+public class ModelDelegateBuffer extends ModelBuffer {
 
-  private final LX lx;
   private final LXBuffer<?> buffer;
-
-  private final LX.Listener modelListener = new LX.Listener() {
-    @Override
-    public void modelChanged(LX lx, LXModel model) {
-      initArray(model.size);
-    }
-  };
 
   /**
    * Provide a generic buffer implementation - if size is already set correctly,
    * our initArray() implementation will check the length first and skip it.
    */
   public ModelDelegateBuffer(LX lx, LXBuffer<?> buf) {
-    this.lx = lx;
+    super(lx);
     this.buffer = buf;
     this.initArray(lx.getModel().size);
-    lx.addListener(this.modelListener);
   }
 
   // Shim constructors - internalize choice of buffer implementation
@@ -54,10 +45,6 @@ public class ModelDelegateBuffer implements LXArrayBuffer {
 
   public ModelDelegateBuffer(LX lx) {
     this(lx, 0);
-  }
-
-  public void dispose() {
-    this.lx.removeListener(this.modelListener);
   }
 
   // -----------------------------------------------------------------
