@@ -20,18 +20,45 @@ package heronarts.lx.buffer;
 
 import java.util.Arrays;
 
-public class LXIntArrayBufferImpl implements LXIntArrayBuffer {
+import heronarts.lx.LX;
+import heronarts.lx.model.LXModel;
 
+public class ModelArrayBuffer implements LXArrayBuffer {
+
+  private final LX lx;
   private int[] array;
   private final int defaultColor;
 
-  public LXIntArrayBufferImpl(int numPoints) {
-    this(numPoints, 0);
+  private final LX.Listener modelListener = new LX.Listener() {
+    @Override
+    public void modelChanged(LX lx, LXModel model) {
+      if (array.length != model.size) {
+        initArray(model.size);
+      }
+    }
+  };
+
+  public ModelArrayBuffer(LX lx) {
+    this(lx, 0);
   }
 
-  public LXIntArrayBufferImpl(int numPoints, int defaultColor) {
+  public ModelArrayBuffer(LX lx, int defaultColor) {
+    this.lx = lx;
     this.defaultColor = defaultColor;
-    initArray(numPoints);
+    initArray(lx.getModel().size);
+    lx.addListener(this.modelListener);
+  }
+
+  public static LXArrayBuffer shimModelBuffer(LX lx) {
+    return shimModelBuffer(lx, 0);
+  }
+
+  public static LXArrayBuffer shimModelBuffer(LX lx, int defaultColor) {
+    if (SHIM_MODEL_DELEGATE) {
+      return new ModelDelegateBuffer(lx, defaultColor);
+    } else {
+      return new ModelArrayBuffer(lx, defaultColor);
+    }
   }
 
   public int[] getArray() {
@@ -44,21 +71,13 @@ public class LXIntArrayBufferImpl implements LXIntArrayBuffer {
     Arrays.fill(this.array, this.defaultColor);
   }
 
+  public void dispose() {
+    this.lx.removeListener(this.modelListener);
+  }
+
   @Override
-  public LXIntArrayBufferImpl setFromIntArray(int[] arr) {
+  public ModelArrayBuffer setFromIntArray(int[] arr) {
     this.array = arr;
     return this;
-  }
-
-  public static LXBuffer<?> shimLXBufferImpl(int numPoints) {
-    return shimLXBufferImpl(numPoints, 0);
-  }
-
-  public static LXBuffer<?> shimLXBufferImpl(int numPoints, int defaultColor) {
-    if (SHIM_NDARRAY) {
-      throw new RuntimeException("Not yet implemented");
-    } else {
-      return new LXIntArrayBufferImpl(numPoints, defaultColor);
-    }
   }
 }
