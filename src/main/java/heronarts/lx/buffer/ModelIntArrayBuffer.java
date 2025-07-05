@@ -54,8 +54,7 @@ public class ModelIntArrayBuffer implements LXIntArrayBuffer {
   }
 
   public static LXIntArrayBuffer shimModelBuffer(LX lx, int defaultColor) {
-    boolean useDelegate = false;
-    if (useDelegate) {
+    if (SHIM_MODEL_DELEGATE) {
       return new ModelDelegateBuffer(lx, defaultColor);
     } else {
       return new ModelIntArrayBuffer(lx, defaultColor);

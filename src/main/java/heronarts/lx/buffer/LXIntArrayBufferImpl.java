@@ -20,9 +20,6 @@ package heronarts.lx.buffer;
 
 import java.util.Arrays;
 
-import heronarts.lx.LX;
-import heronarts.lx.model.LXModel;
-
 public class LXIntArrayBufferImpl implements LXIntArrayBuffer {
 
   private int[] array;
@@ -51,5 +48,17 @@ public class LXIntArrayBufferImpl implements LXIntArrayBuffer {
   public LXIntArrayBufferImpl setFromIntArray(int[] arr) {
     this.array = arr;
     return this;
+  }
+
+  public static LXBuffer<?> shimLXBufferImpl(int numPoints) {
+    return shimLXBufferImpl(numPoints, 0);
+  }
+
+  public static LXBuffer<?> shimLXBufferImpl(int numPoints, int defaultColor) {
+    if (SHIM_NDARRAY) {
+      throw new RuntimeException("Not yet implemented");
+    } else {
+      return new LXIntArrayBufferImpl(numPoints, defaultColor);
+    }
   }
 }

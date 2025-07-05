@@ -19,6 +19,15 @@
 package heronarts.lx.buffer;
 
 public interface LXBuffer<T extends LXBuffer<T>> {
+  /**
+   * If true, return "ModelDelegateBuffer" instead of "ModelIntArrayBuffer"
+   */
+  boolean SHIM_MODEL_DELEGATE = false;
+  /**
+   * If true, return "LXNDArrayBuffer" instead of "LXIntArrayBufferImpl"
+   */
+  boolean SHIM_NDARRAY = false;
+
   T copyTo(LXBuffer<?> that);
 
   T copyFrom(LXBuffer<?> that);
