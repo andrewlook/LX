@@ -18,8 +18,16 @@
 
 package heronarts.lx.mixer;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
 import com.google.gson.JsonObject;
-import heronarts.lx.*;
+import heronarts.lx.LX;
+import heronarts.lx.LXComponent;
+import heronarts.lx.LXModulatorComponent;
+import heronarts.lx.LXSerializable;
+import heronarts.lx.ModelBuffer;
 import heronarts.lx.blend.LXBlend;
 import heronarts.lx.effect.LXEffect;
 import heronarts.lx.midi.LXShortMessage;
@@ -34,10 +42,6 @@ import heronarts.lx.parameter.ObjectParameter;
 import heronarts.lx.structure.view.LXViewDefinition;
 import heronarts.lx.structure.view.LXViewEngine;
 import heronarts.lx.utils.LXUtils;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 
 /**
  * Abstract subclass for both groups and channels
@@ -88,7 +92,8 @@ public abstract class LXAbstractChannel extends LXBus implements LXComponent.Ren
    */
   protected final ModelBuffer blendBuffer;
 
-  protected LXBuffer colors;
+  //  protected LXBuffer colors;
+  protected int[] colors;
 
   /**
    * Whether this channel is enabled.
@@ -160,9 +165,10 @@ public abstract class LXAbstractChannel extends LXBus implements LXComponent.Ren
     this.index = index;
     this.label.setDescription("The name of this channel");
     this.blendBuffer = new ModelBuffer(lx);
-    this.colors = new ModelBuffer(lx);
-    // TODO(look): does this need to be copied here (as in the original code), or is it ok to leave uninit'ed?
-    this.colors.copyFrom(this.blendBuffer);
+//    this.colors = new ModelBuffer(lx);
+    this.colors = this.blendBuffer.getArray();
+//    // TODO(look): does this need to be copied here (as in the original code), or is it ok to leave uninit'ed?
+//    this.colors.copyFrom(this.blendBuffer);
 
     this.autoMute.setValue(lx.engine.mixer.autoMuteDefault.isOn());
 
@@ -356,14 +362,13 @@ public abstract class LXAbstractChannel extends LXBus implements LXComponent.Ren
   public final int getIndex() {
     return this.index;
   }
-  
-  LXBuffer getColors() {
-    return this.colors;
-  }
 
-  // TODO(look): is this needed? or is it better to pass around LXBuffer?
-  int[] getColorsAsInt() {
-    return this.getColors().getArray();
+//  LXBuffer getColorsBuffer() {
+//    return this.colors;
+//  }
+
+  int[] getColors() {
+    return this.colors;
   }
 
   @Override

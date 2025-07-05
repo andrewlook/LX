@@ -1,13 +1,13 @@
 /**
  * Copyright 2013- Mark C. Slee, Heron Arts LLC
- * <p>
+ *
  * This file is part of the LX Studio software library. By using
  * LX, you agree to the terms of the LX Studio Software License
  * and Distribution Agreement, available at: http://lx.studio/license
- * <p>
+ *
  * Please note that the LX license is not open-source. The license
  * allows for free, non-commercial use.
- * <p>
+ *
  * HERON ARTS MAKES NO WARRANTY, EXPRESS, IMPLIED, STATUTORY, OR
  * OTHERWISE, AND SPECIFICALLY DISCLAIMS ANY WARRANTY OF
  * MERCHANTABILITY, NON-INFRINGEMENT, OR FITNESS FOR A PARTICULAR
@@ -18,24 +18,39 @@
 
 package heronarts.lx.mixer;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import heronarts.lx.*;
+import heronarts.lx.LX;
+import heronarts.lx.LXBuffer;
+import heronarts.lx.LXComponent;
+import heronarts.lx.LXSerializable;
+import heronarts.lx.ModelBuffer;
 import heronarts.lx.blend.LXBlend;
 import heronarts.lx.midi.LXShortMessage;
 import heronarts.lx.midi.MidiPanic;
 import heronarts.lx.model.LXModel;
 import heronarts.lx.osc.LXOscEngine;
 import heronarts.lx.osc.OscMessage;
-import heronarts.lx.parameter.*;
+import heronarts.lx.parameter.BooleanParameter;
+import heronarts.lx.parameter.BoundedParameter;
+import heronarts.lx.parameter.CompoundParameter;
+import heronarts.lx.parameter.DiscreteParameter;
+import heronarts.lx.parameter.EnumParameter;
+import heronarts.lx.parameter.LXListenableParameter;
+import heronarts.lx.parameter.LXParameter;
+import heronarts.lx.parameter.LXParameterListener;
+import heronarts.lx.parameter.MutableParameter;
+import heronarts.lx.parameter.ObjectParameter;
+import heronarts.lx.parameter.QuantizedTriggerParameter;
+import heronarts.lx.parameter.TriggerParameter;
 import heronarts.lx.pattern.LXPattern;
 import heronarts.lx.utils.LXUtils;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
 
 /**
  * A channel is a single component of the engine that has a set of patterns from
@@ -950,7 +965,6 @@ public class LXPatternEngine implements LXParameterListener, LXSerializable {
   public void loop(LXBuffer blendBuffer, LXModel modelView, double deltaMs) {
     // Initialize buffer colors
     int[] colors = blendBuffer.getArray();
-    LXBuffer colorBuffer = ModelBuffer.copyOf(this.lx, (ModelBuffer) blendBuffer);
 
     // Initialize colors to transparent. This needs to be done no matter
     // what the mixing mode is, because sub-patterns/effects may render
@@ -989,10 +1003,10 @@ public class LXPatternEngine implements LXParameterListener, LXSerializable {
 
           if (patternRender) {
             pattern.compositeBlend.getObject().blend(
-                colorBuffer,
+                colors,
                 pattern.getColors(),
                 patternDamping * pattern.compositeLevel.getValue(),
-                colorBuffer,
+                colors,
                 patternView
             );
           }
@@ -1064,10 +1078,10 @@ public class LXPatternEngine implements LXParameterListener, LXSerializable {
         nextPattern.loop(deltaMs);
         this.transition.loop(deltaMs);
         this.transition.lerp(
-            colorBuffer,
-            this.renderBuffer,
+            colors,
+            this.renderBuffer.getArray(),
             this.transitionProgress,
-            colorBuffer,
+            colors,
             modelView
         );
       } else {

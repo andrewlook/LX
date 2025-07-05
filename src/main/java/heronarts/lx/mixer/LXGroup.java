@@ -18,6 +18,10 @@
 
 package heronarts.lx.mixer;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import heronarts.lx.LX;
 import heronarts.lx.LXModulatorComponent;
 import heronarts.lx.clip.LXClip;
@@ -25,16 +29,12 @@ import heronarts.lx.clip.LXGroupClip;
 import heronarts.lx.effect.LXEffect;
 import heronarts.lx.parameter.LXParameter;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 public class LXGroup extends LXAbstractChannel {
 
   public class Profiler extends LXAbstractChannel.Profiler {
     public long compositeNanos;
   }
-  
+
   @Override
   protected LXModulatorComponent.Profiler constructProfiler() {
     return new Profiler();
@@ -116,7 +116,8 @@ public class LXGroup extends LXAbstractChannel {
     // Because of channel views, channel blends may not touch all pixels, so start
     // by splatting transparency onto the group buffer
     this.blendBuffer.copyFrom(this.lx.engine.mixer.backgroundTransparent);
-    this.colors.copyFrom(this.blendBuffer);
+    this.colors = this.blendBuffer.getArray();
+//    this.colors.copyFrom(this.blendBuffer);
 
     // Blend all channels that are enabled.
     for (LXChannel channel : this.channels) {

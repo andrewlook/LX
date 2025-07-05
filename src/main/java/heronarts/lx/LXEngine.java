@@ -18,6 +18,18 @@
 
 package heronarts.lx;
 
+import java.io.File;
+import java.net.SocketException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import com.google.gson.JsonObject;
 import heronarts.lx.audio.LXAudioEngine;
 import heronarts.lx.clip.LXClipEngine;
@@ -46,13 +58,6 @@ import heronarts.lx.snapshot.LXSnapshotEngine;
 import heronarts.lx.structure.LXFixture;
 import heronarts.lx.structure.view.LXViewDefinition;
 
-import java.io.File;
-import java.net.SocketException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * The engine is the core class that runs the internal animations. An engine is
@@ -176,7 +181,7 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
         }
       }
     }
-    
+
     Output(LX lx) {
       super(lx);
       this.gammaMode.setValue(GammaMode.DIRECT);
@@ -256,7 +261,7 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
     }
 
     public void copyFrom(Frame that) {
-      setModel(that.model);
+//      setModel(that.model);
       this.cueOn = that.cueOn;
       this.auxOn = that.auxOn;
       System.arraycopy(that.main.getArray(), 0, this.main.getArray(), 0, this.main.getArray().length);

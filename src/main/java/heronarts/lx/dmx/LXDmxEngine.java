@@ -29,7 +29,6 @@ import java.net.SocketException;
 import java.util.Enumeration;
 
 import com.google.gson.JsonObject;
-
 import heronarts.lx.LX;
 import heronarts.lx.LXComponent;
 import heronarts.lx.color.LXColor;
@@ -48,12 +47,12 @@ public class LXDmxEngine extends LXComponent {
   public final static String DEFAULT_ARTNET_HOST = "0.0.0.0";
 
   public enum ByteOrder {
-    RGB(0,1,2),
-    RBG(0,2,1),
-    GRB(1,0,2),
-    GBR(2,0,1),
-    BRG(1,2,0),
-    BGR(2,1,0);
+    RGB(0, 1, 2),
+    RBG(0, 2, 1),
+    GRB(1, 0, 2),
+    GBR(2, 0, 1),
+    BRG(1, 2, 0),
+    BGR(2, 1, 0);
 
     public final int r, g, b;
 
@@ -65,33 +64,33 @@ public class LXDmxEngine extends LXComponent {
   }
 
   public final EnumParameter<IOState> artNetReceiveState =
-    new EnumParameter<IOState>("Art-Net RX State", IOState.STOPPED)
-    .setMappable(false)
-    .setDescription("The state of the Art-Net receiver");
+      new EnumParameter<IOState>("Art-Net RX State", IOState.STOPPED)
+          .setMappable(false)
+          .setDescription("The state of the Art-Net receiver");
 
   public final BooleanParameter artNetReceiveActive =
-    new BooleanParameter("Art-Net Active", false)
-    .setMappable(false)
-    .setDescription("Enables or disables Art-Net DMX input");
+      new BooleanParameter("Art-Net Active", false)
+          .setMappable(false)
+          .setDescription("Enables or disables Art-Net DMX input");
 
   public final StringParameter artNetReceiveHost =
-    new StringParameter("Art-Net Host", DEFAULT_ARTNET_HOST)
-    .setDescription("Hostname to which Art-Net receiver socket is bound");
+      new StringParameter("Art-Net Host", DEFAULT_ARTNET_HOST)
+          .setDescription("Hostname to which Art-Net receiver socket is bound");
 
   public final DiscreteParameter artNetReceivePort =
-    new DiscreteParameter("Art-Net RX Port", ArtNetDatagram.ARTNET_PORT, 1, 65535)
-    .setDescription("UDP port on which the engine listens for Art-Net")
-    .setMappable(false)
-    .setUnits(LXParameter.Units.INTEGER);
+      new DiscreteParameter("Art-Net RX Port", ArtNetDatagram.ARTNET_PORT, 1, 65535)
+          .setDescription("UDP port on which the engine listens for Art-Net")
+          .setMappable(false)
+          .setUnits(LXParameter.Units.INTEGER);
 
   public final TriggerParameter artNetActivity =
-    new TriggerParameter("Art-Net Activity")
-    .setMappable(false)
-    .setDescription("Triggers when art-net input is received");
+      new TriggerParameter("Art-Net Activity")
+          .setMappable(false)
+          .setDescription("Triggers when art-net input is received");
 
   public final BooleanParameter artNetLog =
-    new BooleanParameter("Log Art-Net Activity", false)
-    .setDescription("Whether to write Art-Net activity to the log");
+      new BooleanParameter("Log Art-Net Activity", false)
+          .setDescription("Whether to write Art-Net activity to the log");
 
   private ArtNetReceiver artNetReceiver = null;
 
@@ -99,7 +98,7 @@ public class LXDmxEngine extends LXComponent {
   public static final int MAX_UNIVERSE = 512;
 
   private final byte[][] data =
-    new byte[MAX_UNIVERSE][ArtNetDatagram.MAX_DATA_LENGTH];
+      new byte[MAX_UNIVERSE][ArtNetDatagram.MAX_DATA_LENGTH];
 
   private DatagramSocket artPollSocket;
 
@@ -180,10 +179,10 @@ public class LXDmxEngine extends LXComponent {
 
   public int getColor(int universe, int channel, ByteOrder byteOrder) {
     return LXColor.rgba(
-      this.data[universe][channel + byteOrder.r],
-      this.data[universe][channel + byteOrder.g],
-      this.data[universe][channel + byteOrder.b],
-      0xff
+        this.data[universe][channel + byteOrder.r],
+        this.data[universe][channel + byteOrder.g],
+        this.data[universe][channel + byteOrder.b],
+        0xff
     );
   }
 
@@ -213,8 +212,8 @@ public class LXDmxEngine extends LXComponent {
 
     private byte[] constructArtPollReply() {
       final Inet4Address localAddress =
-        (this.socket.getLocalAddress() instanceof Inet4Address inet4) ?
-          inet4 : getLocalhostIPv4();
+          (this.socket.getLocalAddress() instanceof Inet4Address inet4) ?
+              inet4 : getLocalhostIPv4();
       if (localAddress == null) {
         return null;
       }
@@ -225,33 +224,33 @@ public class LXDmxEngine extends LXComponent {
       final ByteArrayOutputStream buffer = new ByteArrayOutputStream(207);
       try {
         buffer.write(ArtNetDatagram.HEADER);
-        buffer.write(new byte[] {
-          0x00, 0x21, // OpPollReply
-          ip[0], ip[1], ip[2], ip[3], // IP
-          (byte) (port & 0xff), (byte) ((port >>> 8) & 0xff), // Port
-          0x00, 0x01, // Firmware
-          0x00, 0x00, // NetSwitch, SubSwitch
-          0x00, 0x00, // OEM
-          0x00, // UBEA
-          0x00, // Status1
-          0x00, 0x00 // ESTA
+        buffer.write(new byte[]{
+            0x00, 0x21, // OpPollReply
+            ip[0], ip[1], ip[2], ip[3], // IP
+            (byte) (port & 0xff), (byte) ((port >>> 8) & 0xff), // Port
+            0x00, 0x01, // Firmware
+            0x00, 0x00, // NetSwitch, SubSwitch
+            0x00, 0x00, // OEM
+            0x00, // UBEA
+            0x00, // Status1
+            0x00, 0x00 // ESTA
         });
         buffer.write(byteStr(18, "Chromatik")); // PortName
         buffer.write(byteStr(64, "Chromatik Digital Lighting Workstation - " + LX.VERSION)); // LongName
         buffer.write(byteStr(64, "#0001 [0000] Chromatik Status OK")); // NodeReport
-        buffer.write(new byte[] {
-          0x00, 0x04, // NumPorts
-          (byte) 0x80, (byte) 0x80, (byte) 0x80, (byte) 0x80, // PortTypes (output DMX)
-          0x00, 0x00, 0x00, 0x00, // GoodInput
-          (byte) 0x80, (byte) 0x80, (byte) 0x80, (byte) 0x80, // GoodOutput
-          0x00, 0x00, 0x00, 0x00, // SwIn
-          0x00, 0x01, 0x02, 0x03, // SwOut
-          StreamingACNDatagram.DEFAULT_PRIORITY, // AcnPriority
-          0x00, // SwMacro
-          0x00, // SwRemote
-          0x00, 0x00, 0x00, // Spare
-          0x02, // Style (media server)
-          0x00, 0x00, 0x00, 0x00, 0x00, 0x00 // MAC unspecified
+        buffer.write(new byte[]{
+            0x00, 0x04, // NumPorts
+            (byte) 0x80, (byte) 0x80, (byte) 0x80, (byte) 0x80, // PortTypes (output DMX)
+            0x00, 0x00, 0x00, 0x00, // GoodInput
+            (byte) 0x80, (byte) 0x80, (byte) 0x80, (byte) 0x80, // GoodOutput
+            0x00, 0x00, 0x00, 0x00, // SwIn
+            0x00, 0x01, 0x02, 0x03, // SwOut
+            StreamingACNDatagram.DEFAULT_PRIORITY, // AcnPriority
+            0x00, // SwMacro
+            0x00, // SwRemote
+            0x00, 0x00, 0x00, // Spare
+            0x02, // Style (media server)
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00 // MAC unspecified
         });
       } catch (IOException iox) {
         error(iox, "Failed to create Art Poll Reply");
@@ -265,7 +264,9 @@ public class LXDmxEngine extends LXComponent {
       byte[] bytes = new byte[len];
       int i = 0;
       for (byte b : str.getBytes()) {
-        bytes[i++] = b;
+        if (i < len) {
+          bytes[i++] = b;
+        }
       }
       return bytes;
     }
@@ -323,8 +324,8 @@ public class LXDmxEngine extends LXComponent {
           artNetActivity.trigger();
 
           final int opcode =
-            (artNetData[offset + ArtNetDatagram.OPCODE_LSB] & 0xff) |
-            ((artNetData[offset + ArtNetDatagram.OPCODE_MSB] & 0xff) << 8);
+              (artNetData[offset + ArtNetDatagram.OPCODE_LSB] & 0xff) |
+                  ((artNetData[offset + ArtNetDatagram.OPCODE_MSB] & 0xff) << 8);
 
           switch (opcode) {
             case ArtNetDatagram.OPCODE_POLL -> receivePoll(packet, artNetData, offset);
@@ -405,8 +406,8 @@ public class LXDmxEngine extends LXComponent {
       final int dmxOffset = offset + ArtNetDatagram.ARTNET_HEADER_LENGTH;
 
       final int universe =
-        (artNetData[offset + ArtNetDatagram.UNIVERSE_LSB] & 0xff) |
-        ((artNetData[offset + ArtNetDatagram.UNIVERSE_MSB] & 0xff) << 8);
+          (artNetData[offset + ArtNetDatagram.UNIVERSE_LSB] & 0xff) |
+              ((artNetData[offset + ArtNetDatagram.UNIVERSE_MSB] & 0xff) << 8);
 
       if (universe >= MAX_UNIVERSE) {
         error("Ignoring ArtDmx packet, universe exceeds max: " + universe);
@@ -414,8 +415,8 @@ public class LXDmxEngine extends LXComponent {
       }
 
       final int dataLength =
-        (artNetData[offset + ArtNetDatagram.DATA_LENGTH_LSB] & 0xff) |
-        ((artNetData[offset + ArtNetDatagram.DATA_LENGTH_MSB] & 0xff) << 8);
+          (artNetData[offset + ArtNetDatagram.DATA_LENGTH_LSB] & 0xff) |
+              ((artNetData[offset + ArtNetDatagram.DATA_LENGTH_MSB] & 0xff) << 8);
 
       System.arraycopy(artNetData, dmxOffset, data[universe], 0, dataLength);
 

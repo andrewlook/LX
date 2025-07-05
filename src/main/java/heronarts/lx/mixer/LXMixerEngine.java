@@ -18,10 +18,25 @@
 
 package heronarts.lx.mixer;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import heronarts.lx.*;
+import heronarts.lx.LX;
+import heronarts.lx.LXBuffer;
+import heronarts.lx.LXComponent;
+import heronarts.lx.LXDeviceComponent;
+import heronarts.lx.LXEngine;
+import heronarts.lx.LXRegistry;
+import heronarts.lx.LXSerializable;
+import heronarts.lx.ModelBuffer;
 import heronarts.lx.blend.AddBlend;
 import heronarts.lx.blend.LXBlend;
 import heronarts.lx.clip.LXClip;
@@ -31,17 +46,14 @@ import heronarts.lx.model.LXModel;
 import heronarts.lx.osc.LXOscComponent;
 import heronarts.lx.osc.LXOscEngine;
 import heronarts.lx.osc.OscMessage;
-import heronarts.lx.parameter.*;
+import heronarts.lx.parameter.BooleanParameter;
+import heronarts.lx.parameter.CompoundParameter;
+import heronarts.lx.parameter.DiscreteParameter;
+import heronarts.lx.parameter.LXListenableNormalizedParameter;
+import heronarts.lx.parameter.LXParameter;
+import heronarts.lx.parameter.ObjectParameter;
 import heronarts.lx.pattern.LXPattern;
 import heronarts.lx.utils.LXUtils;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 /**
  * Encapsulation of all the LX channel blending and mixer
@@ -970,6 +982,21 @@ public class LXMixerEngine extends LXComponent implements LXOscComponent {
       this.destination = this.output;
     }
 
+    void blend(LXBlend blend, int[] src, double alpha, LXModel model) {
+      blend.blend(this.destination, new ModelBuffer(lx).setArray(src), alpha, this.output, model);
+      this.destination = this.output;
+    }
+
+    void blend(LXBlend blend, int[] src, double alpha, int start, int num) {
+      blend.blend(this.destination, new ModelBuffer(lx).setArray(src), alpha, this.output, start, num);
+      this.destination = this.output;
+    }
+
+    void transition(LXBlend blend, int[] src, double lerp, LXModel model) {
+      blend.lerp(this.destination, new ModelBuffer(lx).setArray(src), lerp, this.output, model);
+      this.destination = this.output;
+    }
+
     void copyFrom(BlendStack that) {
       System.arraycopy(that.destination.getArray(), 0, this.output.getArray(), 0, that.destination.getArray().length);
       this.destination = this.output;
@@ -990,8 +1017,25 @@ public class LXMixerEngine extends LXComponent implements LXOscComponent {
     this._blendCueCalled = true;
   }
 
+
   public void blendAux(LXBuffer auxColors, LXModel auxView) {
     this.blendStackAux.blend(this.addBlend, auxColors, 1, auxView);
+    this._blendAuxCalled = true;
+  }
+
+  // SHIM
+  public void blendCue(int[] cueColors, LXModel cueView) {
+    ModelBuffer cueBuf = new ModelBuffer(lx);
+    cueBuf.setArray(cueColors);
+    this.blendStackCue.blend(this.addBlend, cueBuf, 1, cueView);
+    this._blendCueCalled = true;
+  }
+
+  // SHIM
+  public void blendAux(int[] auxColors, LXModel auxView) {
+    ModelBuffer auxBuf = new ModelBuffer(lx);
+    auxBuf.setArray(auxColors);
+    this.blendStackAux.blend(this.addBlend, auxBuf, 1, auxView);
     this._blendAuxCalled = true;
   }
 

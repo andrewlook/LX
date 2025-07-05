@@ -76,12 +76,12 @@ public abstract class LXLayeredComponent extends LXModelComponent implements LXL
     return this.buffer;
   }
 
-  public LXBuffer getColors() {
-    return this.getBuffer();
+  public int[] getColors() {
+    return this.getBuffer().getArray();
   }
 
-  public int[] getColorsAsInt() {
-    return this.getBuffer().getArray();
+  public LXBuffer getColorsBuffer() {
+    return this.getBuffer();
   }
 
   protected LXLayeredComponent setBuffer(LXDeviceComponent component) {

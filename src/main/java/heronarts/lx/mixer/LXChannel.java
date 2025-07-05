@@ -18,6 +18,10 @@
 
 package heronarts.lx.mixer;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
 import com.google.gson.JsonObject;
 import heronarts.lx.LX;
 import heronarts.lx.LXComponent;
@@ -30,10 +34,6 @@ import heronarts.lx.osc.OscMessage;
 import heronarts.lx.parameter.BooleanParameter;
 import heronarts.lx.parameter.MutableParameter;
 import heronarts.lx.pattern.LXPattern;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 
 /**
  * A channel is a single component of the engine that has a set of patterns from
@@ -395,7 +395,7 @@ public class LXChannel extends LXAbstractChannel implements LXPatternEngine.Cont
    * Activates the given pattern, which must belong to this channel. Transition
    * can be optionally skipped
    *
-   * @param pattern Pattern to activate
+   * @param pattern        Pattern to activate
    * @param skipTransition Skip over a transition
    * @return this
    */
@@ -476,8 +476,8 @@ public class LXChannel extends LXAbstractChannel implements LXPatternEngine.Cont
     }
 
     // Run the pattern engine
-    this.colors = this.blendBuffer; // TODO(look): is it ok to swap reference rather than copy?
-//    this.colors = this.blendBuffer.getArray();
+//    this.colors = this.blendBuffer; // TODO(look): is it ok to swap reference rather than copy?
+    this.colors = this.blendBuffer.getArray();
     this.patternEngine.loop(this.blendBuffer, getModelView(), deltaMs);
     this.profiler.loopNanos = System.nanoTime() - loopStart;
 

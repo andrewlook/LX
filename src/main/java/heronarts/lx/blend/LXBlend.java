@@ -22,6 +22,7 @@ import heronarts.lx.LX;
 import heronarts.lx.LXBuffer;
 import heronarts.lx.LXComponent;
 import heronarts.lx.LXModulatorComponent;
+import heronarts.lx.ModelBuffer;
 import heronarts.lx.model.LXModel;
 
 /**
@@ -81,9 +82,9 @@ public abstract class LXBlend extends LXModulatorComponent {
     return getName();
   }
 
-//    public void blend(LXBuffer dst, LXBuffer src, double alpha, LXBuffer buffer, LXModel model) {
-//        blend(dst, src, alpha, buffer.getArray(), model);
-//    }
+  public void blend(int[] dst, int[] src, double alpha, int[] output, LXModel model) {
+    blend(new ModelBuffer(lx).setArray(dst), new ModelBuffer(lx).setArray(src), alpha, new ModelBuffer(lx).setArray(output), model);
+  }
 
   /**
    * Blends the src buffer onto the destination buffer at the specified alpha amount.
@@ -123,6 +124,21 @@ public abstract class LXBlend extends LXModulatorComponent {
    */
   public void lerp(LXBuffer from, LXBuffer to, double amt, LXBuffer output, LXModel model) {
     LXBuffer dst, src;
+    double alpha;
+    if (amt <= 0.5) {
+      dst = from;
+      src = to;
+      alpha = amt * 2.;
+    } else {
+      dst = to;
+      src = from;
+      alpha = (1 - amt) * 2.;
+    }
+    blend(dst, src, alpha, output, model);
+  }
+
+  public void lerp(int[] from, int[] to, double amt, int[] output, LXModel model) {
+    int[] dst, src;
     double alpha;
     if (amt <= 0.5) {
       dst = from;
