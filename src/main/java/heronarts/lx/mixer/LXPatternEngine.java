@@ -30,7 +30,7 @@ import heronarts.lx.LX;
 import heronarts.lx.LXComponent;
 import heronarts.lx.LXSerializable;
 import heronarts.lx.blend.LXBlend;
-import heronarts.lx.buffer.LXArrayBuffer;
+import heronarts.lx.buffer.LXBuffer;
 import heronarts.lx.buffer.ModelArrayBuffer;
 import heronarts.lx.midi.LXShortMessage;
 import heronarts.lx.midi.MidiPanic;
@@ -962,7 +962,7 @@ public class LXPatternEngine implements LXParameterListener, LXSerializable {
     }
   }
 
-  public void loop(LXArrayBuffer blendBuffer, LXModel modelView, double deltaMs) {
+  public void loop(LXBuffer<?> blendBuffer, LXModel modelView, double deltaMs) {
     // Initialize buffer colors
     int[] colors = blendBuffer.getArray();
 
