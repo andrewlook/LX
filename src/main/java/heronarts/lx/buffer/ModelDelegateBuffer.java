@@ -24,7 +24,7 @@ import heronarts.lx.model.LXModel;
 /**
  * Decoupling LX model-listening behavior from storage implementation.
  */
-public class ModelDelegateBuffer implements LXIntArrayBuffer {
+public class ModelDelegateBuffer implements LXArrayBuffer {
 
   private final LX lx;
   private final LXBuffer<?> buffer;
@@ -49,8 +49,9 @@ public class ModelDelegateBuffer implements LXIntArrayBuffer {
 
   // Shim constructors - internalize choice of buffer implementation
   public ModelDelegateBuffer(LX lx, int defaultColor) {
-    this(lx, new LXIntArrayBufferImpl(lx.getModel().size, defaultColor));
+    this(lx, new LXArrayBufferImpl(lx.getModel().size, defaultColor));
   }
+
   public ModelDelegateBuffer(LX lx) {
     this(lx, 0);
   }

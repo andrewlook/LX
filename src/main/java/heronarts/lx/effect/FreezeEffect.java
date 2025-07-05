@@ -22,7 +22,7 @@ import heronarts.lx.LX;
 import heronarts.lx.LXCategory;
 import heronarts.lx.LXComponent;
 import heronarts.lx.blend.LXFunctionalBlend;
-import heronarts.lx.buffer.ModelIntArrayBuffer;
+import heronarts.lx.buffer.ModelArrayBuffer;
 import heronarts.lx.color.LXColor;
 import heronarts.lx.model.LXPoint;
 import heronarts.lx.modulator.Interval;
@@ -60,7 +60,7 @@ public class FreezeEffect extends LXEffect {
     }
   }
 
-  private final ModelIntArrayBuffer buffer = new ModelIntArrayBuffer(lx);
+  private final ModelArrayBuffer buffer = new ModelArrayBuffer(lx);
 
   public final Interval interval = new Interval();
 

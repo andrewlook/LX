@@ -23,7 +23,7 @@ import heronarts.lx.LXCategory;
 import heronarts.lx.LXComponent;
 import heronarts.lx.LXComponentName;
 import heronarts.lx.blend.LXFunctionalBlend;
-import heronarts.lx.buffer.ModelIntArrayBuffer;
+import heronarts.lx.buffer.ModelArrayBuffer;
 import heronarts.lx.color.LXColor;
 import heronarts.lx.effect.LXEffect;
 import heronarts.lx.model.LXPoint;
@@ -60,7 +60,7 @@ public class SoundObjectEffect extends LXEffect {
 
   public final SoundObjectPattern.Engine engine;
 
-  private final ModelIntArrayBuffer blendBuffer;
+  private final ModelArrayBuffer blendBuffer;
 
   public final EnumParameter<MaskMode> maskMode =
       new EnumParameter<MaskMode>("Mode", MaskMode.MULTIPLY)
@@ -79,7 +79,7 @@ public class SoundObjectEffect extends LXEffect {
   public SoundObjectEffect(LX lx) {
     super(lx);
     this.engine = new SoundObjectPattern.Engine(lx);
-    this.blendBuffer = new ModelIntArrayBuffer(lx);
+    this.blendBuffer = new ModelArrayBuffer(lx);
 
     addParameter("baseSize", this.engine.baseSize);
     addParameter("signalToSize", this.engine.signalToSize);

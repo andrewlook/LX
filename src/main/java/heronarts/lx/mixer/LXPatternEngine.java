@@ -30,8 +30,8 @@ import heronarts.lx.LX;
 import heronarts.lx.LXComponent;
 import heronarts.lx.LXSerializable;
 import heronarts.lx.blend.LXBlend;
-import heronarts.lx.buffer.LXIntArrayBuffer;
-import heronarts.lx.buffer.ModelIntArrayBuffer;
+import heronarts.lx.buffer.LXArrayBuffer;
+import heronarts.lx.buffer.ModelArrayBuffer;
 import heronarts.lx.midi.LXShortMessage;
 import heronarts.lx.midi.MidiPanic;
 import heronarts.lx.model.LXModel;
@@ -211,7 +211,7 @@ public class LXPatternEngine implements LXParameterListener, LXSerializable {
   /**
    * This is a local buffer used to render a secondary pattern
    */
-  protected final ModelIntArrayBuffer renderBuffer;
+  protected final ModelArrayBuffer renderBuffer;
 
   private double autoCycleProgress = 0;
   private double transitionProgress = 0;
@@ -245,7 +245,7 @@ public class LXPatternEngine implements LXParameterListener, LXSerializable {
     this.component = component;
     this.container = (Container) component;
 
-    this.renderBuffer = new ModelIntArrayBuffer(lx);
+    this.renderBuffer = new ModelArrayBuffer(lx);
 
     this.launchPatternCycle =
         new QuantizedTriggerParameter.Launch(this.lx, "Launch Pattern Cycle", this.triggerPatternCycle::trigger)
@@ -962,7 +962,7 @@ public class LXPatternEngine implements LXParameterListener, LXSerializable {
     }
   }
 
-  public void loop(LXIntArrayBuffer blendBuffer, LXModel modelView, double deltaMs) {
+  public void loop(LXArrayBuffer blendBuffer, LXModel modelView, double deltaMs) {
     // Initialize buffer colors
     int[] colors = blendBuffer.getArray();
 

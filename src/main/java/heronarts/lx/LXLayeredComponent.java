@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import heronarts.lx.buffer.LXIntArrayBuffer;
+import heronarts.lx.buffer.LXArrayBuffer;
 import heronarts.lx.color.LXColor;
 import heronarts.lx.color.LXPalette;
 import heronarts.lx.model.LXModel;
@@ -35,7 +35,7 @@ import heronarts.lx.model.LXPoint;
  */
 public abstract class LXLayeredComponent extends LXModelComponent implements LXLoopTask {
 
-  private LXIntArrayBuffer buffer = null;
+  private LXArrayBuffer buffer = null;
 
   protected int[] colors = null;
 
@@ -48,22 +48,22 @@ public abstract class LXLayeredComponent extends LXModelComponent implements LXL
   protected final LXPalette palette;
 
   protected LXLayeredComponent(LX lx) {
-    this(lx, null, (LXIntArrayBuffer) null);
+    this(lx, null, (LXArrayBuffer) null);
   }
 
   protected LXLayeredComponent(LX lx, String label) {
-    this(lx, label, (LXIntArrayBuffer) null);
+    this(lx, label, (LXArrayBuffer) null);
   }
 
   protected LXLayeredComponent(LX lx, LXDeviceComponent component) {
     this(lx, null, component.getBuffer());
   }
 
-  protected LXLayeredComponent(LX lx, LXIntArrayBuffer buffer) {
+  protected LXLayeredComponent(LX lx, LXArrayBuffer buffer) {
     this(lx, null, buffer);
   }
 
-  protected LXLayeredComponent(LX lx, String label, LXIntArrayBuffer buffer) {
+  protected LXLayeredComponent(LX lx, String label, LXArrayBuffer buffer) {
     super(lx, label);
     this.palette = lx.engine.palette;
     if (buffer != null) {
@@ -73,7 +73,7 @@ public abstract class LXLayeredComponent extends LXModelComponent implements LXL
     addArray("layer", this.layers);
   }
 
-  protected LXIntArrayBuffer getBuffer() {
+  protected LXArrayBuffer getBuffer() {
     return this.buffer;
   }
 
@@ -85,7 +85,7 @@ public abstract class LXLayeredComponent extends LXModelComponent implements LXL
     return setBuffer(component.getBuffer());
   }
 
-  public LXLayeredComponent setBuffer(LXIntArrayBuffer buffer) {
+  public LXLayeredComponent setBuffer(LXArrayBuffer buffer) {
     this.buffer = buffer;
     this.colors = buffer.getArray();
     return this;

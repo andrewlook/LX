@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.google.gson.JsonObject;
 import heronarts.lx.audio.LXAudioEngine;
-import heronarts.lx.buffer.LXIntArrayBuffer;
+import heronarts.lx.buffer.LXArrayBuffer;
 import heronarts.lx.clip.LXClipEngine;
 import heronarts.lx.color.LXColor;
 import heronarts.lx.color.LXPalette;
@@ -1205,7 +1205,7 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
   // Buffer for a single frame, which was rendered with
   // a particular model state, has a main view along with
   // a cue and auxiliary view, as well as cue/aux view state
-  public static class Frame implements LXIntArrayBuffer {
+  public static class Frame implements LXArrayBuffer {
     private LXModel model;
     public int[] main = null;
     public int[] cue = null;

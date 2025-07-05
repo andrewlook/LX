@@ -21,7 +21,7 @@ package heronarts.lx.effect;
 import heronarts.lx.LX;
 import heronarts.lx.LXCategory;
 import heronarts.lx.LXComponent;
-import heronarts.lx.buffer.ModelIntArrayBuffer;
+import heronarts.lx.buffer.ModelArrayBuffer;
 import heronarts.lx.color.LXColor;
 import heronarts.lx.model.LXPoint;
 import heronarts.lx.parameter.CompoundParameter;
@@ -71,11 +71,11 @@ public class BlurEffect extends LXEffect {
       new EnumParameter<Mode>("Mode", Mode.MIX)
           .setDescription("Which blending mode the blur uses");
 
-  private final ModelIntArrayBuffer blurBuffer;
+  private final ModelArrayBuffer blurBuffer;
 
   public BlurEffect(LX lx) {
     super(lx);
-    this.blurBuffer = new ModelIntArrayBuffer(lx, LXColor.BLACK);
+    this.blurBuffer = new ModelArrayBuffer(lx, LXColor.BLACK);
     addParameter("level", this.level);
     addParameter("decay", this.decay);
     addParameter("decayFactor", this.decayFactor);
