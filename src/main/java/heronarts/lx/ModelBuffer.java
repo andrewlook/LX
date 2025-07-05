@@ -18,9 +18,9 @@
 
 package heronarts.lx;
 
-import heronarts.lx.model.LXModel;
-
 import java.util.Arrays;
+
+import heronarts.lx.model.LXModel;
 
 public class ModelBuffer implements LXBuffer {
 
@@ -31,11 +31,11 @@ public class ModelBuffer implements LXBuffer {
   private final LX.Listener modelListener = new LX.Listener() {
     @Override
     public void modelChanged(LX lx, LXModel model) {
-      synchronized (array) {
-        if (array.length != model.size) {
-          initArray(model.size);
-        }
-      }
+//      synchronized (array) {
+//        if (array.length != model.size) {
+//          initArray(model.size);
+//        }
+//      }
     }
   };
 
