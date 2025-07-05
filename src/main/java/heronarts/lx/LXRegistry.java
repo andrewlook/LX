@@ -18,8 +18,49 @@
 
 package heronarts.lx;
 
-import com.google.gson.*;
-import heronarts.lx.blend.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardWatchEventKinds;
+import java.nio.file.WatchEvent;
+import java.nio.file.WatchKey;
+import java.nio.file.WatchService;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.Objects;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonSyntaxException;
+import heronarts.lx.blend.AddBlend;
+import heronarts.lx.blend.BurnBlend;
+import heronarts.lx.blend.DarkestBlend;
+import heronarts.lx.blend.DifferenceBlend;
+import heronarts.lx.blend.DissolveBlend;
+import heronarts.lx.blend.DodgeBlend;
+import heronarts.lx.blend.HighlightBlend;
+import heronarts.lx.blend.LXBlend;
+import heronarts.lx.blend.LightestBlend;
+import heronarts.lx.blend.MultiplyBlend;
+import heronarts.lx.blend.NormalBlend;
+import heronarts.lx.blend.SpotlightBlend;
+import heronarts.lx.blend.SubtractBlend;
 import heronarts.lx.effect.LXEffect;
 import heronarts.lx.mixer.LXAbstractChannel;
 import heronarts.lx.mixer.LXChannel;
@@ -28,13 +69,6 @@ import heronarts.lx.pattern.LXPattern;
 import heronarts.lx.pattern.PatternRack;
 import heronarts.lx.structure.LXFixture;
 
-import java.io.*;
-import java.nio.file.*;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
 
 /**
  * Registry container for content classes used by the LX implementation

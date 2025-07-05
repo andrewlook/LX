@@ -31,8 +31,10 @@ public class ModelBuffer implements LXBuffer {
   private final LX.Listener modelListener = new LX.Listener() {
     @Override
     public void modelChanged(LX lx, LXModel model) {
-      if (array.length != model.size) {
-        initArray(model.size);
+      synchronized (array) {
+        if (array.length != model.size) {
+          initArray(model.size);
+        }
       }
     }
   };
@@ -63,9 +65,12 @@ public class ModelBuffer implements LXBuffer {
     return buf;
   }
 
-  public static ModelBuffer copyOf(ModelBuffer that) {
-    ModelBuffer buf = new ModelBuffer(that.lx, that.defaultColor);
-    return (ModelBuffer) buf.copyFrom(that);
+  public static ModelBuffer copyOf(LX lx, ModelBuffer that) {
+    ModelBuffer buf = new ModelBuffer(lx, that.defaultColor);
+    if (buf.getArray().length > 0) {
+      return (ModelBuffer) buf.copyFrom(that);
+    }
+    return buf;
   }
 
   private void initArray(int size) {
