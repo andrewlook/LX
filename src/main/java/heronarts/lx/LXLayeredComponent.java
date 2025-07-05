@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import heronarts.lx.buffer.LXArrayBuffer;
+import heronarts.lx.buffer.LXBuffer;
 import heronarts.lx.color.LXColor;
 import heronarts.lx.color.LXPalette;
 import heronarts.lx.model.LXModel;
@@ -35,7 +35,7 @@ import heronarts.lx.model.LXPoint;
  */
 public abstract class LXLayeredComponent extends LXModelComponent implements LXLoopTask {
 
-  private LXArrayBuffer buffer = null;
+  private LXBuffer<?> buffer = null;
 
   protected int[] colors = null;
 
@@ -48,22 +48,22 @@ public abstract class LXLayeredComponent extends LXModelComponent implements LXL
   protected final LXPalette palette;
 
   protected LXLayeredComponent(LX lx) {
-    this(lx, null, (LXArrayBuffer) null);
+    this(lx, null, (LXBuffer<?>) null);
   }
 
   protected LXLayeredComponent(LX lx, String label) {
-    this(lx, label, (LXArrayBuffer) null);
+    this(lx, label, (LXBuffer<?>) null);
   }
 
   protected LXLayeredComponent(LX lx, LXDeviceComponent component) {
     this(lx, null, component.getBuffer());
   }
 
-  protected LXLayeredComponent(LX lx, LXArrayBuffer buffer) {
+  protected LXLayeredComponent(LX lx, LXBuffer<?> buffer) {
     this(lx, null, buffer);
   }
 
-  protected LXLayeredComponent(LX lx, String label, LXArrayBuffer buffer) {
+  protected LXLayeredComponent(LX lx, String label, LXBuffer<?> buffer) {
     super(lx, label);
     this.palette = lx.engine.palette;
     if (buffer != null) {
@@ -73,7 +73,7 @@ public abstract class LXLayeredComponent extends LXModelComponent implements LXL
     addArray("layer", this.layers);
   }
 
-  protected LXArrayBuffer getBuffer() {
+  protected LXBuffer<?> getBuffer() {
     return this.buffer;
   }
 
@@ -85,7 +85,7 @@ public abstract class LXLayeredComponent extends LXModelComponent implements LXL
     return setBuffer(component.getBuffer());
   }
 
-  public LXLayeredComponent setBuffer(LXArrayBuffer buffer) {
+  public LXLayeredComponent setBuffer(LXBuffer<?> buffer) {
     this.buffer = buffer;
     this.colors = buffer.getArray();
     return this;
