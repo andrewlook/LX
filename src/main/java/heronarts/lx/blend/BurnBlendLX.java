@@ -21,10 +21,10 @@ package heronarts.lx.blend;
 import heronarts.lx.LX;
 import heronarts.lx.color.LXColor;
 
-public class ScreenBlend extends LXBlend.FunctionalBlend {
+public class BurnBlendLX extends LXFunctionalBlend {
 
-  public ScreenBlend(LX lx) {
-    super(lx, LXColor::screen);
+  public BurnBlendLX(LX lx) {
+    super(lx, LXColor::burn);
   }
 
 }

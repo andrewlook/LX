@@ -21,8 +21,9 @@ package heronarts.lx.blend;
 import heronarts.lx.LX;
 import heronarts.lx.color.LXColor;
 
-public class DifferenceBlend extends LXBlend.FunctionalBlend {
-  public DifferenceBlend(LX lx) {
-    super(lx, LXColor::difference);
+public class ScreenBlendLX extends LXFunctionalBlend {
+
+  public ScreenBlendLX(LX lx) {
+    super(lx, LXColor::screen);
   }
 }

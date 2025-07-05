@@ -21,10 +21,9 @@ package heronarts.lx.blend;
 import heronarts.lx.LX;
 import heronarts.lx.color.LXColor;
 
-public class BurnBlend extends LXBlend.FunctionalBlend {
+public class SpotlightBlendLX extends LXFunctionalBlend {
 
-  public BurnBlend(LX lx) {
-    super(lx, LXColor::burn);
+  public SpotlightBlendLX(LX lx) {
+    super(lx, LXColor::spotlight);
   }
-
 }

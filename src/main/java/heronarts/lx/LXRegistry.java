@@ -18,50 +18,8 @@
 
 package heronarts.lx;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardWatchEventKinds;
-import java.nio.file.WatchEvent;
-import java.nio.file.WatchKey;
-import java.nio.file.WatchService;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.Objects;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonSyntaxException;
-
-import heronarts.lx.blend.AddBlend;
-import heronarts.lx.blend.BurnBlend;
-import heronarts.lx.blend.DarkestBlend;
-import heronarts.lx.blend.DifferenceBlend;
-import heronarts.lx.blend.DissolveBlend;
-import heronarts.lx.blend.DodgeBlend;
-import heronarts.lx.blend.HighlightBlend;
-import heronarts.lx.blend.LXBlend;
-import heronarts.lx.blend.LightestBlend;
-import heronarts.lx.blend.MultiplyBlend;
-import heronarts.lx.blend.NormalBlend;
-import heronarts.lx.blend.SpotlightBlend;
-import heronarts.lx.blend.SubtractBlend;
+import com.google.gson.*;
+import heronarts.lx.blend.*;
 import heronarts.lx.effect.LXEffect;
 import heronarts.lx.mixer.LXAbstractChannel;
 import heronarts.lx.mixer.LXChannel;
@@ -69,6 +27,14 @@ import heronarts.lx.modulator.LXModulator;
 import heronarts.lx.pattern.LXPattern;
 import heronarts.lx.pattern.PatternRack;
 import heronarts.lx.structure.LXFixture;
+
+import java.io.*;
+import java.nio.file.*;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 /**
  * Registry container for content classes used by the LX implementation
@@ -81,36 +47,41 @@ public class LXRegistry implements LXSerializable {
      *
      * @param lx LX instance
      */
-    default public void contentChanged(LX lx) {}
+    default public void contentChanged(LX lx) {
+    }
 
     /**
      * Invoked when the available channel blend implementations are changed
      *
      * @param lx LX instance
      */
-    default public void channelBlendsChanged(LX lx) {}
+    default public void channelBlendsChanged(LX lx) {
+    }
 
     /**
      * Invoked when the available transition blend implementations are changed
      *
      * @param lx instance
      */
-    default public void transitionBlendsChanged(LX lx) {}
+    default public void transitionBlendsChanged(LX lx) {
+    }
 
     /**
      * Invoked when the available crossfader blend implementations are changed
      *
      * @param lx instance
      */
-    default public void crossfaderBlendsChanged(LX lx) {}
+    default public void crossfaderBlendsChanged(LX lx) {
+    }
 
     /**
      * Invoked when the state of an available plugin has changed
      *
-     * @param lx LX instance
+     * @param lx     LX instance
      * @param plugin Plugin wrapper
      */
-    default public void pluginChanged(LX lx, Plugin plugin) {}
+    default public void pluginChanged(LX lx, Plugin plugin) {
+    }
   }
 
   private final List<Listener> listeners = new ArrayList<Listener>();
@@ -133,6 +104,7 @@ public class LXRegistry implements LXSerializable {
   }
 
   private static final List<Class<? extends LXPattern>> DEFAULT_PATTERNS;
+
   static {
     DEFAULT_PATTERNS = new ArrayList<Class<? extends LXPattern>>();
     DEFAULT_PATTERNS.add(heronarts.lx.dmx.DmxPattern.class);
@@ -145,9 +117,12 @@ public class LXRegistry implements LXSerializable {
     DEFAULT_PATTERNS.add(heronarts.lx.pattern.texture.NoisePattern.class);
     DEFAULT_PATTERNS.add(heronarts.lx.pattern.texture.SparklePattern.class);
     DEFAULT_PATTERNS.add(heronarts.lx.pattern.test.TestPattern.class);
-  };
+  }
+
+  ;
 
   private static final List<Class<? extends LXEffect>> DEFAULT_EFFECTS;
+
   static {
     DEFAULT_EFFECTS = new ArrayList<Class<? extends LXEffect>>();
     DEFAULT_EFFECTS.add(heronarts.lx.effect.audio.SoundObjectEffect.class);
@@ -164,9 +139,12 @@ public class LXRegistry implements LXSerializable {
     DEFAULT_EFFECTS.add(heronarts.lx.effect.SparkleEffect.class);
     DEFAULT_EFFECTS.add(heronarts.lx.effect.StrobeEffect.class);
     DEFAULT_EFFECTS.add(heronarts.lx.effect.midi.GateEffect.class);
-  };
+  }
+
+  ;
 
   private static final List<Class<? extends LXModulator>> DEFAULT_MODULATORS;
+
   static {
     DEFAULT_MODULATORS = new ArrayList<Class<? extends LXModulator>>();
     DEFAULT_MODULATORS.add(heronarts.lx.audio.BandFilter.class);
@@ -197,48 +175,54 @@ public class LXRegistry implements LXSerializable {
     DEFAULT_MODULATORS.add(heronarts.lx.modulator.StepSequencer.class);
     DEFAULT_MODULATORS.add(heronarts.lx.modulator.Timer.class);
     DEFAULT_MODULATORS.add(heronarts.lx.modulator.VariableLFO.class);
-  };
+  }
+
+  ;
 
   private static final List<Class<? extends LXBlend>> DEFAULT_CHANNEL_BLENDS;
+
   static {
     DEFAULT_CHANNEL_BLENDS = new ArrayList<Class<? extends LXBlend>>();
-    DEFAULT_CHANNEL_BLENDS.add(AddBlend.class);
-    DEFAULT_CHANNEL_BLENDS.add(MultiplyBlend.class);
-    DEFAULT_CHANNEL_BLENDS.add(SubtractBlend.class);
-    DEFAULT_CHANNEL_BLENDS.add(DifferenceBlend.class);
-    DEFAULT_CHANNEL_BLENDS.add(NormalBlend.class);
-    DEFAULT_CHANNEL_BLENDS.add(DodgeBlend.class);
-    DEFAULT_CHANNEL_BLENDS.add(BurnBlend.class);
-    DEFAULT_CHANNEL_BLENDS.add(HighlightBlend.class);
-    DEFAULT_CHANNEL_BLENDS.add(SpotlightBlend.class);
-    DEFAULT_CHANNEL_BLENDS.add(LightestBlend.class);
-    DEFAULT_CHANNEL_BLENDS.add(DarkestBlend.class);
+    DEFAULT_CHANNEL_BLENDS.add(AddBlendLX.class);
+    DEFAULT_CHANNEL_BLENDS.add(MultiplyBlendLX.class);
+    DEFAULT_CHANNEL_BLENDS.add(SubtractBlendLX.class);
+    DEFAULT_CHANNEL_BLENDS.add(DifferenceBlendLX.class);
+    DEFAULT_CHANNEL_BLENDS.add(NormalBlendLX.class);
+    DEFAULT_CHANNEL_BLENDS.add(DodgeBlendLX.class);
+    DEFAULT_CHANNEL_BLENDS.add(BurnBlendLX.class);
+    DEFAULT_CHANNEL_BLENDS.add(HighlightBlendLX.class);
+    DEFAULT_CHANNEL_BLENDS.add(SpotlightBlendLX.class);
+    DEFAULT_CHANNEL_BLENDS.add(LightestBlendLX.class);
+    DEFAULT_CHANNEL_BLENDS.add(DarkestBlendLX.class);
 
   }
 
   private static final List<Class<? extends LXBlend>> DEFAULT_TRANSITION_BLENDS;
+
   static {
     DEFAULT_TRANSITION_BLENDS = new ArrayList<Class<? extends LXBlend>>();
     DEFAULT_TRANSITION_BLENDS.add(DissolveBlend.class);
-    DEFAULT_TRANSITION_BLENDS.add(AddBlend.class);
-    DEFAULT_TRANSITION_BLENDS.add(MultiplyBlend.class);
-    DEFAULT_TRANSITION_BLENDS.add(LightestBlend.class);
-    DEFAULT_TRANSITION_BLENDS.add(DarkestBlend.class);
-    DEFAULT_TRANSITION_BLENDS.add(DifferenceBlend.class);
+    DEFAULT_TRANSITION_BLENDS.add(AddBlendLX.class);
+    DEFAULT_TRANSITION_BLENDS.add(MultiplyBlendLX.class);
+    DEFAULT_TRANSITION_BLENDS.add(LightestBlendLX.class);
+    DEFAULT_TRANSITION_BLENDS.add(DarkestBlendLX.class);
+    DEFAULT_TRANSITION_BLENDS.add(DifferenceBlendLX.class);
   }
 
   private static final List<Class<? extends LXBlend>> DEFAULT_CROSSFADER_BLENDS;
+
   static {
     DEFAULT_CROSSFADER_BLENDS = new ArrayList<Class<? extends LXBlend>>();
     DEFAULT_CROSSFADER_BLENDS.add(DissolveBlend.class);
-    DEFAULT_CROSSFADER_BLENDS.add(AddBlend.class);
-    DEFAULT_CROSSFADER_BLENDS.add(MultiplyBlend.class);
-    DEFAULT_CROSSFADER_BLENDS.add(LightestBlend.class);
-    DEFAULT_CROSSFADER_BLENDS.add(DarkestBlend.class);
-    DEFAULT_CROSSFADER_BLENDS.add(DifferenceBlend.class);
+    DEFAULT_CROSSFADER_BLENDS.add(AddBlendLX.class);
+    DEFAULT_CROSSFADER_BLENDS.add(MultiplyBlendLX.class);
+    DEFAULT_CROSSFADER_BLENDS.add(LightestBlendLX.class);
+    DEFAULT_CROSSFADER_BLENDS.add(DarkestBlendLX.class);
+    DEFAULT_CROSSFADER_BLENDS.add(DifferenceBlendLX.class);
   }
 
   private static final List<Class<? extends LXFixture>> DEFAULT_FIXTURES;
+
   static {
     DEFAULT_FIXTURES = new ArrayList<Class<? extends LXFixture>>();
     DEFAULT_FIXTURES.add(heronarts.lx.structure.ArcFixture.class);
@@ -246,70 +230,72 @@ public class LXRegistry implements LXSerializable {
     DEFAULT_FIXTURES.add(heronarts.lx.structure.PointFixture.class);
     DEFAULT_FIXTURES.add(heronarts.lx.structure.SpiralFixture.class);
     DEFAULT_FIXTURES.add(heronarts.lx.structure.StripFixture.class);
-  };
+  }
+
+  ;
 
   /**
    * The list of globally registered pattern classes
    */
   private final List<Class<? extends LXPattern>> mutablePatterns =
-    new ArrayList<Class<? extends LXPattern>>(DEFAULT_PATTERNS);
+      new ArrayList<Class<? extends LXPattern>>(DEFAULT_PATTERNS);
 
   public final List<Class<? extends LXPattern>> patterns =
-    Collections.unmodifiableList(this.mutablePatterns);
+      Collections.unmodifiableList(this.mutablePatterns);
 
   private final List<Class<? extends LXEffect>> mutableEffects =
-    new ArrayList<Class<? extends LXEffect>>(DEFAULT_EFFECTS);
+      new ArrayList<Class<? extends LXEffect>>(DEFAULT_EFFECTS);
 
   /**
    * The list of globally registered effects
    */
   public final List<Class<? extends LXEffect>> effects =
-    Collections.unmodifiableList(this.mutableEffects);
+      Collections.unmodifiableList(this.mutableEffects);
 
-  private final List<Class<? extends LXModulator>> mutableModulators=
-    new ArrayList<Class<? extends LXModulator>>(DEFAULT_MODULATORS);
+  private final List<Class<? extends LXModulator>> mutableModulators =
+      new ArrayList<Class<? extends LXModulator>>(DEFAULT_MODULATORS);
 
   /**
    * The list of globally registered effects
    */
   public final List<Class<? extends LXModulator>> modulators =
-    Collections.unmodifiableList(this.mutableModulators);
+      Collections.unmodifiableList(this.mutableModulators);
 
   private final List<Class<? extends LXBlend>> mutableChannelBlends =
-    new ArrayList<Class<? extends LXBlend>>(DEFAULT_CHANNEL_BLENDS);
+      new ArrayList<Class<? extends LXBlend>>(DEFAULT_CHANNEL_BLENDS);
 
   /**
    * The list of globally registered channel blend classes
    */
   public final List<Class<? extends LXBlend>> channelBlends =
-    Collections.unmodifiableList(this.mutableChannelBlends);
+      Collections.unmodifiableList(this.mutableChannelBlends);
 
   private final List<Class<? extends LXBlend>> mutableTransitionBlends =
-    new ArrayList<Class<? extends LXBlend>>(DEFAULT_TRANSITION_BLENDS);
+      new ArrayList<Class<? extends LXBlend>>(DEFAULT_TRANSITION_BLENDS);
 
   /**
    * The list of globally registered transition blend classes
    */
   public final List<Class<? extends LXBlend>> transitionBlends =
-    Collections.unmodifiableList(this.mutableTransitionBlends);
+      Collections.unmodifiableList(this.mutableTransitionBlends);
 
   private final List<Class<? extends LXBlend>> mutableCrossfaderBlends =
-    new ArrayList<Class<? extends LXBlend>>(DEFAULT_CROSSFADER_BLENDS);
+      new ArrayList<Class<? extends LXBlend>>(DEFAULT_CROSSFADER_BLENDS);
 
   /**
    * The list of globally registered crossfader blend classes
    */
   public final List<Class<? extends LXBlend>> crossfaderBlends =
-    Collections.unmodifiableList(this.mutableCrossfaderBlends);
+      Collections.unmodifiableList(this.mutableCrossfaderBlends);
 
   private final List<Class<? extends LXFixture>> mutableFixtures =
-    new ArrayList<Class<? extends LXFixture>>(DEFAULT_FIXTURES);
+      new ArrayList<Class<? extends LXFixture>>(DEFAULT_FIXTURES);
 
   /**
    * List of globally registered fixtures.
    */
   public final List<Class<? extends LXFixture>> fixtures =
-    Collections.unmodifiableList(this.mutableFixtures);
+      Collections.unmodifiableList(this.mutableFixtures);
 
   /**
    * JSON fixture type
@@ -369,7 +355,7 @@ public class LXRegistry implements LXSerializable {
    * The list of globally registered JSON fixture types
    */
   public final List<JsonFixture> jsonFixtures =
-   Collections.unmodifiableList(this.mutableJsonFixtures);
+      Collections.unmodifiableList(this.mutableJsonFixtures);
 
   private final List<JsonFixture.Error> mutableJsonFixtureErrors = new ArrayList<JsonFixture.Error>();
 
@@ -389,7 +375,7 @@ public class LXRegistry implements LXSerializable {
    * Registered plugins
    */
   public final List<Plugin> plugins =
-    Collections.unmodifiableList(this.mutablePlugins);
+      Collections.unmodifiableList(this.mutablePlugins);
 
   public class Plugin implements LXSerializable {
     public final Class<? extends LXPlugin> clazz;
@@ -417,8 +403,8 @@ public class LXRegistry implements LXSerializable {
 
     private boolean isPluginCliEnabled(Class<? extends LXPlugin> clazz) {
       return
-        lx.flags.enabledPlugins.contains(clazz.getName()) ||
-        lx.flags.classpathPlugins.contains(clazz.getName());
+          lx.flags.enabledPlugins.contains(clazz.getName()) ||
+              lx.flags.classpathPlugins.contains(clazz.getName());
     }
 
     private boolean restorePluginEnabled(Class<? extends LXPlugin> clazz) {
@@ -842,8 +828,8 @@ public class LXRegistry implements LXSerializable {
 
     // Make a directory for the package media of this type
     File packageDir = (media == LX.Media.PRESETS) ?
-      this.lx.getMediaFolder(media, true) :
-      this.lx.getMediaFile(media, packageDirName, true);
+        this.lx.getMediaFolder(media, true) :
+        this.lx.getMediaFile(media, packageDirName, true);
 
     // For presets, fork package name after device
     if (media == LX.Media.PRESETS) {
@@ -852,9 +838,9 @@ public class LXRegistry implements LXSerializable {
         entryName = packageDirName + '/' + entryName;
       } else {
         entryName =
-          entryName.substring(0, firstSlash) +
-          '/' + packageDirName +
-          entryName.substring(firstSlash);
+            entryName.substring(0, firstSlash) +
+                '/' + packageDirName +
+                entryName.substring(firstSlash);
       }
     }
 
@@ -875,9 +861,9 @@ public class LXRegistry implements LXSerializable {
     if (!destinationFile.exists()) {
       // Just copy the file over
       Files.copy(
-        jarFile.getInputStream(entry),
-        destinationFile.toPath(),
-        StandardCopyOption.REPLACE_EXISTING
+          jarFile.getInputStream(entry),
+          destinationFile.toPath(),
+          StandardCopyOption.REPLACE_EXISTING
       );
     } else {
 
@@ -886,9 +872,9 @@ public class LXRegistry implements LXSerializable {
 
       // Write to a tmp file, check for changes
       Files.copy(
-        jarFile.getInputStream(entry),
-        tmpFilePath,
-        StandardCopyOption.REPLACE_EXISTING
+          jarFile.getInputStream(entry),
+          tmpFilePath,
+          StandardCopyOption.REPLACE_EXISTING
       );
       if (Files.mismatch(destinationFilePath, tmpFilePath) < 0) {
         // No changes, nuke this tmp file
@@ -899,14 +885,14 @@ public class LXRegistry implements LXSerializable {
         final String timestamp = BACKUP_DATE_FORMAT.format(Calendar.getInstance().getTime());
         final Path backupFilePath = new File(packageDir, entryName + "-" + timestamp + ".backup").toPath();
         Files.move(
-          destinationFilePath,
-          backupFilePath,
-          StandardCopyOption.REPLACE_EXISTING
+            destinationFilePath,
+            backupFilePath,
+            StandardCopyOption.REPLACE_EXISTING
         );
         Files.move(
-          tmpFilePath,
-          destinationFilePath,
-          StandardCopyOption.REPLACE_EXISTING
+            tmpFilePath,
+            destinationFilePath,
+            StandardCopyOption.REPLACE_EXISTING
         );
         LX.error("Package media file conflict, backed up to: " + backupFilePath.toString());
       }
@@ -922,8 +908,8 @@ public class LXRegistry implements LXSerializable {
     try {
       if (destinationFile.exists()) {
         final String suffix =
-          new SimpleDateFormat("yyyy.MM.dd-HH.mm.ss")
-          .format(Calendar.getInstance().getTime());
+            new SimpleDateFormat("yyyy.MM.dd-HH.mm.ss")
+                .format(Calendar.getInstance().getTime());
         destinationFile = lx.getMediaFile(LX.Media.DELETED, pack.jarFile.getName() + "-" + suffix, true);
       }
       Files.move(pack.jarFile.toPath(), destinationFile.toPath(), StandardCopyOption.REPLACE_EXISTING);

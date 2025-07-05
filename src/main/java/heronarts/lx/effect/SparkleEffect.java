@@ -21,7 +21,7 @@ package heronarts.lx.effect;
 import heronarts.lx.LX;
 import heronarts.lx.LXCategory;
 import heronarts.lx.LXComponent;
-import heronarts.lx.blend.LXBlend;
+import heronarts.lx.blend.LXFunctionalBlend;
 import heronarts.lx.color.LXColor;
 import heronarts.lx.model.LXModel;
 import heronarts.lx.model.LXPoint;
@@ -44,9 +44,9 @@ public class SparkleEffect extends LXEffect {
     LERP("Lerp", LXColor::lerp);
 
     public final String label;
-    public final LXBlend.FunctionalBlend.BlendFunction function;
+    public final LXFunctionalBlend.BlendFunction function;
 
-    private MaskMode(String label, LXBlend.FunctionalBlend.BlendFunction function) {
+    private MaskMode(String label, LXFunctionalBlend.BlendFunction function) {
       this.label = label;
       this.function = function;
     }
@@ -60,13 +60,13 @@ public class SparkleEffect extends LXEffect {
   public final SparklePattern.Engine engine = new SparklePattern.Engine(model);
 
   public final CompoundParameter amount =
-    new CompoundParameter("Amount", 1)
-    .setUnits(CompoundParameter.Units.PERCENT_NORMALIZED)
-    .setDescription("Amount of sparkle to apply");
+      new CompoundParameter("Amount", 1)
+          .setUnits(CompoundParameter.Units.PERCENT_NORMALIZED)
+          .setDescription("Amount of sparkle to apply");
 
   public final EnumParameter<MaskMode> maskMode =
-    new EnumParameter<MaskMode>("Mode", MaskMode.MULTIPLY)
-    .setDescription("How to apply the sparkle mask");
+      new EnumParameter<MaskMode>("Mode", MaskMode.MULTIPLY)
+          .setDescription("How to apply the sparkle mask");
 
   public SparkleEffect(LX lx) {
     super(lx);
@@ -91,7 +91,7 @@ public class SparkleEffect extends LXEffect {
     // Only apply masking if amount is over 0
     if (enabledAmount > 0) {
       final int blendMask = LXColor.blendMask(enabledAmount);
-      final LXBlend.FunctionalBlend.BlendFunction mask = this.maskMode.getEnum().function;
+      final LXFunctionalBlend.BlendFunction mask = this.maskMode.getEnum().function;
       int i = 0;
       for (LXPoint p : model.points) {
         colors[p.index] = mask.apply(colors[p.index], LXColor.gray(LXUtils.clamp(engine.outputLevels[i++], 0, 100)), blendMask);

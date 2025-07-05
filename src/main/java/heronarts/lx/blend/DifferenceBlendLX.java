@@ -21,10 +21,8 @@ package heronarts.lx.blend;
 import heronarts.lx.LX;
 import heronarts.lx.color.LXColor;
 
-public class DodgeBlend extends LXBlend.FunctionalBlend {
-
-  public DodgeBlend(LX lx) {
-    super(lx, LXColor::dodge);
+public class DifferenceBlendLX extends LXFunctionalBlend {
+  public DifferenceBlendLX(LX lx) {
+    super(lx, LXColor::difference);
   }
-
 }

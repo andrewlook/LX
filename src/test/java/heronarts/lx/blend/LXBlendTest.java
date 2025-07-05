@@ -36,7 +36,7 @@ class LXBlendTest {
 
   private final LXModel mockModel = new LXModel(List.of(TEST_POINTS));
   private final LX mockLX = new LX(mockModel);
-  private final LXBlend add = new AddBlend(mockLX);
+  private final LXBlend add = new AddBlendLX(mockLX);
 
   private ModelBuffer src;
   private ModelBuffer dst;
