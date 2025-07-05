@@ -1,11 +1,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>com.heronarts</groupId>
 	<artifactId>lx</artifactId>
 	<version>1.1.1-SNAPSHOT</version>
+
 	<packaging>jar</packaging>
 
 	<name>LX</name>
@@ -60,20 +61,26 @@
 			<version>${coremidi4j.version}</version>
 		</dependency>
 		<dependency>
-		    <groupId>org.jmdns</groupId>
-		    <artifactId>jmdns</artifactId>
-		    <version>3.6.1</version>
+			<groupId>org.jmdns</groupId>
+			<artifactId>jmdns</artifactId>
+			<version>3.6.1</version>
 		</dependency>
 		<dependency>
-		    <groupId>org.slf4j</groupId>
-		    <artifactId>slf4j-simple</artifactId>
-		    <version>2.0.16</version>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-simple</artifactId>
+			<version>2.0.16</version>
 		</dependency>
 		<dependency>
-		    <groupId>org.junit.jupiter</groupId>
-		    <artifactId>junit-jupiter</artifactId>
-		    <version>5.10.1</version>
-		    <scope>test</scope>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<version>5.10.1</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-junit-jupiter</artifactId>
+			<version>5.18.0</version>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
 
@@ -143,7 +150,9 @@
 					<windowtitle>LX API</windowtitle>
 					<offlineLinks>
 						<offlineLink>
-							<url>https://javadoc.io/doc/com.google.code.gson/gson/${gson.version}/com.google.gson/</url>
+							<url>
+								https://javadoc.io/doc/com.google.code.gson/gson/${gson.version}/com.google.gson/
+							</url>
 							<location>../../build/gson</location>
 						</offlineLink>
 					</offlineLinks>
@@ -159,12 +168,12 @@
 				</executions>
 			</plugin>
 		</plugins>
-    </build>
-    <profiles>
-        <profile>
-            <id>deploy</id>
-           	<build>
-	            <plugins>
+	</build>
+	<profiles>
+		<profile>
+			<id>deploy</id>
+			<build>
+				<plugins>
 					<plugin>
 						<groupId>org.sonatype.central</groupId>
 						<artifactId>central-publishing-maven-plugin</artifactId>
@@ -188,8 +197,8 @@
 							</execution>
 						</executions>
 					</plugin>
-	            </plugins>
-            </build>
-        </profile>
-    </profiles>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 </project>
