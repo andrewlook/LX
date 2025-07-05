@@ -16,18 +16,18 @@
  * @author Mark C. Slee <mark@heronarts.com>
  */
 
-package heronarts.lx;
+package heronarts.lx.buffer;
 
-public interface LXBuffer {
+public interface LXIntArrayBuffer {
   public int[] getArray();
 
-  public default LXBuffer copyTo(LXBuffer that) {
+  public default LXIntArrayBuffer copyTo(LXIntArrayBuffer that) {
     final int[] array = getArray();
     System.arraycopy(array, 0, that.getArray(), 0, array.length);
     return this;
   }
 
-  public default LXBuffer copyFrom(LXBuffer that) {
+  public default LXIntArrayBuffer copyFrom(LXIntArrayBuffer that) {
     final int[] array = getArray();
     System.arraycopy(that.getArray(), 0, array, 0, array.length);
     return this;

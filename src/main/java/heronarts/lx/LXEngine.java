@@ -18,15 +18,30 @@
 
 package heronarts.lx;
 
+import java.io.File;
+import java.net.SocketException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import com.google.gson.JsonObject;
 import heronarts.lx.audio.LXAudioEngine;
+import heronarts.lx.buffer.LXIntArrayFrame;
 import heronarts.lx.clip.LXClipEngine;
 import heronarts.lx.color.LXColor;
 import heronarts.lx.color.LXPalette;
 import heronarts.lx.dmx.LXDmxEngine;
 import heronarts.lx.midi.LXMidiEngine;
+import heronarts.lx.mixer.LXAbstractChannel;
 import heronarts.lx.mixer.LXBus;
 import heronarts.lx.mixer.LXChannel;
-import heronarts.lx.mixer.LXAbstractChannel;
 import heronarts.lx.mixer.LXMixerEngine;
 import heronarts.lx.model.LXModel;
 import heronarts.lx.model.LXPoint;
@@ -45,21 +60,6 @@ import heronarts.lx.snapshot.LXSnapshotEngine;
 import heronarts.lx.structure.LXFixture;
 import heronarts.lx.structure.view.LXViewDefinition;
 
-import java.io.File;
-import java.net.SocketException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import com.google.gson.JsonObject;
-
 /**
  * The engine is the core class that runs the internal animations. An engine is
  * comprised of top-level modulators, then a number of channels, each of which
@@ -72,7 +72,9 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
     SCHEDULED_EXECUTOR_SERVICE,
     BASIC_THREAD_SLEEP,
     BASIC_THREAD_SPINYIELD;
-  };
+  }
+
+  ;
 
   public final LXPalette palette;
 
@@ -107,22 +109,22 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
   public final Output output;
 
   public final BoundedParameter framesPerSecond =
-    new BoundedParameter("FPS", 60, 1, 300)
-    .setMappable(false)
-    .setOscMode(BoundedParameter.OscMode.ABSOLUTE)
-    .setDescription("Number of frames per second the engine runs at");
+      new BoundedParameter("FPS", 60, 1, 300)
+          .setMappable(false)
+          .setOscMode(BoundedParameter.OscMode.ABSOLUTE)
+          .setDescription("Number of frames per second the engine runs at");
 
   public final BoundedParameter speed =
-    new BoundedParameter("Speed", 1, 0, 2)
-    .setDescription("Overall speed adjustement to the entire engine (does not apply to master tempo and audio)");
+      new BoundedParameter("Speed", 1, 0, 2)
+          .setDescription("Overall speed adjustement to the entire engine (does not apply to master tempo and audio)");
 
   public final BooleanParameter performanceMode =
-    new BooleanParameter("Performance", false)
-    .setDescription("Whether performance mode UI is enabled");
+      new BooleanParameter("Performance", false)
+          .setDescription("Whether performance mode UI is enabled");
 
   public final BooleanParameter restricted =
-    new BooleanParameter("Restricted", false)
-    .setDescription("Whether rendering is disabled due to license restrictions");
+      new BooleanParameter("Restricted", false)
+          .setDescription("Whether rendering is disabled due to license restrictions");
 
   public final LXModulationEngine modulation;
 
@@ -136,8 +138,8 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
   public class Output extends LXOutputGroup implements LXOscComponent {
 
     public final BooleanParameter restricted =
-      new BooleanParameter("Restricted", false)
-      .setDescription("Whether output is disabled due to license restrictions");
+        new BooleanParameter("Restricted", false)
+            .setDescription("Whether output is disabled due to license restrictions");
 
     /**
      * This ModelOutput helper is used for sending dynamic datagrams that are
@@ -224,97 +226,22 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
 
   public final Profiler profiler = new Profiler();
 
-  // Buffer for a single frame, which was rendered with
-  // a particular model state, has a main view along with
-  // a cue and auxiliary view, as well as cue/aux view state
-  public static class Frame implements LXBuffer {
-
-    private LXModel model;
-    private int[] main = null;
-    private int[] cue = null;
-    private int[] aux = null;
-    private boolean cueOn = false;
-    private boolean auxOn = false;
-
-    public Frame(LX lx) {
-      setModel(lx.getModel());
-    }
-
-    public void setModel(LXModel model) {
-      this.model = model;
-      if ((this.main == null) || (this.main.length != model.size)) {
-        this.main = new int[model.size];
-        this.cue = new int[model.size];
-        this.aux = new int[model.size];
-      }
-    }
-
-    public void setCueOn(boolean cueOn) {
-      this.cueOn = cueOn;
-    }
-
-    public void setAuxOn(boolean auxOn) {
-      this.auxOn = auxOn;
-    }
-
-    public void copyFrom(Frame that) {
-      setModel(that.model);
-      this.cueOn = that.cueOn;
-      this.auxOn = that.auxOn;
-      System.arraycopy(that.main, 0, this.main, 0, this.main.length);
-      System.arraycopy(that.cue, 0, this.cue, 0, this.cue.length);
-      System.arraycopy(that.aux, 0, this.aux, 0, this.aux.length);
-    }
-
-    public int[] getColors(boolean aux) {
-      return aux ? getAuxColors() : getColors();
-    }
-
-    public int[] getColors() {
-      return this.cueOn ? this.cue : this.main;
-    }
-
-    public int[] getAuxColors() {
-      return this.auxOn ? this.aux : this.main;
-    }
-
-    public LXModel getModel() {
-      return this.model;
-    }
-
-    @Override
-    public int[] getArray() {
-      return this.main;
-    }
-
-    public int[] getMain() {
-      return this.main;
-    }
-
-    public int[] getCue() {
-      return this.cue;
-    }
-
-    public int[] getAux() {
-      return this.aux;
-    }
-  }
 
   // A double buffer that holds two frames which are flipped back and forth such that
   // the engine thread may render into one of them while UI or networking threads may
   // copy off the contents of another
   class DoubleBuffer {
 
-    // Frame buffer that is currently used by the engine to render
-    Frame render;
+    // LXIntArrayFrame buffer that is currently used by the engine to render
+    LXIntArrayFrame render;
 
     // Complete buffer that may be copied off for UI or networking while engine
     // works on the other buffer.
-    Frame copy;
+    LXIntArrayFrame copy;
 
     DoubleBuffer(LX lx) {
-      this.render = new Frame(lx);
-      this.copy = new Frame(lx);
+      this.render = new LXIntArrayFrame(lx);
+      this.copy = new LXIntArrayFrame(lx);
     }
 
     synchronized void sync() {
@@ -322,12 +249,12 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
     }
 
     synchronized void flip() {
-      Frame tmp = this.render;
+      LXIntArrayFrame tmp = this.render;
       this.render = this.copy;
       this.copy = tmp;
     }
 
-    synchronized void copyTo(Frame that) {
+    synchronized void copyTo(LXIntArrayFrame that) {
       that.copyFrom(this.copy);
     }
   }
@@ -335,14 +262,14 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
   private final DoubleBuffer buffer;
 
   public final BooleanParameter isCompositorMultithreaded =
-    new BooleanParameter("Compositor Threaded", false)
-    .setMappable(false)
-    .setDescription("Whether the compositing engine is multi-threaded");
+      new BooleanParameter("Compositor Threaded", false)
+          .setMappable(false)
+          .setDescription("Whether the compositing engine is multi-threaded");
 
   public final BooleanParameter isNetworkMultithreaded =
-    new BooleanParameter("Network Threaded", false)
-    .setMappable(false)
-    .setDescription("Whether the network output is on a separate thread");
+      new BooleanParameter("Network Threaded", false)
+          .setMappable(false)
+          .setDescription("Whether the network output is on a separate thread");
 
   private Thread engineThread = null;
   private final ExecutorService engineExecutorService;
@@ -667,7 +594,9 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
 
       sampler.sample(loopStart, loopEnd);
 
-    };
+    }
+
+    ;
 
   }
 
@@ -766,7 +695,9 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
 
       // Thread has stopped
       LX.log(getName() + " stopped.");
-    };
+    }
+
+    ;
 
     private final long SLEEP_PRECISION = TimeUnit.MILLISECONDS.toNanos(2);
     private final long SPIN_YIELD_PRECISION = TimeUnit.MILLISECONDS.toNanos(1);
@@ -1106,7 +1037,7 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
     final boolean eulaAccepted = !this.lx.permissions.isEulaRequired() || this.lx.preferences.eulaAccepted.isOn();
     final int maxOutputPoints = this.lx.permissions.getMaxOutputPoints();
     final int maxRenderPoints = this.lx.permissions.getMaxRenderPoints();
-    this.restricted.setValue((maxRenderPoints >= 0) && (this.buffer.render.main.length > maxRenderPoints));
+    this.restricted.setValue((maxRenderPoints >= 0) && (this.buffer.render.getMain().length > maxRenderPoints));
     this.output.restricted.setValue((maxOutputPoints >= 0) && (this.buffer.render.main.length > maxOutputPoints));
 
     // Run tempo and audio, always using real-time
@@ -1230,7 +1161,7 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
       } else {
         // Or do it ourself here on the engine thread
         long outputStart = System.nanoTime();
-        Frame sendFrame = this.buffer.copy;
+        LXIntArrayFrame sendFrame = this.buffer.copy;
         int[] sendColors = (this.lx.flags.sendCueToOutput && sendFrame.cueOn) ? sendFrame.cue : sendFrame.main;
         this.output.send(sendColors);
         this.profiler.outputNanos = System.nanoTime() - outputStart;
@@ -1284,11 +1215,11 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
 
     public final Profiler timer = new Profiler();
 
-    private final Frame networkFrame;
+    private final LXIntArrayFrame networkFrame;
 
     NetworkThread(LX lx) {
       super("LXEngine Network Thread");
-      this.networkFrame = new Frame(lx);
+      this.networkFrame = new LXIntArrayFrame(lx);
     }
 
     @Override
@@ -1296,7 +1227,7 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
       LXOutput.log("LXEngine Network Thread started");
       while (!isInterrupted()) {
         try {
-          synchronized(this) {
+          synchronized (this) {
             wait();
           }
         } catch (InterruptedException ix) {
@@ -1343,7 +1274,7 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
    *
    * @param frame Frame buffer to copy into
    */
-  public void copyFrameThreadSafe(Frame frame) {
+  public void copyFrameThreadSafe(LXIntArrayFrame frame) {
     this.buffer.copyTo(frame);
   }
 
@@ -1354,7 +1285,7 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
    *
    * @param frame Frame buffer to copy into
    */
-  public void getFrameNonThreadSafe(Frame frame) {
+  public void getFrameNonThreadSafe(LXIntArrayFrame frame) {
     frame.copyFrom(this.buffer.render);
   }
 
@@ -1429,14 +1360,14 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
 
     // Override project output mode if flag is set
     switch (lx.flags.outputMode) {
-    case ACTIVE:
-      this.output.enabled.setValue(true);
-      break;
-    case INACTIVE:
-      this.output.enabled.setValue(false);
-      break;
-    default:
-      break;
+      case ACTIVE:
+        this.output.enabled.setValue(true);
+        break;
+      case INACTIVE:
+        this.output.enabled.setValue(false);
+        break;
+      default:
+        break;
     }
   }
 

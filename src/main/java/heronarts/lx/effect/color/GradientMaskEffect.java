@@ -18,8 +18,12 @@
 
 package heronarts.lx.effect.color;
 
-import heronarts.lx.*;
+import heronarts.lx.LX;
+import heronarts.lx.LXCategory;
+import heronarts.lx.LXComponent;
+import heronarts.lx.LXComponentName;
 import heronarts.lx.blend.LXFunctionalBlend;
+import heronarts.lx.buffer.ModelIntArrayBuffer;
 import heronarts.lx.color.LXColor;
 import heronarts.lx.effect.LXEffect;
 import heronarts.lx.effect.color.ColorMaskEffect.Mode;
@@ -35,7 +39,7 @@ import heronarts.lx.pattern.color.GradientPattern;
 @LXComponent.Description("Masks content using a dynamic color gradient in 3D space")
 public class GradientMaskEffect extends LXEffect {
 
-  private final ModelBuffer mask = new ModelBuffer(lx);
+  private final ModelIntArrayBuffer mask = new ModelIntArrayBuffer(lx);
   public final GradientPattern.Engine engine;
 
   public final EnumParameter<Mode> mode =

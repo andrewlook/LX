@@ -19,7 +19,6 @@
 package heronarts.lx.blend;
 
 import heronarts.lx.LX;
-import heronarts.lx.LXBuffer;
 import heronarts.lx.color.LXColor;
 import heronarts.lx.model.LXModel;
 import heronarts.lx.model.LXPoint;

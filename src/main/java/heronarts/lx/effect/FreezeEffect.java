@@ -21,12 +21,16 @@ package heronarts.lx.effect;
 import heronarts.lx.LX;
 import heronarts.lx.LXCategory;
 import heronarts.lx.LXComponent;
-import heronarts.lx.ModelBuffer;
 import heronarts.lx.blend.LXFunctionalBlend;
+import heronarts.lx.buffer.ModelIntArrayBuffer;
 import heronarts.lx.color.LXColor;
 import heronarts.lx.model.LXPoint;
 import heronarts.lx.modulator.Interval;
-import heronarts.lx.parameter.*;
+import heronarts.lx.parameter.BooleanParameter;
+import heronarts.lx.parameter.CompoundParameter;
+import heronarts.lx.parameter.EnumParameter;
+import heronarts.lx.parameter.LXParameter;
+import heronarts.lx.parameter.TriggerParameter;
 import heronarts.lx.utils.LXUtils;
 
 @LXCategory(LXCategory.CORE)
@@ -56,7 +60,7 @@ public class FreezeEffect extends LXEffect {
     }
   }
 
-  private final ModelBuffer buffer = new ModelBuffer(lx);
+  private final ModelIntArrayBuffer buffer = new ModelIntArrayBuffer(lx);
 
   public final Interval interval = new Interval();
 

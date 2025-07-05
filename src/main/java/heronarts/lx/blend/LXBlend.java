@@ -19,7 +19,6 @@
 package heronarts.lx.blend;
 
 import heronarts.lx.LX;
-import heronarts.lx.LXBuffer;
 import heronarts.lx.LXComponent;
 import heronarts.lx.LXModulatorComponent;
 import heronarts.lx.model.LXModel;

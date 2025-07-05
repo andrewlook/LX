@@ -16,13 +16,15 @@
  * @author Mark C. Slee <mark@heronarts.com>
  */
 
-package heronarts.lx;
+package heronarts.lx.buffer;
 
 import java.util.Arrays;
 
+import heronarts.lx.LX;
+import heronarts.lx.buffer.LXIntArrayBuffer;
 import heronarts.lx.model.LXModel;
 
-public class ModelBuffer implements LXBuffer {
+public class ModelIntArrayBuffer implements LXIntArrayBuffer {
 
   private final LX lx;
   private int[] array;
@@ -37,14 +39,14 @@ public class ModelBuffer implements LXBuffer {
     }
   };
 
-  public ModelBuffer(LX lx) {
+  public ModelIntArrayBuffer(LX lx) {
     this(lx, 0);
   }
 
-  public ModelBuffer(LX lx, int defaultColor) {
+  public ModelIntArrayBuffer(LX lx, int defaultColor) {
     this.lx = lx;
     this.defaultColor = defaultColor;
-    initArray(lx.model.size);
+    initArray(lx.getModel().size);
     lx.addListener(this.modelListener);
   }
 
@@ -61,7 +63,7 @@ public class ModelBuffer implements LXBuffer {
     this.lx.removeListener(this.modelListener);
   }
 
-  public ModelBuffer unsafeSetArray(int[] array) {
+  public ModelIntArrayBuffer unsafeSetArray(int[] array) {
     this.array = array;
     return this;
   }
