@@ -25,9 +25,11 @@ public interface LXBuffer<T extends LXBuffer<T>> {
 
   T self();
 
-  int[] toIntArray();
+  int[] getArray();
 
   void initArray(int numPoints);
+
+  int length();
 
   T setFromIntArray(int[] arr);
 }

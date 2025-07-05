@@ -18,30 +18,38 @@
 
 package heronarts.lx.buffer;
 
-public interface LXIntArrayBuffer extends LXBuffer<LXIntArrayBuffer> {
-  default LXIntArrayBuffer copyTo(LXBuffer<?> that) {
-    if (that instanceof LXIntArrayBuffer) {
-      final int[] array = getArray();
-      System.arraycopy(array, 0, ((LXIntArrayBuffer) that).getArray(), 0, array.length);
-    }
-    return self();
+import java.util.Arrays;
+
+import heronarts.lx.LX;
+import heronarts.lx.model.LXModel;
+
+public class LXIntArrayBufferImpl implements LXIntArrayBuffer {
+
+  private int[] array;
+  private final int defaultColor;
+
+  public LXIntArrayBufferImpl(int numPoints) {
+    this(numPoints, 0);
   }
 
-  default LXIntArrayBuffer copyFrom(LXBuffer<?> that) {
-    if (that instanceof LXIntArrayBuffer) {
-      final int[] array = getArray();
-      System.arraycopy(((LXIntArrayBuffer) that).getArray(), 0, array, 0, array.length);
-    }
-    return self();
+  public LXIntArrayBufferImpl(int numPoints, int defaultColor) {
+    this.defaultColor = defaultColor;
+    initArray(numPoints);
+  }
+
+  public int[] getArray() {
+    return this.array;
   }
 
   @Override
-  default int length() {
-    return this.getArray().length;
+  public void initArray(int numPoints) {
+    this.array = new int[numPoints];
+    Arrays.fill(this.array, this.defaultColor);
   }
 
   @Override
-  default LXIntArrayBuffer self() {
+  public LXIntArrayBufferImpl setFromIntArray(int[] arr) {
+    this.array = arr;
     return this;
   }
 }

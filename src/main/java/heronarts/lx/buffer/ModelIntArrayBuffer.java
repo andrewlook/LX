@@ -21,7 +21,6 @@ package heronarts.lx.buffer;
 import java.util.Arrays;
 
 import heronarts.lx.LX;
-import heronarts.lx.buffer.LXIntArrayBuffer;
 import heronarts.lx.model.LXModel;
 
 public class ModelIntArrayBuffer implements LXIntArrayBuffer {
@@ -48,6 +47,19 @@ public class ModelIntArrayBuffer implements LXIntArrayBuffer {
     this.defaultColor = defaultColor;
     initArray(lx.getModel().size);
     lx.addListener(this.modelListener);
+  }
+
+  public static LXIntArrayBuffer shimModelBuffer(LX lx) {
+    return shimModelBuffer(lx, 0);
+  }
+
+  public static LXIntArrayBuffer shimModelBuffer(LX lx, int defaultColor) {
+    boolean useDelegate = false;
+    if (useDelegate) {
+      return new ModelDelegateBuffer(lx, defaultColor);
+    } else {
+      return new ModelIntArrayBuffer(lx, defaultColor);
+    }
   }
 
   public int[] getArray() {
