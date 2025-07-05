@@ -1,13 +1,13 @@
 /**
  * Copyright 2013- Mark C. Slee, Heron Arts LLC
- *
+ * <p>
  * This file is part of the LX Studio software library. By using
  * LX, you agree to the terms of the LX Studio Software License
  * and Distribution Agreement, available at: http://lx.studio/license
- *
+ * <p>
  * Please note that the LX license is not open-source. The license
  * allows for free, non-commercial use.
- *
+ * <p>
  * HERON ARTS MAKES NO WARRANTY, EXPRESS, IMPLIED, STATUTORY, OR
  * OTHERWISE, AND SPECIFICALLY DISCLAIMS ANY WARRANTY OF
  * MERCHANTABILITY, NON-INFRINGEMENT, OR FITNESS FOR A PARTICULAR
@@ -18,39 +18,24 @@
 
 package heronarts.lx.mixer;
 
-import heronarts.lx.LX;
-import heronarts.lx.LXBuffer;
-import heronarts.lx.LXComponent;
-import heronarts.lx.LXSerializable;
-import heronarts.lx.ModelBuffer;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import heronarts.lx.*;
 import heronarts.lx.blend.LXBlend;
 import heronarts.lx.midi.LXShortMessage;
 import heronarts.lx.midi.MidiPanic;
 import heronarts.lx.model.LXModel;
 import heronarts.lx.osc.LXOscEngine;
 import heronarts.lx.osc.OscMessage;
-import heronarts.lx.parameter.BoundedParameter;
-import heronarts.lx.parameter.CompoundParameter;
-import heronarts.lx.parameter.DiscreteParameter;
-import heronarts.lx.parameter.EnumParameter;
-import heronarts.lx.parameter.LXListenableParameter;
-import heronarts.lx.parameter.LXParameter;
-import heronarts.lx.parameter.LXParameterListener;
-import heronarts.lx.parameter.MutableParameter;
-import heronarts.lx.parameter.ObjectParameter;
-import heronarts.lx.parameter.QuantizedTriggerParameter;
-import heronarts.lx.parameter.TriggerParameter;
+import heronarts.lx.parameter.*;
 import heronarts.lx.pattern.LXPattern;
 import heronarts.lx.utils.LXUtils;
-import heronarts.lx.parameter.BooleanParameter;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 
 /**
  * A channel is a single component of the engine that has a set of patterns from
@@ -63,6 +48,7 @@ public class LXPatternEngine implements LXParameterListener, LXSerializable {
 
   public interface Container {
     public LXPatternEngine getPatternEngine();
+
     public Listener getPatternEngineDelegate();
   }
 
@@ -71,12 +57,23 @@ public class LXPatternEngine implements LXParameterListener, LXSerializable {
    * channel state is modified.
    */
   public interface Listener {
-    public default void patternAdded(LXPatternEngine engine, LXPattern pattern) {}
-    public default void patternRemoved(LXPatternEngine engine, LXPattern pattern) {}
-    public default void patternMoved(LXPatternEngine engine, LXPattern pattern) {}
-    public default void patternWillChange(LXPatternEngine engine, LXPattern pattern, LXPattern nextPattern) {}
-    public default void patternDidChange(LXPatternEngine engine, LXPattern pattern) {}
-    public default void patternEnabled(LXPatternEngine engine, LXPattern pattern) {}
+    public default void patternAdded(LXPatternEngine engine, LXPattern pattern) {
+    }
+
+    public default void patternRemoved(LXPatternEngine engine, LXPattern pattern) {
+    }
+
+    public default void patternMoved(LXPatternEngine engine, LXPattern pattern) {
+    }
+
+    public default void patternWillChange(LXPatternEngine engine, LXPattern pattern, LXPattern nextPattern) {
+    }
+
+    public default void patternDidChange(LXPatternEngine engine, LXPattern pattern) {
+    }
+
+    public default void patternEnabled(LXPatternEngine engine, LXPattern pattern) {
+    }
   }
 
   private final ArrayList<Listener> listeners = new ArrayList<Listener>();
@@ -98,7 +95,9 @@ public class LXPatternEngine implements LXParameterListener, LXSerializable {
     public String toString() {
       return this.label;
     }
-  };
+  }
+
+  ;
 
   public enum CompositeMode {
     PLAYLIST("Playlist"),
@@ -126,54 +125,54 @@ public class LXPatternEngine implements LXParameterListener, LXSerializable {
    * Auto-cycle to a random pattern, not the next one
    */
   public final EnumParameter<CompositeMode> compositeMode =
-    new EnumParameter<CompositeMode>("Composite Mode", CompositeMode.PLAYLIST)
-    .setDescription("Pattern compositing mode, patterns either act as an ordered playlist or are all blended together");
+      new EnumParameter<CompositeMode>("Composite Mode", CompositeMode.PLAYLIST)
+          .setDescription("Pattern compositing mode, patterns either act as an ordered playlist or are all blended together");
 
   /**
    * Whether damping is enabled on pattern composite blending
    */
   public final BooleanParameter compositeDampingEnabled =
-    new BooleanParameter("Damping", true)
-    .setDescription("Whether damping is enabled when a pattern is enabled or disabled");
+      new BooleanParameter("Damping", true)
+          .setDescription("Whether damping is enabled when a pattern is enabled or disabled");
 
   /**
    * Damping time when a pattern is enabled or disabled in blending mode
    */
   public final CompoundParameter compositeDampingTimeSecs =
-    new CompoundParameter("Damping Time", .1, .05, 5)
-    .setUnits(CompoundParameter.Units.SECONDS)
-    .setDescription("Damping time when a pattern is enabled/disabled in blend mode");
+      new CompoundParameter("Damping Time", .1, .05, 5)
+          .setUnits(CompoundParameter.Units.SECONDS)
+          .setDescription("Damping time when a pattern is enabled/disabled in blend mode");
 
   /**
    * Whether auto pattern transition is enabled on this channel
    */
   public final BooleanParameter autoCycleEnabled =
-    new BooleanParameter("Auto-Cycle", false)
-    .setDescription("When enabled, this channel will automatically cycle between its patterns");
+      new BooleanParameter("Auto-Cycle", false)
+          .setDescription("When enabled, this channel will automatically cycle between its patterns");
 
   /**
    * Auto-cycle to a random pattern, not the next one
    */
   public final EnumParameter<AutoCycleMode> autoCycleMode =
-    new EnumParameter<AutoCycleMode>("Auto-Cycle Mode", AutoCycleMode.NEXT)
-    .setDescription("Mode of auto cycling");
+      new EnumParameter<AutoCycleMode>("Auto-Cycle Mode", AutoCycleMode.NEXT)
+          .setDescription("Mode of auto cycling");
 
   /**
    * Time in seconds after which transition thru the pattern set is automatically initiated.
    */
   public final BoundedParameter autoCycleTimeSecs =
-    new BoundedParameter("Cycle Time", 60, .1, 60*60*4)
-    .setDescription("Sets the number of seconds after which the channel cycles to the next pattern")
-    .setUnits(LXParameter.Units.SECONDS);
+      new BoundedParameter("Cycle Time", 60, .1, 60 * 60 * 4)
+          .setDescription("Sets the number of seconds after which the channel cycles to the next pattern")
+          .setUnits(LXParameter.Units.SECONDS);
 
   public final BoundedParameter transitionTimeSecs =
-    new BoundedParameter("Transition Time", 5, .05, 180)
-    .setDescription("Sets the duration of blending transitions between patterns")
-    .setUnits(LXParameter.Units.SECONDS);
+      new BoundedParameter("Transition Time", 5, .05, 180)
+          .setDescription("Sets the duration of blending transitions between patterns")
+          .setUnits(LXParameter.Units.SECONDS);
 
   public final BooleanParameter transitionEnabled =
-    new BooleanParameter("Transitions", false)
-    .setDescription("When enabled, transitions between patterns use a blend");
+      new BooleanParameter("Transitions", false)
+          .setDescription("When enabled, transitions between patterns use a blend");
 
   public final ObjectParameter<LXBlend> transitionBlendMode;
 
@@ -181,15 +180,15 @@ public class LXPatternEngine implements LXParameterListener, LXSerializable {
   public final List<LXPattern> patterns = Collections.unmodifiableList(mutablePatterns);
 
   public final TriggerParameter triggerPatternCycle =
-    new TriggerParameter("Trigger Pattern Cycle", this::onTriggerPatternCycle)
-    .setDescription("Triggers a pattern change on the channel");
+      new TriggerParameter("Trigger Pattern Cycle", this::onTriggerPatternCycle)
+          .setDescription("Triggers a pattern change on the channel");
 
   // NB(mcslee): chain parameters in case there are modulation mappings from the trigger cycle parameter!
   public final QuantizedTriggerParameter launchPatternCycle;
 
   public final BooleanParameter viewPatternLabel =
-    new BooleanParameter("View Pattern Label", false)
-    .setDescription("Whether to show the active pattern as channel label");
+      new BooleanParameter("View Pattern Label", false)
+          .setDescription("Whether to show the active pattern as channel label");
 
   // Listenable parameter for when number of patterns changes
   public final MutableParameter numPatternsChanged = new MutableParameter();
@@ -216,7 +215,7 @@ public class LXPatternEngine implements LXParameterListener, LXSerializable {
   private final Container container;
 
   public final LXParameter.Collection parameters =
-    new LXParameter.Collection();
+      new LXParameter.Collection();
 
   public LXPatternEngine(LX lx, LXComponent component) {
     this(lx, component, new LXPattern[0]);
@@ -234,15 +233,15 @@ public class LXPatternEngine implements LXParameterListener, LXSerializable {
     this.renderBuffer = new ModelBuffer(lx);
 
     this.launchPatternCycle =
-      new QuantizedTriggerParameter.Launch(this.lx, "Launch Pattern Cycle", this.triggerPatternCycle::trigger)
-      .setDescription("Launches a pattern change on the channel");
+        new QuantizedTriggerParameter.Launch(this.lx, "Launch Pattern Cycle", this.triggerPatternCycle::trigger)
+            .setDescription("Launches a pattern change on the channel");
 
     this.focusedPattern =
-      new DiscreteParameter("Focused Pattern", 0, Math.max(1, patterns.length))
-      .setDescription("Which pattern has focus in the UI");
+        new DiscreteParameter("Focused Pattern", 0, Math.max(1, patterns.length))
+            .setDescription("Which pattern has focus in the UI");
 
     this.transitionBlendMode = new ObjectParameter<LXBlend>("Transition Blend", new LXBlend[1])
-      .setDescription("Specifies the blending function used for transitions between patterns on the channel");
+        .setDescription("Specifies the blending function used for transitions between patterns on the channel");
     updateTransitionBlendOptions();
 
     this.transitionMillis = lx.engine.nowMillis;
@@ -392,7 +391,7 @@ public class LXPatternEngine implements LXParameterListener, LXSerializable {
   public boolean handleOscMessage(OscMessage message, String[] parts, int index) {
     String path = parts[index];
     if (path.equals(PATH_PATTERN)) {
-      String patternId = parts[index+1];
+      String patternId = parts[index + 1];
       LXPattern pattern = null;
       if (patternId.equals(PATH_ACTIVE)) {
         pattern = getActivePattern();
@@ -426,23 +425,23 @@ public class LXPatternEngine implements LXParameterListener, LXSerializable {
       }
     } else {
       switch (this.compositeMode.getEnum()) {
-      case PLAYLIST:
-        final LXPattern activePattern = getActivePattern();
-        if (activePattern != null) {
-          activePattern.midiDispatch(message);
-        }
-        LXPattern nextPattern = getNextPattern();
-        if (nextPattern != null && nextPattern != activePattern) {
-          nextPattern.midiDispatch(message);
-        }
-        break;
-      case BLEND:
-        for (LXPattern pattern : this.patterns) {
-          if (pattern.enabled.isOn()) {
-            pattern.midiDispatch(message);
+        case PLAYLIST:
+          final LXPattern activePattern = getActivePattern();
+          if (activePattern != null) {
+            activePattern.midiDispatch(message);
           }
-        }
-        break;
+          LXPattern nextPattern = getNextPattern();
+          if (nextPattern != null && nextPattern != activePattern) {
+            nextPattern.midiDispatch(message);
+          }
+          break;
+        case BLEND:
+          for (LXPattern pattern : this.patterns) {
+            if (pattern.enabled.isOn()) {
+              pattern.midiDispatch(message);
+            }
+          }
+          break;
       }
     }
   }
@@ -661,7 +660,7 @@ public class LXPatternEngine implements LXParameterListener, LXSerializable {
     this.mutablePatterns.add(index, pattern);
     int i = 0;
     for (LXPattern p : this.mutablePatterns) {
-       p.setIndex(i++);
+      p.setIndex(i++);
     }
     this.activePatternIndex = activePattern.getIndex();
     this.nextPatternIndex = nextPattern.getIndex();
@@ -777,7 +776,7 @@ public class LXPatternEngine implements LXParameterListener, LXSerializable {
    * Activates the given pattern, which must belong to this channel. Transition
    * can be optionally skipped
    *
-   * @param pattern Pattern to activate
+   * @param pattern        Pattern to activate
    * @param skipTransition Skip over a transition
    * @return this
    */
@@ -939,18 +938,19 @@ public class LXPatternEngine implements LXParameterListener, LXSerializable {
 
   private void doPatternCycle() {
     switch (this.autoCycleMode.getEnum()) {
-    case NEXT:
-      goNextPattern();
-      break;
-    case RANDOM:
-      goRandomPattern();
-      break;
+      case NEXT:
+        goNextPattern();
+        break;
+      case RANDOM:
+        goRandomPattern();
+        break;
     }
   }
 
   public void loop(LXBuffer blendBuffer, LXModel modelView, double deltaMs) {
     // Initialize buffer colors
     int[] colors = blendBuffer.getArray();
+    LXBuffer colorBuffer = ModelBuffer.copyOf((ModelBuffer) blendBuffer);
 
     // Initialize colors to transparent. This needs to be done no matter
     // what the mixing mode is, because sub-patterns/effects may render
@@ -971,8 +971,8 @@ public class LXPatternEngine implements LXParameterListener, LXSerializable {
         final double patternDamping = pattern.getCompositeDampingLevel();
 
         final boolean isAutoMuted =
-          pattern.autoMute.isOn() &&
-          (pattern.compositeLevel.getValue() == 0);
+            pattern.autoMute.isOn() &&
+                (pattern.compositeLevel.getValue() == 0);
         pattern.isAutoMuted.setValue(isAutoMuted);
 
         final boolean patternRender = !isAutoMuted && (patternDamping > 0);
@@ -989,11 +989,11 @@ public class LXPatternEngine implements LXParameterListener, LXSerializable {
 
           if (patternRender) {
             pattern.compositeBlend.getObject().blend(
-              colors,
-              pattern.getColors(),
-              patternDamping * pattern.compositeLevel.getValue(),
-              colors,
-              patternView
+                colorBuffer,
+                pattern.getColors(),
+                patternDamping * pattern.compositeLevel.getValue(),
+                colorBuffer,
+                patternView
             );
           }
 
@@ -1034,7 +1034,7 @@ public class LXPatternEngine implements LXParameterListener, LXSerializable {
         }
 
         this.autoCycleProgress = (this.lx.engine.nowMillis - this.transitionMillis) /
-          (1000 * autoCycleTimeParam.getValue());
+            (1000 * autoCycleTimeParam.getValue());
 
         if (this.autoCycleProgress >= 1) {
           this.autoCycleProgress = 1;
@@ -1064,11 +1064,11 @@ public class LXPatternEngine implements LXParameterListener, LXSerializable {
         nextPattern.loop(deltaMs);
         this.transition.loop(deltaMs);
         this.transition.lerp(
-          colors,
-          this.renderBuffer.getArray(),
-          this.transitionProgress,
-          colors,
-          modelView
+            colorBuffer,
+            this.renderBuffer,
+            this.transitionProgress,
+            colorBuffer,
+            modelView
         );
       } else {
         this.transitionProgress = 0;

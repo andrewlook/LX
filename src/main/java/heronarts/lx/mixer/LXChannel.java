@@ -1,13 +1,13 @@
 /**
  * Copyright 2013- Mark C. Slee, Heron Arts LLC
- *
+ * <p>
  * This file is part of the LX Studio software library. By using
  * LX, you agree to the terms of the LX Studio Software License
  * and Distribution Agreement, available at: http://lx.studio/license
- *
+ * <p>
  * Please note that the LX license is not open-source. The license
  * allows for free, non-commercial use.
- *
+ * <p>
  * HERON ARTS MAKES NO WARRANTY, EXPRESS, IMPLIED, STATUTORY, OR
  * OTHERWISE, AND SPECIFICALLY DISCLAIMS ANY WARRANTY OF
  * MERCHANTABILITY, NON-INFRINGEMENT, OR FITNESS FOR A PARTICULAR
@@ -18,6 +18,7 @@
 
 package heronarts.lx.mixer;
 
+import com.google.gson.JsonObject;
 import heronarts.lx.LX;
 import heronarts.lx.LXComponent;
 import heronarts.lx.clip.LXChannelClip;
@@ -26,14 +27,13 @@ import heronarts.lx.effect.LXEffect;
 import heronarts.lx.midi.LXShortMessage;
 import heronarts.lx.model.LXModel;
 import heronarts.lx.osc.OscMessage;
+import heronarts.lx.parameter.BooleanParameter;
 import heronarts.lx.parameter.MutableParameter;
 import heronarts.lx.pattern.LXPattern;
-import heronarts.lx.parameter.BooleanParameter;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-
-import com.google.gson.JsonObject;
 
 /**
  * A channel is a single component of the engine that has a set of patterns from
@@ -47,13 +47,26 @@ public class LXChannel extends LXAbstractChannel implements LXPatternEngine.Cont
    * channel state is modified.
    */
   public interface Listener extends LXAbstractChannel.Listener {
-    public default void groupChanged(LXChannel channel, LXGroup group) {}
-    public default void patternAdded(LXChannel channel, LXPattern pattern) {}
-    public default void patternRemoved(LXChannel channel, LXPattern pattern) {}
-    public default void patternMoved(LXChannel channel, LXPattern pattern) {}
-    public default void patternWillChange(LXChannel channel, LXPattern pattern, LXPattern nextPattern) {}
-    public default void patternDidChange(LXChannel channel, LXPattern pattern) {}
-    public default void patternEnabled(LXChannel channel, LXPattern pattern) {}
+    public default void groupChanged(LXChannel channel, LXGroup group) {
+    }
+
+    public default void patternAdded(LXChannel channel, LXPattern pattern) {
+    }
+
+    public default void patternRemoved(LXChannel channel, LXPattern pattern) {
+    }
+
+    public default void patternMoved(LXChannel channel, LXPattern pattern) {
+    }
+
+    public default void patternWillChange(LXChannel channel, LXPattern pattern, LXPattern nextPattern) {
+    }
+
+    public default void patternDidChange(LXChannel channel, LXPattern pattern) {
+    }
+
+    public default void patternEnabled(LXChannel channel, LXPattern pattern) {
+    }
   }
 
   private final ArrayList<Listener> listeners = new ArrayList<Listener>();
@@ -65,8 +78,8 @@ public class LXChannel extends LXAbstractChannel implements LXPatternEngine.Cont
    * Whether the channel control UI is expanded
    */
   public final BooleanParameter controlsExpanded =
-    new BooleanParameter("Expanded", true)
-    .setDescription("Whether the control elements for the channel device are expanded");
+      new BooleanParameter("Expanded", true)
+          .setDescription("Whether the control elements for the channel device are expanded");
 
   /**
    * A semaphore used to keep count of how many remote control surfaces may be
@@ -74,12 +87,12 @@ public class LXChannel extends LXAbstractChannel implements LXPatternEngine.Cont
    * to the user that this component is under remote control.
    */
   public final MutableParameter controlSurfaceSemaphore =
-    new MutableParameter("Control-Surfaces", 0)
-    .setDescription("How many control surfaces are controlling this component");
+      new MutableParameter("Control-Surfaces", 0)
+          .setDescription("How many control surfaces are controlling this component");
 
   public final BooleanParameter viewPatternLabel =
-    new BooleanParameter("View Pattern Label", false)
-    .setDescription("Whether to show the active pattern as channel label");
+      new BooleanParameter("View Pattern Label", false)
+          .setDescription("Whether to show the active pattern as channel label");
 
   /**
    * Group that this channel belongs to
@@ -90,7 +103,7 @@ public class LXChannel extends LXAbstractChannel implements LXPatternEngine.Cont
   public final List<LXPattern> patterns;
 
   public LXChannel(LX lx, int index, LXPattern[] patterns) {
-    super(lx, index, "Channel-" + (index+1));
+    super(lx, index, "Channel-" + (index + 1));
 
     this.patternEngine = new LXPatternEngine(lx, this, patterns);
 
@@ -193,6 +206,7 @@ public class LXChannel extends LXAbstractChannel implements LXPatternEngine.Cont
       _processReentrantListenerChanges();
       lx.engine.clips.updatePatternGridSize();
     }
+
     public void patternRemoved(LXPatternEngine engine, LXPattern pattern) {
       inListener = true;
       listeners.forEach(listener -> listener.patternRemoved(LXChannel.this, pattern));
@@ -200,24 +214,28 @@ public class LXChannel extends LXAbstractChannel implements LXPatternEngine.Cont
       _processReentrantListenerChanges();
       lx.engine.clips.updatePatternGridSize();
     }
+
     public void patternMoved(LXPatternEngine engine, LXPattern pattern) {
       inListener = true;
       listeners.forEach(listener -> listener.patternMoved(LXChannel.this, pattern));
       inListener = false;
       _processReentrantListenerChanges();
     }
+
     public void patternWillChange(LXPatternEngine engine, LXPattern pattern, LXPattern nextPattern) {
       inListener = true;
       listeners.forEach(listener -> listener.patternWillChange(LXChannel.this, pattern, nextPattern));
       inListener = false;
       _processReentrantListenerChanges();
     }
+
     public void patternDidChange(LXPatternEngine engine, LXPattern pattern) {
       inListener = true;
       listeners.forEach(listener -> listener.patternDidChange(LXChannel.this, pattern));
       inListener = false;
       _processReentrantListenerChanges();
     }
+
     public void patternEnabled(LXPatternEngine engine, LXPattern pattern) {
       inListener = true;
       listeners.forEach(listener -> listener.patternEnabled(LXChannel.this, pattern));
@@ -458,7 +476,8 @@ public class LXChannel extends LXAbstractChannel implements LXPatternEngine.Cont
     }
 
     // Run the pattern engine
-    this.colors = this.blendBuffer.getArray();
+    this.colors = this.blendBuffer; // TODO(look): is it ok to swap reference rather than copy?
+//    this.colors = this.blendBuffer.getArray();
     this.patternEngine.loop(this.blendBuffer, getModelView(), deltaMs);
     this.profiler.loopNanos = System.nanoTime() - loopStart;
 
@@ -515,7 +534,7 @@ public class LXChannel extends LXAbstractChannel implements LXPatternEngine.Cont
       final int groupId = obj.get(KEY_GROUP).getAsInt();
       final LXComponent group = lx.getProjectComponent(groupId);
       if (group instanceof LXGroup) {
-        ((LXGroup)group).addChannel(this);
+        ((LXGroup) group).addChannel(this);
       } else {
         LX.error("Group ID " + groupId + " not found when restoring channel: " + this);
       }

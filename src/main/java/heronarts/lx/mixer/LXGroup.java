@@ -1,13 +1,13 @@
 /**
  * Copyright 2018- Mark C. Slee, Heron Arts LLC
- *
+ * <p>
  * This file is part of the LX Studio software library. By using
  * LX, you agree to the terms of the LX Studio Software License
  * and Distribution Agreement, available at: http://lx.studio/license
- *
+ * <p>
  * Please note that the LX license is not open-source. The license
  * allows for free, non-commercial use.
- *
+ * <p>
  * HERON ARTS MAKES NO WARRANTY, EXPRESS, IMPLIED, STATUTORY, OR
  * OTHERWISE, AND SPECIFICALLY DISCLAIMS ANY WARRANTY OF
  * MERCHANTABILITY, NON-INFRINGEMENT, OR FITNESS FOR A PARTICULAR
@@ -18,10 +18,6 @@
 
 package heronarts.lx.mixer;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 import heronarts.lx.LX;
 import heronarts.lx.LXModulatorComponent;
 import heronarts.lx.clip.LXClip;
@@ -29,12 +25,16 @@ import heronarts.lx.clip.LXGroupClip;
 import heronarts.lx.effect.LXEffect;
 import heronarts.lx.parameter.LXParameter;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 public class LXGroup extends LXAbstractChannel {
 
   public class Profiler extends LXAbstractChannel.Profiler {
     public long compositeNanos;
   }
-
+  
   @Override
   protected LXModulatorComponent.Profiler constructProfiler() {
     return new Profiler();
@@ -44,7 +44,7 @@ public class LXGroup extends LXAbstractChannel {
   public final List<LXChannel> channels = Collections.unmodifiableList(this.mutableChannels);
 
   public LXGroup(LX lx, int index) {
-    super(lx, index, "Group-" + (index+1));
+    super(lx, index, "Group-" + (index + 1));
   }
 
   @Override
@@ -116,18 +116,18 @@ public class LXGroup extends LXAbstractChannel {
     // Because of channel views, channel blends may not touch all pixels, so start
     // by splatting transparency onto the group buffer
     this.blendBuffer.copyFrom(this.lx.engine.mixer.backgroundTransparent);
-    this.colors = this.blendBuffer.getArray();
+    this.colors.copyFrom(this.blendBuffer);
 
     // Blend all channels that are enabled.
     for (LXChannel channel : this.channels) {
       final long blendStart = System.nanoTime();
       if (channel.enabled.isOn()) {
         channel.blendMode.getObject().blend(
-          this.colors,
-          channel.getColors(),
-          channel.fader.getValue(),
-          this.colors,
-          channel.getModelView()
+            this.colors,
+            channel.getColors(),
+            channel.fader.getValue(),
+            this.colors,
+            channel.getModelView()
         );
       }
       ((LXAbstractChannel.Profiler) channel.profiler).blendNanos = System.nanoTime() - blendStart;

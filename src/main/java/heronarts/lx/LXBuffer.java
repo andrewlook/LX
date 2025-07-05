@@ -18,6 +18,8 @@
 
 package heronarts.lx;
 
+import java.util.Arrays;
+
 public interface LXBuffer {
   public int[] getArray();
 
@@ -31,5 +33,20 @@ public interface LXBuffer {
     final int[] array = getArray();
     System.arraycopy(that.getArray(), 0, array, 0, array.length);
     return this;
+  }
+
+  public default LXBuffer fill(int color) {
+    Arrays.fill(getArray(), color);
+    return this;
+  }
+
+  public default LXBuffer set(int index, int color) {
+    // TODO length-check?
+    getArray()[index] = color;
+    return this;
+  }
+
+  public default int length() {
+    return getArray().length;
   }
 }

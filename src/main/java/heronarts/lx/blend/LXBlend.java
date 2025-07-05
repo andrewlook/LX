@@ -1,13 +1,13 @@
 /**
  * Copyright 2016- Mark C. Slee, Heron Arts LLC
- *
+ * <p>
  * This file is part of the LX Studio software library. By using
  * LX, you agree to the terms of the LX Studio Software License
  * and Distribution Agreement, available at: http://lx.studio/license
- *
+ * <p>
  * Please note that the LX license is not open-source. The license
  * allows for free, non-commercial use.
- *
+ * <p>
  * HERON ARTS MAKES NO WARRANTY, EXPRESS, IMPLIED, STATUTORY, OR
  * OTHERWISE, AND SPECIFICALLY DISCLAIMS ANY WARRANTY OF
  * MERCHANTABILITY, NON-INFRINGEMENT, OR FITNESS FOR A PARTICULAR
@@ -43,8 +43,8 @@ public abstract class LXBlend extends LXModulatorComponent {
       /**
        * Blend function to combine two colors
        *
-       * @param dst Background color
-       * @param src Overlay color
+       * @param dst   Background color
+       * @param src   Overlay color
        * @param alpha Secondary alpha mask (from 0x00 - 0x100)
        * @return Blended color
        */
@@ -59,18 +59,24 @@ public abstract class LXBlend extends LXModulatorComponent {
     }
 
     @Override
-    public void blend(int[] dst, int[] src, double alpha, int[] output, LXModel model) {
+    public void blend(LXBuffer dst, LXBuffer src, double alpha, LXBuffer output, LXModel model) {
       int alphaMask = (int) (alpha * LXColor.BLEND_ALPHA_FULL);
+      int[] out = output.getArray();
+      int[] from = dst.getArray();
+      int[] to = src.getArray();
       for (LXPoint p : model.points) {
-        output[p.index] = this.function.apply(dst[p.index], src[p.index], alphaMask);
+        out[p.index] = this.function.apply(from[p.index], to[p.index], alphaMask);
       }
     }
 
     @Override
-    public void blend(int[] dst, int[] src, double alpha, int[] output, int start, int num) {
+    public void blend(LXBuffer dst, LXBuffer src, double alpha, LXBuffer output, int start, int num) {
       int alphaMask = (int) (alpha * LXColor.BLEND_ALPHA_FULL);
-      for (int i = start; i < start+num; ++i) {
-        output[i] = this.function.apply(dst[i], src[i], alphaMask);
+      int[] out = output.getArray();
+      int[] from = dst.getArray();
+      int[] to = src.getArray();
+      for (int i = start; i < start + num; ++i) {
+        out[i] = this.function.apply(from[i], to[i], alphaMask);
       }
     }
   }
@@ -109,7 +115,6 @@ public abstract class LXBlend extends LXModulatorComponent {
 
   /**
    * Gets the name of this blend.
-   *
    */
   @Override
   public String getLabel() {
@@ -124,32 +129,32 @@ public abstract class LXBlend extends LXModulatorComponent {
     return getName();
   }
 
-  public void blend(int[] dst, int[] src, double alpha, LXBuffer buffer, LXModel model) {
-    blend(dst, src, alpha, buffer.getArray(), model);
-  }
+//    public void blend(LXBuffer dst, LXBuffer src, double alpha, LXBuffer buffer, LXModel model) {
+//        blend(dst, src, alpha, buffer.getArray(), model);
+//    }
 
   /**
    * Blends the src buffer onto the destination buffer at the specified alpha amount.
    *
-   * @param dst Destination buffer (lower layer)
-   * @param src Source buffer (top layer)
-   * @param alpha Alpha blend, from 0-1
+   * @param dst    Destination buffer (lower layer)
+   * @param src    Source buffer (top layer)
+   * @param alpha  Alpha blend, from 0-1
    * @param output Output buffer, which may be the same as src or dst
-   * @param model A model which indicates the set of points to blend
+   * @param model  A model which indicates the set of points to blend
    */
-  public abstract void blend(int[] dst, int[] src, double alpha, int[] output, LXModel model);
+  public abstract void blend(LXBuffer dst, LXBuffer src, double alpha, LXBuffer output, LXModel model);
 
   /**
    * Blends the src buffer onto the destination buffer at the specified alpha amount.
    *
-   * @param dst Destination buffer (lower layer)
-   * @param src Source buffer (top layer)
-   * @param alpha Alpha blend, from 0-1
+   * @param dst    Destination buffer (lower layer)
+   * @param src    Source buffer (top layer)
+   * @param alpha  Alpha blend, from 0-1
    * @param output Output buffer, which may be the same as src or dst
-   * @param start Starting index to blend
-   * @param num Number of pixels to blend
+   * @param start  Starting index to blend
+   * @param num    Number of pixels to blend
    */
-  public abstract void blend(int[] dst, int[] src, double alpha, int[] output, int start, int num);
+  public abstract void blend(LXBuffer dst, LXBuffer src, double alpha, LXBuffer output, int start, int num);
 
   /**
    * Transitions from one buffer to another. By default, this is used by first
@@ -158,14 +163,14 @@ public abstract class LXBlend extends LXModulatorComponent {
    * custom functionality. This method is used by pattern transitions on
    * channels as well as the crossfader.
    *
-   * @param from First buffer
-   * @param to Second buffer
-   * @param amt Interpolation from-to (0-1)
+   * @param from   First buffer
+   * @param to     Second buffer
+   * @param amt    Interpolation from-to (0-1)
    * @param output Output buffer, which may be the same as from or to
-   * @param model The model with points that should be blended
+   * @param model  The model with points that should be blended
    */
-  public void lerp(int[] from, int[] to, double amt, int[] output, LXModel model) {
-    int[] dst, src;
+  public void lerp(LXBuffer from, LXBuffer to, double amt, LXBuffer output, LXModel model) {
+    LXBuffer dst, src;
     double alpha;
     if (amt <= 0.5) {
       dst = from;
@@ -174,7 +179,7 @@ public abstract class LXBlend extends LXModulatorComponent {
     } else {
       dst = to;
       src = from;
-      alpha = (1-amt) * 2.;
+      alpha = (1 - amt) * 2.;
     }
     blend(dst, src, alpha, output, model);
   }

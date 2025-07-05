@@ -1,13 +1,13 @@
 /**
  * Copyright 2013- Mark C. Slee, Heron Arts LLC
- *
+ * <p>
  * This file is part of the LX Studio software library. By using
  * LX, you agree to the terms of the LX Studio Software License
  * and Distribution Agreement, available at: http://lx.studio/license
- *
+ * <p>
  * Please note that the LX license is not open-source. The license
  * allows for free, non-commercial use.
- *
+ * <p>
  * HERON ARTS MAKES NO WARRANTY, EXPRESS, IMPLIED, STATUTORY, OR
  * OTHERWISE, AND SPECIFICALLY DISCLAIMS ANY WARRANTY OF
  * MERCHANTABILITY, NON-INFRINGEMENT, OR FITNESS FOR A PARTICULAR
@@ -18,15 +18,16 @@
 
 package heronarts.lx;
 
+import com.google.gson.JsonObject;
 import heronarts.lx.audio.LXAudioEngine;
 import heronarts.lx.clip.LXClipEngine;
 import heronarts.lx.color.LXColor;
 import heronarts.lx.color.LXPalette;
 import heronarts.lx.dmx.LXDmxEngine;
 import heronarts.lx.midi.LXMidiEngine;
+import heronarts.lx.mixer.LXAbstractChannel;
 import heronarts.lx.mixer.LXBus;
 import heronarts.lx.mixer.LXChannel;
-import heronarts.lx.mixer.LXAbstractChannel;
 import heronarts.lx.mixer.LXMixerEngine;
 import heronarts.lx.model.LXModel;
 import heronarts.lx.model.LXPoint;
@@ -48,17 +49,10 @@ import heronarts.lx.structure.view.LXViewDefinition;
 import java.io.File;
 import java.net.SocketException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import com.google.gson.JsonObject;
 
 /**
  * The engine is the core class that runs the internal animations. An engine is
@@ -72,7 +66,9 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
     SCHEDULED_EXECUTOR_SERVICE,
     BASIC_THREAD_SLEEP,
     BASIC_THREAD_SPINYIELD;
-  };
+  }
+
+  ;
 
   public final LXPalette palette;
 
@@ -107,22 +103,22 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
   public final Output output;
 
   public final BoundedParameter framesPerSecond =
-    new BoundedParameter("FPS", 60, 1, 300)
-    .setMappable(false)
-    .setOscMode(BoundedParameter.OscMode.ABSOLUTE)
-    .setDescription("Number of frames per second the engine runs at");
+      new BoundedParameter("FPS", 60, 1, 300)
+          .setMappable(false)
+          .setOscMode(BoundedParameter.OscMode.ABSOLUTE)
+          .setDescription("Number of frames per second the engine runs at");
 
   public final BoundedParameter speed =
-    new BoundedParameter("Speed", 1, 0, 2)
-    .setDescription("Overall speed adjustement to the entire engine (does not apply to master tempo and audio)");
+      new BoundedParameter("Speed", 1, 0, 2)
+          .setDescription("Overall speed adjustement to the entire engine (does not apply to master tempo and audio)");
 
   public final BooleanParameter performanceMode =
-    new BooleanParameter("Performance", false)
-    .setDescription("Whether performance mode UI is enabled");
+      new BooleanParameter("Performance", false)
+          .setDescription("Whether performance mode UI is enabled");
 
   public final BooleanParameter restricted =
-    new BooleanParameter("Restricted", false)
-    .setDescription("Whether rendering is disabled due to license restrictions");
+      new BooleanParameter("Restricted", false)
+          .setDescription("Whether rendering is disabled due to license restrictions");
 
   public final LXModulationEngine modulation;
 
@@ -136,8 +132,8 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
   public class Output extends LXOutputGroup implements LXOscComponent {
 
     public final BooleanParameter restricted =
-      new BooleanParameter("Restricted", false)
-      .setDescription("Whether output is disabled due to license restrictions");
+        new BooleanParameter("Restricted", false)
+            .setDescription("Whether output is disabled due to license restrictions");
 
     /**
      * This ModelOutput helper is used for sending dynamic datagrams that are
@@ -180,7 +176,7 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
         }
       }
     }
-
+    
     Output(LX lx) {
       super(lx);
       this.gammaMode.setValue(GammaMode.DIRECT);
@@ -229,23 +225,25 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
   // a cue and auxiliary view, as well as cue/aux view state
   public static class Frame implements LXBuffer {
 
+    private LX lx;
     private LXModel model;
-    private int[] main = null;
-    private int[] cue = null;
-    private int[] aux = null;
+    private LXBuffer main = null;
+    private LXBuffer cue = null;
+    private LXBuffer aux = null;
     private boolean cueOn = false;
     private boolean auxOn = false;
 
     public Frame(LX lx) {
+      this.lx = lx;
       setModel(lx.getModel());
     }
 
     public void setModel(LXModel model) {
       this.model = model;
-      if ((this.main == null) || (this.main.length != model.size)) {
-        this.main = new int[model.size];
-        this.cue = new int[model.size];
-        this.aux = new int[model.size];
+      if ((this.main == null) || (this.main.getArray().length != model.size)) {
+        this.main = new ModelBuffer(this.lx, LXColor.BLACK);
+        this.cue = new ModelBuffer(this.lx, LXColor.BLACK);
+        this.aux = new ModelBuffer(this.lx, LXColor.BLACK);
       }
     }
 
@@ -261,9 +259,9 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
       setModel(that.model);
       this.cueOn = that.cueOn;
       this.auxOn = that.auxOn;
-      System.arraycopy(that.main, 0, this.main, 0, this.main.length);
-      System.arraycopy(that.cue, 0, this.cue, 0, this.cue.length);
-      System.arraycopy(that.aux, 0, this.aux, 0, this.aux.length);
+      System.arraycopy(that.main.getArray(), 0, this.main.getArray(), 0, this.main.getArray().length);
+      System.arraycopy(that.cue.getArray(), 0, this.cue.getArray(), 0, this.cue.getArray().length);
+      System.arraycopy(that.aux.getArray(), 0, this.aux.getArray(), 0, this.aux.getArray().length);
     }
 
     public int[] getColors(boolean aux) {
@@ -271,11 +269,11 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
     }
 
     public int[] getColors() {
-      return this.cueOn ? this.cue : this.main;
+      return this.cueOn ? this.cue.getArray() : this.main.getArray();
     }
 
     public int[] getAuxColors() {
-      return this.auxOn ? this.aux : this.main;
+      return this.auxOn ? this.aux.getArray() : this.main.getArray();
     }
 
     public LXModel getModel() {
@@ -284,20 +282,33 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
 
     @Override
     public int[] getArray() {
-      return this.main;
+      return getMain();
     }
 
     public int[] getMain() {
-      return this.main;
+      return mainBuffer().getArray();
     }
 
     public int[] getCue() {
-      return this.cue;
+      return cueBuffer().getArray();
     }
 
     public int[] getAux() {
+      return auxBuffer().getArray();
+    }
+
+    public LXBuffer mainBuffer() {
+      return this.main;
+    }
+
+    public LXBuffer cueBuffer() {
+      return this.cue;
+    }
+
+    public LXBuffer auxBuffer() {
       return this.aux;
     }
+
   }
 
   // A double buffer that holds two frames which are flipped back and forth such that
@@ -335,14 +346,14 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
   private final DoubleBuffer buffer;
 
   public final BooleanParameter isCompositorMultithreaded =
-    new BooleanParameter("Compositor Threaded", false)
-    .setMappable(false)
-    .setDescription("Whether the compositing engine is multi-threaded");
+      new BooleanParameter("Compositor Threaded", false)
+          .setMappable(false)
+          .setDescription("Whether the compositing engine is multi-threaded");
 
   public final BooleanParameter isNetworkMultithreaded =
-    new BooleanParameter("Network Threaded", false)
-    .setMappable(false)
-    .setDescription("Whether the network output is on a separate thread");
+      new BooleanParameter("Network Threaded", false)
+          .setMappable(false)
+          .setDescription("Whether the network output is on a separate thread");
 
   private Thread engineThread = null;
   private final ExecutorService engineExecutorService;
@@ -667,7 +678,9 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
 
       sampler.sample(loopStart, loopEnd);
 
-    };
+    }
+
+    ;
 
   }
 
@@ -766,7 +779,9 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
 
       // Thread has stopped
       LX.log(getName() + " stopped.");
-    };
+    }
+
+    ;
 
     private final long SLEEP_PRECISION = TimeUnit.MILLISECONDS.toNanos(2);
     private final long SPIN_YIELD_PRECISION = TimeUnit.MILLISECONDS.toNanos(1);
@@ -828,7 +843,7 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
   /**
    * Register a component with the engine. It will be saved and loaded.
    *
-   * @param path Unique path key for saving and loading component
+   * @param path      Unique path key for saving and loading component
    * @param component Component
    * @return this
    */
@@ -931,7 +946,7 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
    * of milliseconds expires and the timeout has not been canceled.
    * The timer is automatically canceled once it has run.
    *
-   * @param timerMs Timeout in milliseconds
+   * @param timerMs  Timeout in milliseconds
    * @param runnable Function to run after timeout expires
    * @return Timer object which can be stopped via cancel()
    */
@@ -946,7 +961,7 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
    * the interval has passed, until explicitly canceled.
    *
    * @param intervalMs Interval in milliseconds
-   * @param runnable Function to run whenever interval has passed
+   * @param runnable   Function to run whenever interval has passed
    * @return Timer object which can be stopped via cancel()
    */
   public Timer addInterval(double intervalMs, Runnable runnable) {
@@ -1106,8 +1121,8 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
     final boolean eulaAccepted = !this.lx.permissions.isEulaRequired() || this.lx.preferences.eulaAccepted.isOn();
     final int maxOutputPoints = this.lx.permissions.getMaxOutputPoints();
     final int maxRenderPoints = this.lx.permissions.getMaxRenderPoints();
-    this.restricted.setValue((maxRenderPoints >= 0) && (this.buffer.render.main.length > maxRenderPoints));
-    this.output.restricted.setValue((maxOutputPoints >= 0) && (this.buffer.render.main.length > maxOutputPoints));
+    this.restricted.setValue((maxRenderPoints >= 0) && (this.buffer.render.main.length() > maxRenderPoints));
+    this.output.restricted.setValue((maxOutputPoints >= 0) && (this.buffer.render.main.length() > maxOutputPoints));
 
     // Run tempo and audio, always using real-time
     this.lx.engine.tempo.loop(deltaMs);
@@ -1145,17 +1160,17 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
       this.mixer.loop(buffer.render, deltaMs);
     } else {
       // Black everything out
-      Arrays.fill(buffer.render.main, LXColor.BLACK);
-      Arrays.fill(buffer.render.cue, LXColor.BLACK);
-      Arrays.fill(buffer.render.aux, LXColor.BLACK);
+      buffer.render.main.fill(LXColor.BLACK);
+      buffer.render.cue.fill(LXColor.BLACK);
+      buffer.render.aux.fill(LXColor.BLACK);
     }
 
     // Post-pass for any views with cue enabled
     for (LXViewDefinition view : this.lx.structure.views.views) {
       if (view.cueActive.isOn() && (view.getView() != null)) {
-        Arrays.fill(buffer.render.cue, LXColor.BLACK);
+        buffer.render.cue.fill(LXColor.BLACK);
         for (LXPoint p : view.getView().points) {
-          buffer.render.cue[p.index] = LXColor.WHITE;
+          buffer.render.cue.set(p.index, LXColor.WHITE);
         }
         buffer.render.setCueOn(true);
         break;
@@ -1174,9 +1189,9 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
         int end = start + fixture.totalSize();
         if (end > start) {
           for (int i = start; i < end; ++i) {
-            this.buffer.render.main[i] = LXColor.BLACK;
-            this.buffer.render.cue[i] = LXColor.BLACK;
-            this.buffer.render.aux[i] = LXColor.BLACK;
+            this.buffer.render.main.set(i, LXColor.BLACK);
+            this.buffer.render.cue.set(i, LXColor.BLACK);
+            this.buffer.render.aux.set(i, LXColor.BLACK);
           }
         }
       } else if (fixture.identify.isOn()) {
@@ -1184,9 +1199,9 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
         int end = start + fixture.totalSize();
         if (end > start) {
           for (int i = start; i < end; ++i) {
-            this.buffer.render.main[i] = identifyColor;
-            this.buffer.render.cue[i] = identifyColor;
-            this.buffer.render.aux[i] = identifyColor;
+            this.buffer.render.main.set(i, identifyColor);
+            this.buffer.render.cue.set(i, identifyColor);
+            this.buffer.render.aux.set(i, identifyColor);
           }
         }
       }
@@ -1194,11 +1209,11 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
         int start = fixture.getIndexBufferOffset();
         int end = start + fixture.totalSize();
         if (end > start) {
-          for (int i = 0; i < this.buffer.render.main.length; ++i) {
+          for (int i = 0; i < this.buffer.render.main.length(); ++i) {
             if (i < start || i >= end) {
-              this.buffer.render.main[i] = LXColor.BLACK;
-              this.buffer.render.cue[i] = LXColor.BLACK;
-              this.buffer.render.aux[i] = LXColor.BLACK;
+              this.buffer.render.main.set(i, LXColor.BLACK);
+              this.buffer.render.cue.set(i, LXColor.BLACK);
+              this.buffer.render.aux.set(i, LXColor.BLACK);
             }
           }
         }
@@ -1206,13 +1221,13 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
 
       // Finally, structure-level edits
       if (this.lx.structure.mute.isOn()) {
-        Arrays.fill(this.buffer.render.main, LXColor.BLACK);
-        Arrays.fill(this.buffer.render.cue, LXColor.BLACK);
-        Arrays.fill(this.buffer.render.aux, LXColor.BLACK);
+        this.buffer.render.main.fill(LXColor.BLACK);
+        this.buffer.render.cue.fill(LXColor.BLACK);
+        this.buffer.render.aux.fill(LXColor.BLACK);
       } else if (this.lx.structure.allWhite.isOn()) {
-        Arrays.fill(this.buffer.render.main, LXColor.WHITE);
-        Arrays.fill(this.buffer.render.cue, LXColor.WHITE);
-        Arrays.fill(this.buffer.render.aux, LXColor.WHITE);
+        this.buffer.render.main.fill(LXColor.WHITE);
+        this.buffer.render.cue.fill(LXColor.WHITE);
+        this.buffer.render.aux.fill(LXColor.WHITE);
       }
     }
 
@@ -1231,7 +1246,8 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
         // Or do it ourself here on the engine thread
         long outputStart = System.nanoTime();
         Frame sendFrame = this.buffer.copy;
-        int[] sendColors = (this.lx.flags.sendCueToOutput && sendFrame.cueOn) ? sendFrame.cue : sendFrame.main;
+        // TODO(look): should this be LXBuffer?
+        int[] sendColors = (this.lx.flags.sendCueToOutput && sendFrame.cueOn) ? sendFrame.cue.getArray() : sendFrame.main.getArray();
         this.output.send(sendColors);
         this.profiler.outputNanos = System.nanoTime() - outputStart;
       }
@@ -1259,13 +1275,13 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
 
   private void _logProfiler() {
     StringBuilder sb = new StringBuilder();
-    sb.append("LXEngine::run() " + ((int) (this.profiler.runNanos / 1000000)) + "ms\n");
-    sb.append("LXEngine::run()::channels " + ((int) (this.profiler.channelNanos / 1000000)) + "ms\n");
+    sb.append("LXEngine::run() ").append((int) (this.profiler.runNanos / 1000000)).append("ms\n");
+    sb.append("LXEngine::run()::channels ").append((int) (this.profiler.channelNanos / 1000000)).append("ms\n");
     for (LXAbstractChannel channel : this.mixer.channels) {
-      sb.append("LXEngine::" + channel.getLabel() + "::loop() " + ((int) (channel.profiler.loopNanos / 1000000)) + "ms\n");
+      sb.append("LXEngine::").append(channel.getLabel()).append("::loop() ").append((int) (channel.profiler.loopNanos / 1000000)).append("ms\n");
       if (channel instanceof LXChannel) {
         LXPattern pattern = ((LXChannel) channel).getActivePattern();
-        sb.append("LXEngine::" + channel.getLabel() + "::" + pattern.getLabel() + "::run() " + ((int) (pattern.profiler.runNanos / 1000000)) + "ms\n");
+        sb.append("LXEngine::").append(channel.getLabel()).append("::").append(pattern.getLabel()).append("::run() ").append((int) (pattern.profiler.runNanos / 1000000)).append("ms\n");
       }
     }
     LX.log(sb.toString());
@@ -1296,7 +1312,7 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
       LXOutput.log("LXEngine Network Thread started");
       while (!isInterrupted()) {
         try {
-          synchronized(this) {
+          synchronized (this) {
             wait();
           }
         } catch (InterruptedException ix) {
@@ -1312,7 +1328,7 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
           long copyEnd = System.nanoTime();
           this.timer.copyNanos = copyEnd - copyStart;
           try {
-            output.send(this.networkFrame.main);
+            output.send(this.networkFrame.main.getArray());
           } catch (Throwable x) {
             // TODO(mcslee): For now we don't flag these, there could be ConcurrentModificationException
             // or ArrayIndexBounds exceptions if the model/fixtures are being changed in real-time.
@@ -1429,14 +1445,14 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
 
     // Override project output mode if flag is set
     switch (lx.flags.outputMode) {
-    case ACTIVE:
-      this.output.enabled.setValue(true);
-      break;
-    case INACTIVE:
-      this.output.enabled.setValue(false);
-      break;
-    default:
-      break;
+      case ACTIVE:
+        this.output.enabled.setValue(true);
+        break;
+      case INACTIVE:
+        this.output.enabled.setValue(false);
+        break;
+      default:
+        break;
     }
   }
 

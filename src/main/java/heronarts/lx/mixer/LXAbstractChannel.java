@@ -1,13 +1,13 @@
 /**
  * Copyright 2018- Mark C. Slee, Heron Arts LLC
- *
+ * <p>
  * This file is part of the LX Studio software library. By using
  * LX, you agree to the terms of the LX Studio Software License
  * and Distribution Agreement, available at: http://lx.studio/license
- *
+ * <p>
  * Please note that the LX license is not open-source. The license
  * allows for free, non-commercial use.
- *
+ * <p>
  * HERON ARTS MAKES NO WARRANTY, EXPRESS, IMPLIED, STATUTORY, OR
  * OTHERWISE, AND SPECIFICALLY DISCLAIMS ANY WARRANTY OF
  * MERCHANTABILITY, NON-INFRINGEMENT, OR FITNESS FOR A PARTICULAR
@@ -18,17 +18,8 @@
 
 package heronarts.lx.mixer;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-
 import com.google.gson.JsonObject;
-
-import heronarts.lx.LX;
-import heronarts.lx.LXComponent;
-import heronarts.lx.LXModulatorComponent;
-import heronarts.lx.LXSerializable;
-import heronarts.lx.ModelBuffer;
+import heronarts.lx.*;
 import heronarts.lx.blend.LXBlend;
 import heronarts.lx.effect.LXEffect;
 import heronarts.lx.midi.LXShortMessage;
@@ -44,13 +35,18 @@ import heronarts.lx.structure.view.LXViewDefinition;
 import heronarts.lx.structure.view.LXViewEngine;
 import heronarts.lx.utils.LXUtils;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
 /**
  * Abstract subclass for both groups and channels
  */
 public abstract class LXAbstractChannel extends LXBus implements LXComponent.Renamable {
 
   public interface Listener extends LXBus.Listener {
-    public default void indexChanged(LXAbstractChannel channel) {}
+    public default void indexChanged(LXAbstractChannel channel) {
+    }
   }
 
   public interface MidiListener {
@@ -74,7 +70,9 @@ public abstract class LXAbstractChannel extends LXBus implements LXComponent.Ren
     BYPASS,
     A,
     B
-  };
+  }
+
+  ;
 
   // An internal state flag used by the engine to track which channels
   // are actively animating (e.g. they are enabled or cued)
@@ -90,57 +88,57 @@ public abstract class LXAbstractChannel extends LXBus implements LXComponent.Ren
    */
   protected final ModelBuffer blendBuffer;
 
-  protected int[] colors;
+  protected LXBuffer colors;
 
   /**
    * Whether this channel is enabled.
    */
   public final BooleanParameter enabled =
-    new BooleanParameter("On", true)
-    .setDescription("Sets whether this channel is on or off");
+      new BooleanParameter("On", true)
+          .setDescription("Sets whether this channel is on or off");
 
   /**
    * Whether this channel automatically behaves as if enabled is false
    * whenever the fader level is at 0.
    */
   public final BooleanParameter autoMute =
-    new BooleanParameter("Auto-Mute", false)
-    .setDescription("Whether to disable channel processing if fader is off");
+      new BooleanParameter("Auto-Mute", false)
+          .setDescription("Whether to disable channel processing if fader is off");
 
   /**
    * Read-only parameter, used to monitor when auto-muting is taking place
    */
   public final BooleanParameter isAutoMuted =
-    new BooleanParameter("Auto-Muted", false)
-    .setDescription("Set to true by the engine when the channel is auto-disabled");
+      new BooleanParameter("Auto-Muted", false)
+          .setDescription("Set to true by the engine when the channel is auto-disabled");
 
   /**
    * Crossfade group this channel belongs to
    */
   public final EnumParameter<CrossfadeGroup> crossfadeGroup =
-    new EnumParameter<CrossfadeGroup>("Group", CrossfadeGroup.BYPASS)
-    .setDescription("Assigns this channel to crossfader group A or B");
+      new EnumParameter<CrossfadeGroup>("Group", CrossfadeGroup.BYPASS)
+          .setDescription("Assigns this channel to crossfader group A or B");
 
   /**
    * Whether this channel should show in the cue UI.
    */
   public final BooleanParameter cueActive =
-    new BooleanParameter("Cue", false)
-    .setDescription("Toggles the channel CUE state, determining whether it is shown in the preview window");
+      new BooleanParameter("Cue", false)
+          .setDescription("Toggles the channel CUE state, determining whether it is shown in the preview window");
 
   /**
    * Whether this channel should show in the aux UI.
    */
   public final BooleanParameter auxActive =
-    new BooleanParameter("Aux", false)
-    .setDescription("Toggles the channel AUX state, determining whether it is shown in the auxiliary window");
+      new BooleanParameter("Aux", false)
+          .setDescription("Toggles the channel AUX state, determining whether it is shown in the auxiliary window");
 
   public final MidiSelector.Source.Channel midiSource =
-    new MidiSelector.Source.Channel("MIDI Source");
+      new MidiSelector.Source.Channel("MIDI Source");
 
   public final MidiFilterParameter midiFilter =
-    new MidiFilterParameter("MIDI Filter", false)
-    .setDescription("Filter controls for incoming MIDI messages");
+      new MidiFilterParameter("MIDI Filter", false)
+          .setDescription("Filter controls for incoming MIDI messages");
 
   public final ObjectParameter<LXBlend> blendMode;
 
@@ -149,8 +147,8 @@ public abstract class LXAbstractChannel extends LXBus implements LXComponent.Ren
   int performanceWarningFrameCount = 0;
 
   public final BooleanParameter performanceWarning =
-    new BooleanParameter("Warning", false)
-    .setDescription("Set to true by the engine if this channel is using too many CPU resources");
+      new BooleanParameter("Warning", false)
+          .setDescription("Set to true by the engine if this channel is using too many CPU resources");
 
   /**
    * View selector for this abstract channel
@@ -162,12 +160,14 @@ public abstract class LXAbstractChannel extends LXBus implements LXComponent.Ren
     this.index = index;
     this.label.setDescription("The name of this channel");
     this.blendBuffer = new ModelBuffer(lx);
-    this.colors = this.blendBuffer.getArray();
+    this.colors = new ModelBuffer(lx);
+    // TODO(look): does this need to be copied here (as in the original code), or is it ok to leave uninit'ed?
+    this.colors.copyFrom(this.blendBuffer);
 
     this.autoMute.setValue(lx.engine.mixer.autoMuteDefault.isOn());
 
     this.blendMode = new ObjectParameter<LXBlend>("Blend", new LXBlend[1])
-      .setDescription("Specifies the blending function used for the channel fader");
+        .setDescription("Specifies the blending function used for the channel fader");
     updateChannelBlendOptions();
 
     addParameter("enabled", this.enabled);
@@ -233,7 +233,7 @@ public abstract class LXAbstractChannel extends LXBus implements LXComponent.Ren
 
   @Override
   public String getPath() {
-    return LXMixerEngine.PATH_CHANNEL + "/" + (this.index+1);
+    return LXMixerEngine.PATH_CHANNEL + "/" + (this.index + 1);
   }
 
   @Override
@@ -356,9 +356,14 @@ public abstract class LXAbstractChannel extends LXBus implements LXComponent.Ren
   public final int getIndex() {
     return this.index;
   }
-
-  int[] getColors() {
+  
+  LXBuffer getColors() {
     return this.colors;
+  }
+
+  // TODO(look): is this needed? or is it better to pass around LXBuffer?
+  int[] getColorsAsInt() {
+    return this.getColors().getArray();
   }
 
   @Override
