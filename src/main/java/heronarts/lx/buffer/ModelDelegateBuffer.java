@@ -19,12 +19,11 @@
 package heronarts.lx.buffer;
 
 import heronarts.lx.LX;
-import heronarts.lx.model.LXModel;
 
 /**
  * Decoupling LX model-listening behavior from storage implementation.
  */
-public class ModelDelegateBuffer extends ModelBuffer {
+public class ModelDelegateBuffer<T extends LXArrayBuffer<T>> extends ModelBuffer<T> {
 
   private final LXBuffer<?> buffer;
 
@@ -32,15 +31,15 @@ public class ModelDelegateBuffer extends ModelBuffer {
    * Provide a generic buffer implementation - if size is already set correctly,
    * our initArray() implementation will check the length first and skip it.
    */
-  public ModelDelegateBuffer(LX lx, LXBuffer<?> buf) {
+  protected ModelDelegateBuffer(LX lx, LXBuffer<?> buf) {
     super(lx);
     this.buffer = buf;
     this.initArray(lx.getModel().size);
   }
 
   // Shim constructors - internalize choice of buffer implementation
-  public ModelDelegateBuffer(LX lx, int defaultColor) {
-    this(lx, new LXArrayBufferImpl(lx.getModel().size, defaultColor));
+  protected ModelDelegateBuffer(LX lx, int defaultColor) {
+    this(lx, new LXArrayBufferImpl<>(lx.getModel().size, defaultColor));
   }
 
   public ModelDelegateBuffer(LX lx) {
@@ -66,8 +65,8 @@ public class ModelDelegateBuffer extends ModelBuffer {
   }
 
   @Override
-  public ModelDelegateBuffer setFromIntArray(int[] arr) {
+  public T setFromIntArray(int[] arr) {
     this.buffer.setFromIntArray(arr);
-    return this;
+    return self();
   }
 }

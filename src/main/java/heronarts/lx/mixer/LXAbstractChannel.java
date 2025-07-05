@@ -28,7 +28,7 @@ import heronarts.lx.LXComponent;
 import heronarts.lx.LXModulatorComponent;
 import heronarts.lx.LXSerializable;
 import heronarts.lx.blend.LXBlend;
-import heronarts.lx.buffer.ModelArrayBuffer;
+import heronarts.lx.buffer.ModelBuffer;
 import heronarts.lx.effect.LXEffect;
 import heronarts.lx.midi.LXShortMessage;
 import heronarts.lx.midi.MidiFilterParameter;
@@ -90,7 +90,7 @@ public abstract class LXAbstractChannel extends LXBus implements LXComponent.Ren
   /**
    * This is a local buffer used for transition blending on this channel
    */
-  protected final ModelArrayBuffer blendBuffer;
+  protected final ModelBuffer<?> blendBuffer;
 
   protected int[] colors;
 
@@ -163,7 +163,7 @@ public abstract class LXAbstractChannel extends LXBus implements LXComponent.Ren
     super(lx, label);
     this.index = index;
     this.label.setDescription("The name of this channel");
-    this.blendBuffer = new ModelArrayBuffer(lx);
+    this.blendBuffer = ModelBuffer.shim(lx);
     this.colors = this.blendBuffer.getArray();
 
     this.autoMute.setValue(lx.engine.mixer.autoMuteDefault.isOn());

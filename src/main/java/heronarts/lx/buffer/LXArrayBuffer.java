@@ -18,8 +18,9 @@
 
 package heronarts.lx.buffer;
 
-public interface LXArrayBuffer extends LXBuffer<LXArrayBuffer> {
-  default LXArrayBuffer copyTo(LXBuffer<?> that) {
+public interface LXArrayBuffer<T extends LXBuffer<T>> extends LXBuffer<T> {
+
+  default T copyTo(LXBuffer<?> that) {
     if (that instanceof LXArrayBuffer) {
       final int[] array = getArray();
       System.arraycopy(array, 0, ((LXArrayBuffer) that).getArray(), 0, array.length);
@@ -27,7 +28,7 @@ public interface LXArrayBuffer extends LXBuffer<LXArrayBuffer> {
     return self();
   }
 
-  default LXArrayBuffer copyFrom(LXBuffer<?> that) {
+  default T copyFrom(LXBuffer<?> that) {
     if (that instanceof LXArrayBuffer) {
       final int[] array = getArray();
       System.arraycopy(((LXArrayBuffer) that).getArray(), 0, array, 0, array.length);
@@ -41,7 +42,7 @@ public interface LXArrayBuffer extends LXBuffer<LXArrayBuffer> {
   }
 
   @Override
-  default LXArrayBuffer self() {
-    return this;
+  default T self() {
+    return (T) this;
   }
 }

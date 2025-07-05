@@ -22,16 +22,16 @@ import java.util.Arrays;
 
 import heronarts.lx.LX;
 
-public class ModelArrayBuffer extends ModelBuffer {
+public class ModelArrayBuffer<T extends LXArrayBuffer<T>> extends ModelBuffer<T> {
 
   private int[] array;
   private final int defaultColor;
 
-  public ModelArrayBuffer(LX lx) {
+  protected ModelArrayBuffer(LX lx) {
     this(lx, 0);
   }
 
-  public ModelArrayBuffer(LX lx, int defaultColor) {
+  protected ModelArrayBuffer(LX lx, int defaultColor) {
     super(lx);
     this.defaultColor = defaultColor;
     initArray(lx.getModel().size);
@@ -49,8 +49,8 @@ public class ModelArrayBuffer extends ModelBuffer {
   }
 
   @Override
-  public ModelArrayBuffer setFromIntArray(int[] arr) {
+  public T setFromIntArray(int[] arr) {
     this.array = arr;
-    return this;
+    return self();
   }
 }

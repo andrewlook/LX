@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import heronarts.lx.LX;
-import heronarts.lx.buffer.ModelArrayBuffer;
+import heronarts.lx.buffer.ModelBuffer;
 import heronarts.lx.color.LXColor;
 import heronarts.lx.model.LXModel;
 import heronarts.lx.model.LXPoint;
@@ -38,15 +38,20 @@ class LXBlendTest {
   private final LX mockLX = new LX(mockModel);
   private final LXBlend add = new AddBlend(mockLX);
 
-  private ModelArrayBuffer src;
-  private ModelArrayBuffer dst;
-  private ModelArrayBuffer out;
+  private ModelBuffer<?> src;
+  private ModelBuffer<?> dst;
+  private ModelBuffer<?> out;
 
   @BeforeEach
   void setUp() {
-    src = new ModelArrayBuffer(mockLX).setFromIntArray(TEST_SOURCE);
-    dst = new ModelArrayBuffer(mockLX).setFromIntArray(TEST_DEST);
-    out = new ModelArrayBuffer(mockLX).setFromIntArray(new int[]{
+    src = ModelBuffer.shim(mockLX);
+    src.setFromIntArray(TEST_SOURCE);
+
+    dst = ModelBuffer.shim(mockLX);
+    dst.setFromIntArray(TEST_DEST);
+
+    out = ModelBuffer.shim(mockLX);
+    out.setFromIntArray(new int[]{
         LXColor.BLACK,
         LXColor.BLACK,
         LXColor.BLACK,

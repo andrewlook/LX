@@ -24,7 +24,7 @@ import heronarts.lx.model.LXModel;
 /**
  * Decoupling LX model-listening behavior from storage implementation.
  */
-public abstract class ModelBuffer implements LXArrayBuffer {
+public abstract class ModelBuffer<T extends LXArrayBuffer<T>> implements LXArrayBuffer<T> {
 
   protected final LX lx;
   private final LX.Listener modelListener = new LX.Listener() {
@@ -38,7 +38,7 @@ public abstract class ModelBuffer implements LXArrayBuffer {
    * Provide a generic buffer implementation - if size is already set correctly,
    * our initArray() implementation will check the length first and skip it.
    */
-  public ModelBuffer(LX lx) {
+  protected ModelBuffer(LX lx) {
     this.lx = lx;
     lx.addListener(this.modelListener);
   }
@@ -47,15 +47,19 @@ public abstract class ModelBuffer implements LXArrayBuffer {
     this.lx.removeListener(this.modelListener);
   }
 
-  public static LXArrayBuffer shimModelBuffer(LX lx) {
-    return shimModelBuffer(lx, 0);
+  public static ModelBuffer shim(LX lx) {
+    return shim(lx, 0, SHIM_MODEL_DELEGATE);
   }
 
-  public static ModelBuffer shimModelBuffer(LX lx, int defaultColor) {
-    if (SHIM_MODEL_DELEGATE) {
-      return new ModelDelegateBuffer(lx, defaultColor);
+  public static ModelBuffer shim(LX lx, int defaultColor) {
+    return shim(lx, defaultColor, SHIM_MODEL_DELEGATE);
+  }
+
+  public static ModelBuffer shim(LX lx, int defaultColor, boolean useDelegate) {
+    if (useDelegate) {
+      return new ModelDelegateBuffer<>(lx, defaultColor);
     } else {
-      return new ModelArrayBuffer(lx, defaultColor);
+      return new ModelArrayBuffer<>(lx, defaultColor);
     }
   }
 }

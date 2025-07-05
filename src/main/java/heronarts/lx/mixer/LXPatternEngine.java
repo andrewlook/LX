@@ -31,7 +31,7 @@ import heronarts.lx.LXComponent;
 import heronarts.lx.LXSerializable;
 import heronarts.lx.blend.LXBlend;
 import heronarts.lx.buffer.LXBuffer;
-import heronarts.lx.buffer.ModelArrayBuffer;
+import heronarts.lx.buffer.ModelBuffer;
 import heronarts.lx.midi.LXShortMessage;
 import heronarts.lx.midi.MidiPanic;
 import heronarts.lx.model.LXModel;
@@ -211,7 +211,7 @@ public class LXPatternEngine implements LXParameterListener, LXSerializable {
   /**
    * This is a local buffer used to render a secondary pattern
    */
-  protected final ModelArrayBuffer renderBuffer;
+  protected final ModelBuffer<?> renderBuffer;
 
   private double autoCycleProgress = 0;
   private double transitionProgress = 0;
@@ -245,7 +245,7 @@ public class LXPatternEngine implements LXParameterListener, LXSerializable {
     this.component = component;
     this.container = (Container) component;
 
-    this.renderBuffer = new ModelArrayBuffer(lx);
+    this.renderBuffer = ModelBuffer.shim(lx);
 
     this.launchPatternCycle =
         new QuantizedTriggerParameter.Launch(this.lx, "Launch Pattern Cycle", this.triggerPatternCycle::trigger)

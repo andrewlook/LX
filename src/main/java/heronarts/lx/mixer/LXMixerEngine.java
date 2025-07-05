@@ -38,7 +38,7 @@ import heronarts.lx.LXRegistry;
 import heronarts.lx.LXSerializable;
 import heronarts.lx.blend.AddBlend;
 import heronarts.lx.blend.LXBlend;
-import heronarts.lx.buffer.ModelArrayBuffer;
+import heronarts.lx.buffer.ModelBuffer;
 import heronarts.lx.clip.LXClip;
 import heronarts.lx.color.LXColor;
 import heronarts.lx.effect.LXEffect;
@@ -139,10 +139,10 @@ public class LXMixerEngine extends LXComponent implements LXOscComponent {
       new BooleanParameter("Auto-Mute Pattern Default", false)
           .setDescription("Whether new rack patterns have Auto-Mute enabled by default");
 
-  public final ModelArrayBuffer backgroundBlack;
-  public final ModelArrayBuffer backgroundTransparent;
-  private final ModelArrayBuffer blendBufferLeft;
-  private final ModelArrayBuffer blendBufferRight;
+  public final ModelBuffer<?> backgroundBlack;
+  public final ModelBuffer<?> backgroundTransparent;
+  private final ModelBuffer<?> blendBufferLeft;
+  private final ModelBuffer<?> blendBufferRight;
 
   public final BooleanParameter viewCondensed =
       new BooleanParameter("View Condensed", false)
@@ -160,10 +160,10 @@ public class LXMixerEngine extends LXComponent implements LXOscComponent {
     super(lx, "Mixer");
 
     // Background and blending buffers
-    this.backgroundBlack = new ModelArrayBuffer(lx, LXColor.BLACK);
-    this.backgroundTransparent = new ModelArrayBuffer(lx, 0);
-    this.blendBufferLeft = new ModelArrayBuffer(lx);
-    this.blendBufferRight = new ModelArrayBuffer(lx);
+    this.backgroundBlack = ModelBuffer.shim(lx, LXColor.BLACK);
+    this.backgroundTransparent = ModelBuffer.shim(lx, 0);
+    this.blendBufferLeft = ModelBuffer.shim(lx);
+    this.blendBufferRight = ModelBuffer.shim(lx);
     LX.initProfiler.log("Engine: Mixer: Buffers");
 
     // Set up global add blend

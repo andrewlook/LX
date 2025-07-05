@@ -1205,7 +1205,7 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
   // Buffer for a single frame, which was rendered with
   // a particular model state, has a main view along with
   // a cue and auxiliary view, as well as cue/aux view state
-  public static class Frame implements LXArrayBuffer {
+  public static class Frame implements LXArrayBuffer<Frame> {
     private LXModel model;
     public int[] main = null;
     public int[] cue = null;
