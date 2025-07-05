@@ -22,7 +22,7 @@ public interface LXBuffer<T extends LXBuffer<T>> {
   /**
    * If true, return "ModelDelegateBuffer" instead of "ModelIntArrayBuffer"
    */
-  boolean SHIM_MODEL_DELEGATE = false;
+  boolean SHIM_MODEL_DELEGATE = true;
   /**
    * If true, return "LXNDArrayBuffer" instead of "LXIntArrayBufferImpl"
    */
