@@ -33,11 +33,11 @@ import com.google.gson.JsonObject;
 import heronarts.lx.LX;
 import heronarts.lx.LXComponent;
 import heronarts.lx.LXDeviceComponent;
+import heronarts.lx.LXEngine;
 import heronarts.lx.LXRegistry;
 import heronarts.lx.LXSerializable;
 import heronarts.lx.blend.AddBlend;
 import heronarts.lx.blend.LXBlend;
-import heronarts.lx.buffer.LXIntArrayFrame;
 import heronarts.lx.buffer.ModelIntArrayBuffer;
 import heronarts.lx.clip.LXClip;
 import heronarts.lx.color.LXColor;
@@ -1013,7 +1013,7 @@ public class LXMixerEngine extends LXComponent implements LXOscComponent {
   private final List<Future<?>> compositorFutures = new ArrayList<>();
   private ExecutorService compositor = null;
 
-  public void loop(LXIntArrayFrame render, double deltaMs) {
+  public void loop(LXEngine.Frame render, double deltaMs) {
     final long channelStart = System.nanoTime();
 
     // Initialize blend stacks

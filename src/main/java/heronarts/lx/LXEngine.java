@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.google.gson.JsonObject;
 import heronarts.lx.audio.LXAudioEngine;
-import heronarts.lx.buffer.LXIntArrayFrame;
+import heronarts.lx.buffer.LXIntArrayBuffer;
 import heronarts.lx.clip.LXClipEngine;
 import heronarts.lx.color.LXColor;
 import heronarts.lx.color.LXPalette;
@@ -232,16 +232,16 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
   // copy off the contents of another
   class DoubleBuffer {
 
-    // LXIntArrayFrame buffer that is currently used by the engine to render
-    LXIntArrayFrame render;
+    // Frame buffer that is currently used by the engine to render
+    Frame render;
 
     // Complete buffer that may be copied off for UI or networking while engine
     // works on the other buffer.
-    LXIntArrayFrame copy;
+    Frame copy;
 
     DoubleBuffer(LX lx) {
-      this.render = new LXIntArrayFrame(lx);
-      this.copy = new LXIntArrayFrame(lx);
+      this.render = new Frame(lx);
+      this.copy = new Frame(lx);
     }
 
     synchronized void sync() {
@@ -249,12 +249,12 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
     }
 
     synchronized void flip() {
-      LXIntArrayFrame tmp = this.render;
+      Frame tmp = this.render;
       this.render = this.copy;
       this.copy = tmp;
     }
 
-    synchronized void copyTo(LXIntArrayFrame that) {
+    synchronized void copyTo(Frame that) {
       that.copyFrom(this.copy);
     }
   }
@@ -1161,7 +1161,7 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
       } else {
         // Or do it ourself here on the engine thread
         long outputStart = System.nanoTime();
-        LXIntArrayFrame sendFrame = this.buffer.copy;
+        Frame sendFrame = this.buffer.copy;
         int[] sendColors = (this.lx.flags.sendCueToOutput && sendFrame.cueOn) ? sendFrame.cue : sendFrame.main;
         this.output.send(sendColors);
         this.profiler.outputNanos = System.nanoTime() - outputStart;
@@ -1202,6 +1202,91 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
     LX.log(sb.toString());
   }
 
+  // Buffer for a single frame, which was rendered with
+  // a particular model state, has a main view along with
+  // a cue and auxiliary view, as well as cue/aux view state
+  public static class Frame implements LXIntArrayBuffer {
+    private LXModel model;
+    public int[] main = null;
+    public int[] cue = null;
+    public int[] aux = null;
+    public boolean cueOn = false;
+    public boolean auxOn = false;
+
+    public Frame(LX lx) {
+      setModel(lx.getModel());
+    }
+
+    public void setModel(LXModel model) {
+      this.model = model;
+      if ((this.main == null) || (this.main.length != model.size)) {
+        this.initArray(model.size);
+      }
+    }
+
+    public void setCueOn(boolean cueOn) {
+      this.cueOn = cueOn;
+    }
+
+    public void setAuxOn(boolean auxOn) {
+      this.auxOn = auxOn;
+    }
+
+    public void copyFrom(Frame that) {
+      setModel(that.model);
+      this.cueOn = that.cueOn;
+      this.auxOn = that.auxOn;
+      System.arraycopy(that.main, 0, this.main, 0, this.main.length);
+      System.arraycopy(that.cue, 0, this.cue, 0, this.cue.length);
+      System.arraycopy(that.aux, 0, this.aux, 0, this.aux.length);
+    }
+
+    public int[] getColors(boolean aux) {
+      return aux ? getAuxColors() : getColors();
+    }
+
+    public int[] getColors() {
+      return this.cueOn ? this.cue : this.main;
+    }
+
+    public int[] getAuxColors() {
+      return this.auxOn ? this.aux : this.main;
+    }
+
+    public LXModel getModel() {
+      return this.model;
+    }
+
+    @Override
+    public int[] getArray() {
+      return this.main;
+    }
+
+    public int[] getMain() {
+      return this.main;
+    }
+
+    public int[] getCue() {
+      return this.cue;
+    }
+
+    public int[] getAux() {
+      return this.aux;
+    }
+
+    @Override
+    public void initArray(int numPoints) {
+      this.main = new int[model.size];
+      this.cue = new int[model.size];
+      this.aux = new int[model.size];
+    }
+
+    @Override
+    public Frame setFromIntArray(int[] arr) {
+      throw new RuntimeException("not implemented");
+    }
+  }
+
   public class NetworkThread extends Thread {
 
     public class Profiler {
@@ -1215,11 +1300,11 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
 
     public final Profiler timer = new Profiler();
 
-    private final LXIntArrayFrame networkFrame;
+    private final Frame networkFrame;
 
     NetworkThread(LX lx) {
       super("LXEngine Network Thread");
-      this.networkFrame = new LXIntArrayFrame(lx);
+      this.networkFrame = new Frame(lx);
     }
 
     @Override
@@ -1274,7 +1359,7 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
    *
    * @param frame Frame buffer to copy into
    */
-  public void copyFrameThreadSafe(LXIntArrayFrame frame) {
+  public void copyFrameThreadSafe(Frame frame) {
     this.buffer.copyTo(frame);
   }
 
@@ -1285,7 +1370,7 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
    *
    * @param frame Frame buffer to copy into
    */
-  public void getFrameNonThreadSafe(LXIntArrayFrame frame) {
+  public void getFrameNonThreadSafe(Frame frame) {
     frame.copyFrom(this.buffer.render);
   }
 
