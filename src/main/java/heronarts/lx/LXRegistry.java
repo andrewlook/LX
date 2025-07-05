@@ -183,17 +183,17 @@ public class LXRegistry implements LXSerializable {
 
   static {
     DEFAULT_CHANNEL_BLENDS = new ArrayList<Class<? extends LXBlend>>();
-    DEFAULT_CHANNEL_BLENDS.add(AddBlendLX.class);
+    DEFAULT_CHANNEL_BLENDS.add(AddBlend.class);
     DEFAULT_CHANNEL_BLENDS.add(MultiplyBlendLX.class);
-    DEFAULT_CHANNEL_BLENDS.add(SubtractBlendLX.class);
-    DEFAULT_CHANNEL_BLENDS.add(DifferenceBlendLX.class);
-    DEFAULT_CHANNEL_BLENDS.add(NormalBlendLX.class);
-    DEFAULT_CHANNEL_BLENDS.add(DodgeBlendLX.class);
-    DEFAULT_CHANNEL_BLENDS.add(BurnBlendLX.class);
-    DEFAULT_CHANNEL_BLENDS.add(HighlightBlendLX.class);
-    DEFAULT_CHANNEL_BLENDS.add(SpotlightBlendLX.class);
-    DEFAULT_CHANNEL_BLENDS.add(LightestBlendLX.class);
-    DEFAULT_CHANNEL_BLENDS.add(DarkestBlendLX.class);
+    DEFAULT_CHANNEL_BLENDS.add(SubtractBlend.class);
+    DEFAULT_CHANNEL_BLENDS.add(DifferenceBlend.class);
+    DEFAULT_CHANNEL_BLENDS.add(NormalBlend.class);
+    DEFAULT_CHANNEL_BLENDS.add(DodgeBlend.class);
+    DEFAULT_CHANNEL_BLENDS.add(BurnBlend.class);
+    DEFAULT_CHANNEL_BLENDS.add(HighlightBlend.class);
+    DEFAULT_CHANNEL_BLENDS.add(SpotlightBlend.class);
+    DEFAULT_CHANNEL_BLENDS.add(LightestBlend.class);
+    DEFAULT_CHANNEL_BLENDS.add(DarkestBlend.class);
 
   }
 
@@ -202,11 +202,11 @@ public class LXRegistry implements LXSerializable {
   static {
     DEFAULT_TRANSITION_BLENDS = new ArrayList<Class<? extends LXBlend>>();
     DEFAULT_TRANSITION_BLENDS.add(DissolveBlend.class);
-    DEFAULT_TRANSITION_BLENDS.add(AddBlendLX.class);
+    DEFAULT_TRANSITION_BLENDS.add(AddBlend.class);
     DEFAULT_TRANSITION_BLENDS.add(MultiplyBlendLX.class);
-    DEFAULT_TRANSITION_BLENDS.add(LightestBlendLX.class);
-    DEFAULT_TRANSITION_BLENDS.add(DarkestBlendLX.class);
-    DEFAULT_TRANSITION_BLENDS.add(DifferenceBlendLX.class);
+    DEFAULT_TRANSITION_BLENDS.add(LightestBlend.class);
+    DEFAULT_TRANSITION_BLENDS.add(DarkestBlend.class);
+    DEFAULT_TRANSITION_BLENDS.add(DifferenceBlend.class);
   }
 
   private static final List<Class<? extends LXBlend>> DEFAULT_CROSSFADER_BLENDS;
@@ -214,11 +214,11 @@ public class LXRegistry implements LXSerializable {
   static {
     DEFAULT_CROSSFADER_BLENDS = new ArrayList<Class<? extends LXBlend>>();
     DEFAULT_CROSSFADER_BLENDS.add(DissolveBlend.class);
-    DEFAULT_CROSSFADER_BLENDS.add(AddBlendLX.class);
+    DEFAULT_CROSSFADER_BLENDS.add(AddBlend.class);
     DEFAULT_CROSSFADER_BLENDS.add(MultiplyBlendLX.class);
-    DEFAULT_CROSSFADER_BLENDS.add(LightestBlendLX.class);
-    DEFAULT_CROSSFADER_BLENDS.add(DarkestBlendLX.class);
-    DEFAULT_CROSSFADER_BLENDS.add(DifferenceBlendLX.class);
+    DEFAULT_CROSSFADER_BLENDS.add(LightestBlend.class);
+    DEFAULT_CROSSFADER_BLENDS.add(DarkestBlend.class);
+    DEFAULT_CROSSFADER_BLENDS.add(DifferenceBlend.class);
   }
 
   private static final List<Class<? extends LXFixture>> DEFAULT_FIXTURES;

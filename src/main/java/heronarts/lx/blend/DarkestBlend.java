@@ -21,10 +21,8 @@ package heronarts.lx.blend;
 import heronarts.lx.LX;
 import heronarts.lx.color.LXColor;
 
-public class BurnBlendLX extends LXFunctionalBlend {
-
-  public BurnBlendLX(LX lx) {
-    super(lx, LXColor::burn);
+public class DarkestBlend extends LXFunctionalBlend {
+  public DarkestBlend(LX lx) {
+    super(lx, LXColor::darkest);
   }
-
 }

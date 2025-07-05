@@ -22,7 +22,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import heronarts.lx.*;
-import heronarts.lx.blend.AddBlendLX;
+import heronarts.lx.blend.AddBlend;
 import heronarts.lx.blend.LXBlend;
 import heronarts.lx.clip.LXClip;
 import heronarts.lx.color.LXColor;
@@ -84,7 +84,7 @@ public class LXMixerEngine extends LXComponent implements LXOscComponent {
 
   public final LXMasterBus masterBus;
 
-  private final AddBlendLX addBlend;
+  private final AddBlend addBlend;
 
   public final DiscreteParameter focusedChannel =
       new DiscreteParameter("Channel", 1)
@@ -155,7 +155,7 @@ public class LXMixerEngine extends LXComponent implements LXOscComponent {
     LX.initProfiler.log("Engine: Mixer: Buffers");
 
     // Set up global add blend
-    this.addBlend = new AddBlendLX(lx);
+    this.addBlend = new AddBlend(lx);
     this.addBlend.onActive();
 
     // Master crossfader blend modes
