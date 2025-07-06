@@ -27,7 +27,7 @@ class TensorPlaygroundTest {
       LXColor.RED,
       LXColor.GREEN
   };
-  
+
   @Test
   public void testConvertUint8() {
     INDArray converted = intArrayTo2DTensorUint8(TEST_DEST);
