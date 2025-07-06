@@ -29,6 +29,8 @@ import heronarts.lx.clip.LXGroupClip;
 import heronarts.lx.effect.LXEffect;
 import heronarts.lx.parameter.LXParameter;
 
+import static heronarts.lx.blend.LXBlend.BlendTarget.target;
+
 public class LXGroup extends LXAbstractChannel {
 
   public class Profiler extends LXAbstractChannel.Profiler {
@@ -122,12 +124,11 @@ public class LXGroup extends LXAbstractChannel {
     for (LXChannel channel : this.channels) {
       final long blendStart = System.nanoTime();
       if (channel.enabled.isOn()) {
-        channel.blendMode.getObject().blend(
+        channel.blendMode.getObject().blendToDest(
           this.colors,
           channel.getColors(),
           channel.fader.getValue(),
-          this.colors,
-          channel.getModelView()
+          target(channel.getModelView())
         );
       }
       ((LXAbstractChannel.Profiler) channel.profiler).blendNanos = System.nanoTime() - blendStart;

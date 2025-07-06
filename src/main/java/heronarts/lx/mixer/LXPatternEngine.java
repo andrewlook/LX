@@ -52,6 +52,8 @@ import heronarts.lx.parameter.TriggerParameter;
 import heronarts.lx.pattern.LXPattern;
 import heronarts.lx.utils.LXUtils;
 
+import static heronarts.lx.blend.LXBlend.BlendTarget.target;
+
 /**
  * A channel is a single component of the engine that has a set of patterns from
  * which it plays and rotates. It also has a fader to control how this channel
@@ -1002,12 +1004,11 @@ public class LXPatternEngine implements LXParameterListener, LXSerializable {
           pattern.loop(deltaMs);
 
           if (patternRender) {
-            pattern.compositeBlend.getObject().blend(
+            pattern.compositeBlend.getObject().blendToDest(
                 colors,
                 pattern.getColors(),
                 patternDamping * pattern.compositeLevel.getValue(),
-                colors,
-                patternView
+                target(patternView)
             );
           }
 
@@ -1077,12 +1078,11 @@ public class LXPatternEngine implements LXParameterListener, LXSerializable {
         nextPattern.setModel(nextPattern.getModelView());
         nextPattern.loop(deltaMs);
         this.transition.loop(deltaMs);
-        this.transition.lerp(
+        this.transition.lerpToDest(
             colors,
             this.renderBuffer.getArray(),
             this.transitionProgress,
-            colors,
-            modelView
+            target(modelView)
         );
       } else {
         this.transitionProgress = 0;

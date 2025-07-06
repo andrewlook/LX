@@ -950,8 +950,8 @@ public class LXMixerEngine extends LXComponent implements LXOscComponent {
   private final BlendStack blendStackMain = BlendStack.shim();
   private final BlendStack blendStackCue = BlendStack.shim();
   private final BlendStack blendStackAux = BlendStack.shim();
-  private final BlendStack blendStackLeft = BlendStack.shim();
-  private final BlendStack blendStackRight = BlendStack.shim();
+  //  private final BlendStack blendStackLeft = BlendStack.shim();
+//  private final BlendStack blendStackRight = BlendStack.shim();
   private boolean _blendCueCalled = false;
   private boolean _blendAuxCalled = false;
 
@@ -978,13 +978,11 @@ public class LXMixerEngine extends LXComponent implements LXOscComponent {
     this.blendStackMain.initialize(this.backgroundBlack.getArray(), render.getMain());
     this.blendStackCue.initialize(this.backgroundBlack.getArray(), render.getCue());
     this.blendStackAux.initialize(this.backgroundBlack.getArray(), render.getAux());
-    this.blendStackLeft.initialize(this.backgroundBlack.getArray(), this.blendBufferLeft.getArray());
-    this.blendStackRight.initialize(this.backgroundBlack.getArray(), this.blendBufferRight.getArray());
-
-    final double crossfadeValue = this.crossfader.getValue();
-
-    final boolean leftBusActive = crossfadeValue < 1.;
-    final boolean rightBusActive = crossfadeValue > 0.;
+//    this.blendStackLeft.initialize(this.backgroundBlack.getArray(), this.blendBufferLeft.getArray());
+//    this.blendStackRight.initialize(this.backgroundBlack.getArray(), this.blendBufferRight.getArray());
+//    final double crossfadeValue = this.crossfader.getValue();
+//    final boolean leftBusActive = crossfadeValue < 1.;
+//    final boolean rightBusActive = crossfadeValue > 0.;
 
     boolean cueBusActive = false;
     boolean auxBusActive = false;
@@ -1026,9 +1024,9 @@ public class LXMixerEngine extends LXComponent implements LXOscComponent {
     }
 
     // Step 3: blend the channel buffers down
-    final boolean blendLeft = leftBusActive || this.cueA.isOn() || (isPerformanceMode && this.auxA.isOn());
-    final boolean blendRight = rightBusActive || this.cueB.isOn() || (isPerformanceMode && this.auxB.isOn());
-    boolean leftExists = false, rightExists = false;
+//    final boolean blendLeft = leftBusActive || this.cueA.isOn() || (isPerformanceMode && this.auxA.isOn());
+//    final boolean blendRight = rightBusActive || this.cueB.isOn() || (isPerformanceMode && this.auxB.isOn());
+//    boolean leftExists = false, rightExists = false;
 
     final boolean useMultithreadedCompositor =
         this.lx.engine.isCompositorMultithreaded.isOn() &&
@@ -1038,23 +1036,23 @@ public class LXMixerEngine extends LXComponent implements LXOscComponent {
       // Only blend channels not in a group, group channels were composited above
       if (!channel.isInGroup()) {
         final long blendStart = System.nanoTime();
-        final LXAbstractChannel.CrossfadeGroup crossfadeGroup = channel.crossfadeGroup.getEnum();
-        final BlendStack blendStack = switch (crossfadeGroup) {
-          case A -> blendLeft ? this.blendStackLeft : null;
-          case B -> blendRight ? this.blendStackRight : null;
-          case BYPASS -> this.blendStackMain;
-        };
-        if (crossfadeGroup == LXAbstractChannel.CrossfadeGroup.A) {
-          leftExists = true;
-        }
-        if (crossfadeGroup == LXAbstractChannel.CrossfadeGroup.B) {
-          rightExists = true;
-        }
+//        final LXAbstractChannel.CrossfadeGroup crossfadeGroup = channel.crossfadeGroup.getEnum();
+//        final BlendStack blendStack = switch (crossfadeGroup) {
+//          case A -> blendLeft ? this.blendStackLeft : null;
+//          case B -> blendRight ? this.blendStackRight : null;
+//          case BYPASS -> this.blendStackMain;
+//        };
+//        if (crossfadeGroup == LXAbstractChannel.CrossfadeGroup.A) {
+//          leftExists = true;
+//        }
+//        if (crossfadeGroup == LXAbstractChannel.CrossfadeGroup.B) {
+//          rightExists = true;
+//        }
         if (!useMultithreadedCompositor) {
-          if ((blendStack != null) && channel.enabled.isOn()) {
+          if (channel.enabled.isOn()) {
             final double alpha = channel.fader.getValue();
             if (alpha > 0) {
-              blendStack.blend(channel.blendMode.getObject(), channel.getColors(), alpha, target(channel.getModelView()));
+              this.blendStackMain.blend(channel.blendMode.getObject(), channel.getColors(), alpha, target(channel.getModelView()));
             }
           }
         }
@@ -1086,15 +1084,13 @@ public class LXMixerEngine extends LXComponent implements LXOscComponent {
             for (LXAbstractChannel channel : this.channels) {
               final double alpha = channel.fader.getValue();
               if (!channel.isInGroup() && channel.enabled.isOn() && (alpha > 0)) {
-                final LXAbstractChannel.CrossfadeGroup crossfadeGroup = channel.crossfadeGroup.getEnum();
-                final BlendStack blendStack = switch (crossfadeGroup) {
-                  case A -> blendLeft ? this.blendStackLeft : null;
-                  case B -> blendRight ? this.blendStackRight : null;
-                  case BYPASS -> this.blendStackMain;
-                };
-                if (blendStack != null) {
-                  blendStack.blend(channel.blendMode.getObject(), channel.getColors(), alpha, target(start, num));
-                }
+                this.blendStackMain.blend(channel.blendMode.getObject(), channel.getColors(), alpha, target(start, num));
+//                final LXAbstractChannel.CrossfadeGroup crossfadeGroup = channel.crossfadeGroup.getEnum();
+//                final BlendStack blendStack = switch (crossfadeGroup) {
+//                  case A -> blendLeft ? this.blendStackLeft : null;
+//                  case B -> blendRight ? this.blendStackRight : null;
+//                  case BYPASS -> this.blendStackMain;
+//                };
               }
             }
           }));
@@ -1133,46 +1129,46 @@ public class LXMixerEngine extends LXComponent implements LXOscComponent {
       }
     }
 
-    // Crossfade group CUE
-    if (this.cueA.isOn()) {
-      this.blendStackCue.copyFrom(this.blendStackLeft);
-      cueBusActive = true;
-    } else if (this.cueB.isOn()) {
-      this.blendStackCue.copyFrom(this.blendStackRight);
-      cueBusActive = true;
-    }
-
-    // Crossfade group AUX
-    if (isPerformanceMode) {
-      if (this.auxA.isOn()) {
-        this.blendStackAux.copyFrom(this.blendStackLeft);
-        auxBusActive = true;
-      } else if (this.auxB.isOn()) {
-        this.blendStackAux.copyFrom(this.blendStackRight);
-        auxBusActive = true;
-      }
-    }
-
-    // Step 5: now we have three output buses that need mixing... the left/right crossfade
-    // groups plus the main buffer. We figure out which of them are active and blend appropriately
-    // Note that the A+B crossfade groups are additively mixed AFTER the main buffer
-    final boolean leftContent = leftBusActive && leftExists;
-    final boolean rightContent = rightBusActive && rightExists;
-    final LXModel model = this.lx.getModel();
-
-    if (leftContent && rightContent) {
-      // There are left and right channels assigned!
-      final LXBlend blend = this.crossfaderBlendMode.getObject();
-      this.blendStackLeft.transition(blend, this.blendStackRight.getDestination(), crossfadeValue, target(model));
-      // Add the crossfaded groups to the main buffer
-      this.blendStackMain.blend(this.addBlend, this.blendStackLeft, 1., target(model));
-    } else if (leftContent) {
-      // Add the left group to the main buffer
-      this.blendStackMain.blend(this.addBlend, this.blendStackLeft, Math.min(1, 2. * (1 - crossfadeValue)), target(model));
-    } else if (rightContent) {
-      // Add the right group to the main buffer
-      this.blendStackMain.blend(this.addBlend, this.blendStackRight, Math.min(1, 2. * crossfadeValue), target(model));
-    }
+//    // Crossfade group CUE
+//    if (this.cueA.isOn()) {
+//      this.blendStackCue.copyFrom(this.blendStackLeft);
+//      cueBusActive = true;
+//    } else if (this.cueB.isOn()) {
+//      this.blendStackCue.copyFrom(this.blendStackRight);
+//      cueBusActive = true;
+//    }
+//
+//    // Crossfade group AUX
+//    if (isPerformanceMode) {
+//      if (this.auxA.isOn()) {
+//        this.blendStackAux.copyFrom(this.blendStackLeft);
+//        auxBusActive = true;
+//      } else if (this.auxB.isOn()) {
+//        this.blendStackAux.copyFrom(this.blendStackRight);
+//        auxBusActive = true;
+//      }
+//    }
+//
+//    // Step 5: now we have three output buses that need mixing... the left/right crossfade
+//    // groups plus the main buffer. We figure out which of them are active and blend appropriately
+//    // Note that the A+B crossfade groups are additively mixed AFTER the main buffer
+//    final boolean leftContent = leftBusActive && leftExists;
+//    final boolean rightContent = rightBusActive && rightExists;
+//    final LXModel model = this.lx.getModel();
+//
+//    if (leftContent && rightContent) {
+//      // There are left and right channels assigned!
+//      final LXBlend blend = this.crossfaderBlendMode.getObject();
+//      this.blendStackLeft.transition(blend, this.blendStackRight.getDestination(), crossfadeValue, target(model));
+//      // Add the crossfaded groups to the main buffer
+//      this.blendStackMain.blend(this.addBlend, this.blendStackLeft, 1., target(model));
+//    } else if (leftContent) {
+//      // Add the left group to the main buffer
+//      this.blendStackMain.blend(this.addBlend, this.blendStackLeft, Math.min(1, 2. * (1 - crossfadeValue)), target(model));
+//    } else if (rightContent) {
+//      // Add the right group to the main buffer
+//      this.blendStackMain.blend(this.addBlend, this.blendStackRight, Math.min(1, 2. * crossfadeValue), target(model));
+//    }
 
     // Step 6: Time to apply master FX to the main blended output
     long effectStart = System.nanoTime();

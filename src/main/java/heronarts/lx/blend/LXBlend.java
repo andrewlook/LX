@@ -120,9 +120,12 @@ public abstract class LXBlend extends LXModulatorComponent {
    */
   public abstract void blend(int[] dst, int[] src, double alpha, int[] output, BlendTarget target);
 
-  //    public void blend(int[] dst, int[] src, double alpha, LXBuffer buffer, LXModel model) {
-//        blend(dst, src, alpha, buffer.getArray(), model);
-//    }
+  /**
+   * Convenience for the common case where 'destination' and 'output' are the same.
+   */
+  public void blendToDest(int[] dst, int[] src, double alpha, BlendTarget target) {
+    blend(dst, src, alpha, dst, target);
+  }
 
   /**
    * Transitions from one buffer to another. By default, this is used by first
@@ -151,6 +154,15 @@ public abstract class LXBlend extends LXModulatorComponent {
     }
     blend(dst, src, alpha, output, target);
   }
+
+  /**
+   * Convenience for the common case where 'destination' and 'output' are the same.
+   */
+  public void lerpToDest(int[] dst, int[] src, double amt, BlendTarget target) {
+    lerp(dst, src, amt, dst, target);
+  }
+
+
 
   /**
    * Subclasses may override this method. It will be invoked when the blend is
