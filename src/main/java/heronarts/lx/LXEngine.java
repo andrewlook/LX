@@ -21,7 +21,6 @@ package heronarts.lx;
 import java.io.File;
 import java.net.SocketException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -59,6 +58,10 @@ import heronarts.lx.pattern.LXPattern;
 import heronarts.lx.snapshot.LXSnapshotEngine;
 import heronarts.lx.structure.LXFixture;
 import heronarts.lx.structure.view.LXViewDefinition;
+
+import static heronarts.lx.buffer.BufferUtils.bufferFill;
+import static heronarts.lx.buffer.BufferUtils.bufferLength;
+import static heronarts.lx.buffer.BufferUtils.bufferSet;
 
 /**
  * The engine is the core class that runs the internal animations. An engine is
@@ -1037,8 +1040,9 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
     final boolean eulaAccepted = !this.lx.permissions.isEulaRequired() || this.lx.preferences.eulaAccepted.isOn();
     final int maxOutputPoints = this.lx.permissions.getMaxOutputPoints();
     final int maxRenderPoints = this.lx.permissions.getMaxRenderPoints();
-    this.restricted.setValue((maxRenderPoints >= 0) && (this.buffer.render.getMain().length > maxRenderPoints));
-    this.output.restricted.setValue((maxOutputPoints >= 0) && (this.buffer.render.main.length > maxOutputPoints));
+    final int numBufferPoints = bufferLength(this.buffer.render.main);
+    this.restricted.setValue((maxRenderPoints >= 0) && (numBufferPoints > maxRenderPoints));
+    this.output.restricted.setValue((maxOutputPoints >= 0) && (numBufferPoints > maxOutputPoints));
 
     // Run tempo and audio, always using real-time
     this.lx.engine.tempo.loop(deltaMs);
@@ -1076,15 +1080,15 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
       this.mixer.loop(buffer.render, deltaMs);
     } else {
       // Black everything out
-      Arrays.fill(buffer.render.main, LXColor.BLACK);
-      Arrays.fill(buffer.render.cue, LXColor.BLACK);
-      Arrays.fill(buffer.render.aux, LXColor.BLACK);
+      bufferFill(buffer.render.main, LXColor.BLACK);
+      bufferFill(buffer.render.cue, LXColor.BLACK);
+      bufferFill(buffer.render.aux, LXColor.BLACK);
     }
 
     // Post-pass for any views with cue enabled
     for (LXViewDefinition view : this.lx.structure.views.views) {
       if (view.cueActive.isOn() && (view.getView() != null)) {
-        Arrays.fill(buffer.render.cue, LXColor.BLACK);
+        bufferFill(buffer.render.cue, LXColor.BLACK);
         for (LXPoint p : view.getView().points) {
           buffer.render.cue[p.index] = LXColor.WHITE;
         }
@@ -1105,9 +1109,9 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
         int end = start + fixture.totalSize();
         if (end > start) {
           for (int i = start; i < end; ++i) {
-            this.buffer.render.main[i] = LXColor.BLACK;
-            this.buffer.render.cue[i] = LXColor.BLACK;
-            this.buffer.render.aux[i] = LXColor.BLACK;
+            bufferSet(this.buffer.render.main, i, LXColor.BLACK);
+            bufferSet(this.buffer.render.cue, i, LXColor.BLACK);
+            bufferSet(this.buffer.render.aux, i, LXColor.BLACK);
           }
         }
       } else if (fixture.identify.isOn()) {
@@ -1115,9 +1119,9 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
         int end = start + fixture.totalSize();
         if (end > start) {
           for (int i = start; i < end; ++i) {
-            this.buffer.render.main[i] = identifyColor;
-            this.buffer.render.cue[i] = identifyColor;
-            this.buffer.render.aux[i] = identifyColor;
+            bufferSet(this.buffer.render.main, i, identifyColor);
+            bufferSet(this.buffer.render.cue, i, identifyColor);
+            bufferSet(this.buffer.render.aux, i, identifyColor);
           }
         }
       }
@@ -1127,9 +1131,9 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
         if (end > start) {
           for (int i = 0; i < this.buffer.render.main.length; ++i) {
             if (i < start || i >= end) {
-              this.buffer.render.main[i] = LXColor.BLACK;
-              this.buffer.render.cue[i] = LXColor.BLACK;
-              this.buffer.render.aux[i] = LXColor.BLACK;
+              bufferSet(this.buffer.render.main, i, LXColor.BLACK);
+              bufferSet(this.buffer.render.cue, i, LXColor.BLACK);
+              bufferSet(this.buffer.render.aux, i, LXColor.BLACK);
             }
           }
         }
@@ -1137,13 +1141,13 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
 
       // Finally, structure-level edits
       if (this.lx.structure.mute.isOn()) {
-        Arrays.fill(this.buffer.render.main, LXColor.BLACK);
-        Arrays.fill(this.buffer.render.cue, LXColor.BLACK);
-        Arrays.fill(this.buffer.render.aux, LXColor.BLACK);
+        bufferFill(this.buffer.render.main, LXColor.BLACK);
+        bufferFill(this.buffer.render.cue, LXColor.BLACK);
+        bufferFill(this.buffer.render.aux, LXColor.BLACK);
       } else if (this.lx.structure.allWhite.isOn()) {
-        Arrays.fill(this.buffer.render.main, LXColor.WHITE);
-        Arrays.fill(this.buffer.render.cue, LXColor.WHITE);
-        Arrays.fill(this.buffer.render.aux, LXColor.WHITE);
+        bufferFill(this.buffer.render.main, LXColor.WHITE);
+        bufferFill(this.buffer.render.cue, LXColor.WHITE);
+        bufferFill(this.buffer.render.aux, LXColor.WHITE);
       }
     }
 

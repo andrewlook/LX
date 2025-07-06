@@ -2,7 +2,6 @@ package heronarts.lx.blend;
 
 import heronarts.lx.LX;
 import heronarts.lx.color.LXColor;
-import heronarts.lx.model.LXModel;
 import heronarts.lx.model.LXPoint;
 
 public class LXFunctionalBlend extends LXBlend {
@@ -29,18 +28,17 @@ public class LXFunctionalBlend extends LXBlend {
   }
 
   @Override
-  public void blend(int[] dst, int[] src, double alpha, int[] output, LXModel model) {
+  public void blend(int[] dst, int[] src, double alpha, int[] output, BlendTarget target) {
     int alphaMask = (int) (alpha * LXColor.BLEND_ALPHA_FULL);
-    for (LXPoint p : model.points) {
-      output[p.index] = this.function.apply(dst[p.index], src[p.index], alphaMask);
-    }
-  }
 
-  @Override
-  public void blend(int[] dst, int[] src, double alpha, int[] output, int start, int num) {
-    int alphaMask = (int) (alpha * LXColor.BLEND_ALPHA_FULL);
-    for (int i = start; i < start + num; ++i) {
-      output[i] = this.function.apply(dst[i], src[i], alphaMask);
+    if (target.model != null) {
+      for (LXPoint p : target.model.points) {
+        output[p.index] = this.function.apply(dst[p.index], src[p.index], alphaMask);
+      }
+    } else {
+      for (int i = target.start; i < target.start + target.num; ++i) {
+        output[i] = this.function.apply(dst[i], src[i], alphaMask);
+      }
     }
   }
 }
