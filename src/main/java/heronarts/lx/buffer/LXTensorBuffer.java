@@ -21,7 +21,6 @@ package heronarts.lx.buffer;
 public interface LXTensorBuffer<T extends LXBuffer<T>> extends LXBuffer<T> {
 
   default T copyTo(LXBuffer<?> that) {
-
     if (that instanceof LXTensorBuffer) {
       throw new RuntimeException("not implemented");
     } else if (that instanceof LXArrayBuffer<?>) {
@@ -41,11 +40,6 @@ public interface LXTensorBuffer<T extends LXBuffer<T>> extends LXBuffer<T> {
       throw new RuntimeException("unrecognized type");
     }
     return self();
-  }
-
-  @Override
-  default int length() {
-    return this.readOnlyArray().length;
   }
 
   @Override
