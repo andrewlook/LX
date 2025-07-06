@@ -116,7 +116,6 @@ public abstract class LXBlend extends LXModulatorComponent {
    * @param src    Source buffer (top layer)
    * @param alpha  Alpha blend, from 0-1
    * @param output Output buffer, which may be the same as src or dst
-   * @param model  A model which indicates the set of points to blend
    */
   public abstract void blend(int[] dst, int[] src, double alpha, int[] output, BlendTarget target);
 
@@ -138,7 +137,6 @@ public abstract class LXBlend extends LXModulatorComponent {
    * @param to     Second buffer
    * @param amt    Interpolation from-to (0-1)
    * @param output Output buffer, which may be the same as from or to
-   * @param model  The model with points that should be blended
    */
   public void lerp(int[] from, int[] to, double amt, int[] output, BlendTarget target) {
     int[] dst, src;

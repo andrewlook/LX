@@ -11,21 +11,22 @@ import heronarts.lx.model.LXPoint;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static heronarts.lx.blend.LXBlend.BlendTarget.target;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 class LXBlendTest {
 
-  static final int[] TEST_SOURCE = new int[]{
-      LXColor.WHITE,
-      LXColor.BLACK,
-      LXColor.RED,
-      LXColor.GREEN
-  };
   static final int[] TEST_DEST = new int[]{
       LXColor.BLACK,
       LXColor.WHITE,
       LXColor.GREEN,
       LXColor.BLACK,
+  };
+  static final int[] TEST_SOURCE = new int[]{
+      LXColor.WHITE,
+      LXColor.BLACK,
+      LXColor.RED,
+      LXColor.GREEN
   };
   static final LXPoint[] TEST_POINTS = new LXPoint[]{
       new LXPoint(0f, 1f),
@@ -67,21 +68,49 @@ class LXBlendTest {
         0xFFFFFF00, // RED   + GREEN
         0xFF00FF00, // BLACK + GREEN
     };
-    add.blend(src.getArray(), dst.getArray(), 1.0, out.getArray(), mockModel);
+    add.blend(dst.getArray(), src.getArray(), 1.0, out.getArray(), target(mockModel));
+    assertArrayEquals(expected, out.getArray());
+  }
+
+  @Test
+  void testBlendSameDestAndOutput() {
+    int[] expected = new int[]{
+        0xFFFFFFFF,
+        0xFF000000,
+        0xFFFF0000,
+        0xFF00FF00
+    };
+    add.blend(out.getArray(), src.getArray(), 1.0, out.getArray(), target(mockModel));
+    bprint(expected);
+    bprint(out.getArray());
+    assertArrayEquals(expected, out.getArray());
+  }
+
+  @Test
+  void testBlendToDest() {
+    int[] expected = new int[]{
+        0xFFFFFFFF,
+        0xFF000000,
+        0xFFFF0000,
+        0xFF00FF00
+    };
+    add.blendToDest(out.getArray(), src.getArray(), 1.0, target(mockModel));
+    bprint(expected);
+    bprint(out.getArray());
     assertArrayEquals(expected, out.getArray());
   }
 
   @Test
   void testAddBlendHalfAlpha() {
     int[] expected = new int[]{
-        0xFFFFFFFF, // WHITE + (0.5 * BLACK)
         0xFF7F7F7F, // BLACK + (0.5 * WHITE)
-        0xFFFF7F00, // RED   + (0.5 * GREEN)
-        0xFF00FF00, // BLACK + (0.5 * GREEN)
+        0xFFFFFFFF, // WHITE + (0.5 * BLACK)
+        0xFF7FFF00, // GREEN + (0.5 * RED)
+        0xFF007F00, // BLACK + (0.5 * GREEN)
     };
-    add.blend(src.getArray(), dst.getArray(), 0.5, out.getArray(), mockModel);
-//    bprint(expected);
-//    bprint(out.getArray());
+    add.blend(dst.getArray(), src.getArray(), 0.5, out.getArray(), target(mockModel));
+    bprint(expected);
+    bprint(out.getArray());
     assertArrayEquals(expected, out.getArray());
   }
 
