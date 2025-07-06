@@ -10,7 +10,9 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 public class BenchmarkSuite {
   static final List<Class<?>> benchmarkTests = List.of(
-      AddBlend100000Points.class
+      AddBlend5000Points.class,
+      AddBlend100000Points.class,
+      AddBlend2000000Points.class
   );
 
   public static void main(String[] args) throws RunnerException {

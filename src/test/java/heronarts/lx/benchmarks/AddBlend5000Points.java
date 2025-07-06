@@ -13,14 +13,15 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Timeout;
 
+
 @BenchmarkMode(Mode.All)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
 @Fork(value = 1, warmups = 1)
 @Timeout(time = 10, timeUnit = TimeUnit.SECONDS)
-public class AddBlend100000Points extends BlendingHarness {
+public class AddBlend5000Points extends BlendingHarness {
   static final int NUM_CHANNELS = 16;
-  static final int NUM_POINTS_PER_CHANNEL = 100_000;
+  static final int NUM_POINTS_PER_CHANNEL = 5_000;
 
   @Setup(Level.Trial)
   public void setupWholeTrial() {
