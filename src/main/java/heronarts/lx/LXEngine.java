@@ -1262,8 +1262,13 @@ public class LXEngine extends LXComponent implements LXOscComponent, LXModulatio
     }
 
     @Override
-    public int[] getArray() {
+    public int[] writableArray() {
       return this.main;
+    }
+
+    @Override
+    public int[] readOnlyArray() {
+      return this.writableArray();
     }
 
     public int[] getMain() {

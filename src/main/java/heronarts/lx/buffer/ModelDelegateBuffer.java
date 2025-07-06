@@ -53,8 +53,13 @@ public class ModelDelegateBuffer<T extends LXArrayBuffer<T>> extends ModelBuffer
   // they don't need to be overridden here.
   // -----------------------------------------------------------------
   @Override
-  public int[] getArray() {
-    return this.buffer.getArray();
+  public int[] writableArray() {
+    return this.buffer.writableArray();
+  }
+
+  @Override
+  public int[] readOnlyArray() {
+    return this.buffer.writableArray();
   }
 
   @Override

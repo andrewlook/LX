@@ -44,8 +44,13 @@ public class ModelArrayBuffer<T extends LXArrayBuffer<T>> extends ModelBuffer<T>
   }
 
   @Override
-  public int[] getArray() {
+  public int[] writableArray() {
     return this.array;
+  }
+
+  @Override
+  public int[] readOnlyArray() {
+    return this.writableArray();
   }
 
   @Override

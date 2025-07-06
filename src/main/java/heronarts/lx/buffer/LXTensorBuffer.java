@@ -18,25 +18,26 @@
 
 package heronarts.lx.buffer;
 
-public interface LXArrayBuffer<T extends LXBuffer<T>> extends LXBuffer<T> {
+public interface LXTensorBuffer<T extends LXBuffer<T>> extends LXBuffer<T> {
 
   default T copyTo(LXBuffer<?> that) {
-    if (that instanceof LXArrayBuffer) {
-      System.arraycopy(this.readOnlyArray(), 0, that.writableArray(), 0, this.length());
-    } else if (that instanceof LXTensorBuffer) {
+
+    if (that instanceof LXTensorBuffer) {
       throw new RuntimeException("not implemented");
-    } else{
+    } else if (that instanceof LXArrayBuffer<?>) {
+      System.arraycopy(this.readOnlyArray(), 0, that.writableArray(), 0, this.length());
+    } else {
       throw new RuntimeException("unrecognized type");
     }
     return self();
   }
 
   default T copyFrom(LXBuffer<?> that) {
-    if (that instanceof LXArrayBuffer) {
-      System.arraycopy(that.readOnlyArray(), 0, this.writableArray(), 0, this.length());
-    } else if (that instanceof LXTensorBuffer) {
+    if (that instanceof LXTensorBuffer) {
       throw new RuntimeException("not implemented");
-    } else{
+    } else if (that instanceof LXArrayBuffer) {
+      System.arraycopy(that.readOnlyArray(), 0, this.writableArray(), 0, this.length());
+    } else {
       throw new RuntimeException("unrecognized type");
     }
     return self();

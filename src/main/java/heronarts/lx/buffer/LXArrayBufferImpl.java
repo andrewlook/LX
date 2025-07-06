@@ -34,8 +34,12 @@ public class LXArrayBufferImpl<T extends LXArrayBuffer<T>> implements LXArrayBuf
     initArray(numPoints);
   }
 
-  public int[] getArray() {
+  public int[] writableArray() {
     return this.array;
+  }
+
+  public int[] readOnlyArray() {
+    return this.writableArray();
   }
 
   @Override

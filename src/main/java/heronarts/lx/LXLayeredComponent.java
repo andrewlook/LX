@@ -68,7 +68,7 @@ public abstract class LXLayeredComponent extends LXModelComponent implements LXL
     this.palette = lx.engine.palette;
     if (buffer != null) {
       this.buffer = buffer;
-      this.colors = buffer.getArray();
+      this.colors = buffer.writableArray();
     }
     addArray("layer", this.layers);
   }
@@ -78,7 +78,7 @@ public abstract class LXLayeredComponent extends LXModelComponent implements LXL
   }
 
   public int[] getColors() {
-    return getBuffer().getArray();
+    return getBuffer().writableArray();
   }
 
   protected LXLayeredComponent setBuffer(LXDeviceComponent component) {
@@ -87,7 +87,7 @@ public abstract class LXLayeredComponent extends LXModelComponent implements LXL
 
   public LXLayeredComponent setBuffer(LXBuffer<?> buffer) {
     this.buffer = buffer;
-    this.colors = buffer.getArray();
+    this.colors = buffer.writableArray();
     return this;
   }
 
@@ -101,7 +101,7 @@ public abstract class LXLayeredComponent extends LXModelComponent implements LXL
     // reference. Even if a doofus assigns colors to something else, we'll reset it
     // here on each pass of the loop. Better than subclasses having to call getColors()
     // all the time.
-    this.colors = this.buffer.getArray();
+    this.colors = this.buffer.writableArray();
 
     super.loop(deltaMs);
     onLoop(deltaMs);

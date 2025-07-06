@@ -975,9 +975,9 @@ public class LXMixerEngine extends LXComponent implements LXOscComponent {
     final long channelStart = System.nanoTime();
 
     // Initialize blend stacks
-    this.blendStackMain.initialize(this.backgroundBlack.getArray(), render.getMain());
-    this.blendStackCue.initialize(this.backgroundBlack.getArray(), render.getCue());
-    this.blendStackAux.initialize(this.backgroundBlack.getArray(), render.getAux());
+    this.blendStackMain.initialize(this.backgroundBlack.readOnlyArray(), render.getMain());
+    this.blendStackCue.initialize(this.backgroundBlack.readOnlyArray(), render.getCue());
+    this.blendStackAux.initialize(this.backgroundBlack.readOnlyArray(), render.getAux());
 //    this.blendStackLeft.initialize(this.backgroundBlack.getArray(), this.blendBufferLeft.getArray());
 //    this.blendStackRight.initialize(this.backgroundBlack.getArray(), this.blendBufferRight.getArray());
 //    final double crossfadeValue = this.crossfader.getValue();

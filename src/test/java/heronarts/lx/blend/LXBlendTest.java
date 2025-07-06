@@ -68,8 +68,8 @@ class LXBlendTest {
         0xFFFFFF00, // RED   + GREEN
         0xFF00FF00, // BLACK + GREEN
     };
-    add.blend(dst.getArray(), src.getArray(), 1.0, out.getArray(), target(mockModel));
-    assertArrayEquals(expected, out.getArray());
+    add.blend(dst.writableArray(), src.writableArray(), 1.0, out.writableArray(), target(mockModel));
+    assertArrayEquals(expected, out.writableArray());
   }
 
   @Test
@@ -80,10 +80,10 @@ class LXBlendTest {
         0xFFFF0000,
         0xFF00FF00
     };
-    add.blend(out.getArray(), src.getArray(), 1.0, out.getArray(), target(mockModel));
+    add.blend(out.writableArray(), src.writableArray(), 1.0, out.writableArray(), target(mockModel));
     bprint(expected);
-    bprint(out.getArray());
-    assertArrayEquals(expected, out.getArray());
+    bprint(out.writableArray());
+    assertArrayEquals(expected, out.writableArray());
   }
 
   @Test
@@ -94,10 +94,10 @@ class LXBlendTest {
         0xFFFF0000,
         0xFF00FF00
     };
-    add.blendToDest(out.getArray(), src.getArray(), 1.0, target(mockModel));
+    add.blendToDest(out.writableArray(), src.writableArray(), 1.0, target(mockModel));
     bprint(expected);
-    bprint(out.getArray());
-    assertArrayEquals(expected, out.getArray());
+    bprint(out.writableArray());
+    assertArrayEquals(expected, out.writableArray());
   }
 
   @Test
@@ -108,10 +108,10 @@ class LXBlendTest {
         0xFF7FFF00, // GREEN + (0.5 * RED)
         0xFF007F00, // BLACK + (0.5 * GREEN)
     };
-    add.blend(dst.getArray(), src.getArray(), 0.5, out.getArray(), target(mockModel));
+    add.blend(dst.writableArray(), src.writableArray(), 0.5, out.writableArray(), target(mockModel));
     bprint(expected);
-    bprint(out.getArray());
-    assertArrayEquals(expected, out.getArray());
+    bprint(out.writableArray());
+    assertArrayEquals(expected, out.writableArray());
   }
 
   private void bprint(int x) {

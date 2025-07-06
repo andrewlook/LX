@@ -34,7 +34,9 @@ public interface LXBuffer<T extends LXBuffer<T>> {
 
   T self();
 
-  int[] getArray();
+  int[] readOnlyArray();
+
+  int[] writableArray();
 
   void initArray(int numPoints);
 

@@ -966,7 +966,7 @@ public class LXPatternEngine implements LXParameterListener, LXSerializable {
 
   public void loop(LXBuffer<?> blendBuffer, LXModel modelView, double deltaMs) {
     // Initialize buffer colors
-    int[] colors = blendBuffer.getArray();
+    int[] colors = blendBuffer.writableArray();
 
     // Initialize colors to transparent. This needs to be done no matter
     // what the mixing mode is, because sub-patterns/effects may render
@@ -1080,7 +1080,7 @@ public class LXPatternEngine implements LXParameterListener, LXSerializable {
         this.transition.loop(deltaMs);
         this.transition.lerpToDest(
             colors,
-            this.renderBuffer.getArray(),
+            this.renderBuffer.writableArray(),
             this.transitionProgress,
             target(modelView)
         );
