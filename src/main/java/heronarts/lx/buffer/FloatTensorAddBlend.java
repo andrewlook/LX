@@ -32,7 +32,7 @@ public class FloatTensorAddBlend {
       outSlice.assign(dstSlice);
     }
 
-    // Extract channels
+    // Extract channels (already FLOAT)
     INDArray outAlpha = outSlice.getColumn(0);
     INDArray outR = outSlice.getColumn(1);
     INDArray outG = outSlice.getColumn(2);
@@ -43,24 +43,24 @@ public class FloatTensorAddBlend {
     INDArray srcG = srcSlice.getColumn(2);
     INDArray srcB = srcSlice.getColumn(3);
 
-    // For float [0,1] values, we need to adapt the formula
-    // Original: effectiveAlpha = (srcAlpha * alpha * 256) / 256
-    // For [0,1]: effectiveAlpha = srcAlpha * alpha
+    // For float [0,1] values, adapt the formula from integer version
+    // Original integer: effectiveAlpha = (srcAlpha * alpha * 256) / 256 + rounding
+    // Float equivalent: effectiveAlpha = srcAlpha * alpha + rounding_adjustment
     INDArray effectiveAlpha = srcAlpha.mul(alpha);
 
     // Add rounding equivalent for [0,1] range
-    // Original checked >= 127.5/255 ≈ 0.5
+    // Original checked >= 127.5/255 ≈ 0.5, so we check >= 0.5
+    // Original added 1/255, so we add equivalent in [0,1] space
     INDArray roundingMask = effectiveAlpha.gte(0.5);
-    effectiveAlpha.addi(roundingMask.castTo(DataType.FLOAT).div(255.0)); // Add 1/255 instead of 1
+    effectiveAlpha.addi(roundingMask.castTo(DataType.FLOAT).div(255.0)); // Add 1/255
 
-    // Blend: out = dst + (src * effectiveAlpha)
-    // No need to divide by 256 since we're in [0,1] space
+    // Additive blend in [0,1] space: out = dst + (src * effectiveAlpha)
     outR.addi(srcR.mul(effectiveAlpha));
     outG.addi(srcG.mul(effectiveAlpha));
     outB.addi(srcB.mul(effectiveAlpha));
     outAlpha.addi(effectiveAlpha);
 
-    // Clip to valid range [0,1] for float values
+    // Clip to valid range [0, 1] for float values
     outR.assign(Transforms.min(outR, 1.0));
     outG.assign(Transforms.min(outG, 1.0));
     outB.assign(Transforms.min(outB, 1.0));
