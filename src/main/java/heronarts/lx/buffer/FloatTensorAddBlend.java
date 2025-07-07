@@ -32,7 +32,7 @@ public class FloatTensorAddBlend {
       outSlice.assign(dstSlice);
     }
 
-    // Extract channels (already FLOAT)
+    // Extract channels
     INDArray outAlpha = outSlice.getColumn(0);
     INDArray outR = outSlice.getColumn(1);
     INDArray outG = outSlice.getColumn(2);
@@ -43,33 +43,40 @@ public class FloatTensorAddBlend {
     INDArray srcG = srcSlice.getColumn(2);
     INDArray srcB = srcSlice.getColumn(3);
 
-    // Calculate effective source alpha - adapt integer formula to [0,1] space
-    // Original: effectiveAlpha = (srcAlpha * alpha * 256) / 256
-    // Then: effectiveAlpha += (effectiveAlpha >= 127.5 ? 1 : 0)
-    INDArray effectiveAlpha = srcAlpha.mul(alpha);
+    // Convert to integer space for exact calculation, then back to float
+    // This ensures we match the UINT8 implementation exactly
 
-    // To match the integer version exactly, we need to:
-    // 1. Scale to [0,255] range temporarily for the rounding logic
-    // 2. Apply the same rounding rule
-    // 3. Scale back to [0,1]
-    INDArray scaledAlpha = effectiveAlpha.mul(255.0);
-    INDArray roundingMask = scaledAlpha.gte(127.5);
-    scaledAlpha.addi(roundingMask.castTo(DataType.FLOAT));
+    // Scale [0,1] to [0,255] for integer math
+    INDArray srcAlpha255 = srcAlpha.mul(255.0);
+    INDArray srcR255 = srcR.mul(255.0);
+    INDArray srcG255 = srcG.mul(255.0);
+    INDArray srcB255 = srcB.mul(255.0);
 
-    // Scale back to [0,1] range
-    effectiveAlpha = scaledAlpha.div(255.0);
+    // Apply the exact integer formula
+    double alphaScale = alpha * 256.0;
+    INDArray effectiveAlpha = srcAlpha255.mul(alphaScale).div(256.0);
 
-    // Additive blend in [0,1] space: out = dst + (src * effectiveAlpha)
-    outR.addi(srcR.mul(effectiveAlpha));
-    outG.addi(srcG.mul(effectiveAlpha));
-    outB.addi(srcB.mul(effectiveAlpha));
-    outAlpha.addi(effectiveAlpha);
+    // Add rounding: effectiveAlpha += (effectiveAlpha >= 127.5 ? 1 : 0)
+    INDArray roundingMask = effectiveAlpha.gte(127.5);
+    effectiveAlpha.addi(roundingMask.castTo(DataType.FLOAT));
 
-    // Clip to valid range [0, 1] for float values
-    outR.assign(Transforms.min(outR, 1.0));
-    outG.assign(Transforms.min(outG, 1.0));
-    outB.assign(Transforms.min(outB, 1.0));
-    outAlpha.assign(Transforms.min(outAlpha, 1.0));
+    // Additive blend in 255 space: out = dst + (src * effectiveAlpha / 256)
+    outR.muli(255.0).addi(srcR255.mul(effectiveAlpha).div(256.0));
+    outG.muli(255.0).addi(srcG255.mul(effectiveAlpha).div(256.0));
+    outB.muli(255.0).addi(srcB255.mul(effectiveAlpha).div(256.0));
+    outAlpha.muli(255.0).addi(effectiveAlpha);
+
+    // Clip to [0, 255]
+    outR.assign(Transforms.min(outR, 255.0));
+    outG.assign(Transforms.min(outG, 255.0));
+    outB.assign(Transforms.min(outB, 255.0));
+    outAlpha.assign(Transforms.min(outAlpha, 255.0));
+
+    // Convert back to [0,1] range
+    outR.divi(255.0);
+    outG.divi(255.0);
+    outB.divi(255.0);
+    outAlpha.divi(255.0);
 
 //    // Clip to valid range using putWhere (most efficient)
 //    INDArray maxVal = Nd4j.scalar(255.0);
