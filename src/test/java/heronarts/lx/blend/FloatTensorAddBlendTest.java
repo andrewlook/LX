@@ -18,7 +18,6 @@ import static heronarts.lx.blend.BlendTestHelpers.TEST_POINTS;
 import static heronarts.lx.blend.BlendTestHelpers.TEST_SOURCE;
 import static heronarts.lx.buffer.TensorConverters.floatTensor2DToIntArray;
 import static heronarts.lx.buffer.TensorConverters.intArrayToFloatTensor2D;
-import static heronarts.lx.buffer.TensorDebugUtils.debugTensor;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 class FloatTensorAddBlendTest {
@@ -38,50 +37,45 @@ class FloatTensorAddBlendTest {
     out = intArrayToFloatTensor2D(TEST_BLACK);
   }
 
+  // ============= Range (start, num) Indexing =====================
+
   @Test
-  void testAddBlendFullAlpha() {
+  void testRangeAddBlendFullAlpha() {
     add.blend(dst, src, 1.0, out, 0, mockModel.size);
     assertArrayEquals(EXPECTED_FULL_ALPHA, floatTensor2DToIntArray(out));
   }
 
   @Test
-  void testBlendSameDestAndOutput() {
+  void testRangeBlendSameDestAndOutput() {
     add.blend(out, src, 1.0, out, 0, mockModel.size);
     assertArrayEquals(EXPECTED_SAME_DEST_AND_OUTPUT, floatTensor2DToIntArray(out));
   }
 
   @Test
-  void testAddBlendHalfAlpha() {
+  void testRangeAddBlendHalfAlpha() {
     add.blend(dst, src, 0.5, out, 0, mockModel.size);
-    debugTensor(out, "ACTUAL (HALF ALPHA)");
-    debugTensor(intArrayToFloatTensor2D(EXPECTED_HALF_ALPHA), "EXPECTED (HALF ALPHA)");
+    assertArrayEquals(EXPECTED_HALF_ALPHA, floatTensor2DToIntArray(out));
+  }
+
+  // ============= Model Points Indexing =====================
+
+  @Test
+  void testModelAddBlendFullAlpha() {
+    add.blend(dst, src, 1.0, out, mockModel);
+    assertArrayEquals(EXPECTED_FULL_ALPHA, floatTensor2DToIntArray(out));
+  }
+
+  @Test
+  void testModelBlendSameDestAndOutput() {
+    add.blend(out, src, 1.0, out, mockModel);
+    assertArrayEquals(EXPECTED_SAME_DEST_AND_OUTPUT, floatTensor2DToIntArray(out));
+  }
+
+  @Test
+  void testModelAddBlendHalfAlpha() {
+    add.blend(dst, src, 0.5, out, mockModel);
+//    debugTensor(out, "ACTUAL (HALF ALPHA)");
+//    debugTensor(intArrayToFloatTensor2D(EXPECTED_HALF_ALPHA), "EXPECTED (HALF ALPHA)");
     assertArrayEquals(EXPECTED_HALF_ALPHA, floatTensor2DToIntArray(out));
   }
 }
-
-  /*
-
-  TODO: add these back in after model indexing.
-
-  @Test
-  void testAddBlendFullAlpha() {
-    add.blend(dst, src, 1.0, out, mockModel);
-    assertArrayEquals(EXPECTED_FULL_ALPHA, out);
-  }
-
-  @Test
-  void testBlendSameDestAndOutput() {
-    add.blend(out, src, 1.0, out, mockModel);
-    bprint(EXPECTED_SAME_DEST_AND_OUTPUT);
-    bprint(out);
-    assertArrayEquals(EXPECTED_SAME_DEST_AND_OUTPUT, out);
-  }
-
-  @Test
-  void testAddBlendHalfAlpha() {
-    add.blend(dst, src, 0.5, out, mockModel);
-    bprint(EXPECTED_HALF_ALPHA);
-    bprint(out);
-    assertArrayEquals(EXPECTED_HALF_ALPHA, out);
-  }
-  */

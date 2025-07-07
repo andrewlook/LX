@@ -5,7 +5,7 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.indexing.NDArrayIndex;
 import org.nd4j.linalg.ops.transforms.Transforms;
 
-public class FloatTensorAddBlend {
+public class FloatTensorAddBlend extends BaseTensorBlend {
 
   /**
    * Blends the src buffer onto the destination buffer at the specified alpha amount.
@@ -18,9 +18,10 @@ public class FloatTensorAddBlend {
    * @param start Starting index to blend
    * @param num Number of pixels to blend
    */
+  @Override
   public void blend(INDArray dst, INDArray src, double alpha, INDArray output, int start, int num) {
     // Validate inputs
-    validateInputs(dst, src, output);
+    validateInputs(DataType.FLOAT, dst, src, output);
 
     // Work on slices
     INDArray dstSlice = dst.get(NDArrayIndex.interval(start, start + num), NDArrayIndex.all());
@@ -87,54 +88,74 @@ public class FloatTensorAddBlend {
   }
 
   /**
-   * Convenience method to blend entire tensors
-   *
-   * @param dst Destination buffer (lower layer) - FLOAT tensor [N, 4] with values [0, 1]
-   * @param src Source buffer (top layer) - FLOAT tensor [N, 4] with values [0, 1]
-   * @param alpha Alpha blend, from 0-1
-   * @param output Output buffer - FLOAT tensor [N, 4], may be the same as src or dst
+   * @param mask Boolean tensor [N] or [N, 1] - true where blending should occur
    */
-  public void blend(INDArray dst, INDArray src, double alpha, INDArray output) {
-    blend(dst, src, alpha, output, 0, (int) dst.size(0));
-  }
+  @Override
+  public void blend(INDArray dst, INDArray src, double alpha, INDArray output, INDArray mask) {
+    validateInputs(DataType.FLOAT, dst, src, output);
+    validateMask(mask, dst.size(0));
 
-  private void validateInputs(INDArray dst, INDArray src, INDArray output) {
-    // Check data types
-    if (dst.dataType() != DataType.FLOAT) {
-      throw new IllegalArgumentException("dst must be FLOAT, got: " + dst.dataType());
-    }
-    if (src.dataType() != DataType.FLOAT) {
-      throw new IllegalArgumentException("src must be FLOAT, got: " + src.dataType());
-    }
-    if (output.dataType() != DataType.FLOAT) {
-      throw new IllegalArgumentException("output must be FLOAT, got: " + output.dataType());
+    if (output != dst) {
+      output.assign(dst);
     }
 
-    // Check shapes
-    if (dst.rank() != 2 || dst.size(1) != 4) {
-      throw new IllegalArgumentException("dst must be 2D with shape [N, 4], got: " + java.util.Arrays.toString(dst.shape()));
-    }
-    if (src.rank() != 2 || src.size(1) != 4) {
-      throw new IllegalArgumentException("src must be 2D with shape [N, 4], got: " + java.util.Arrays.toString(src.shape()));
-    }
-    if (output.rank() != 2 || output.size(1) != 4) {
-      throw new IllegalArgumentException("output must be 2D with shape [N, 4], got: " + java.util.Arrays.toString(output.shape()));
+    // Ensure mask is the right shape for broadcasting - should be [N] not [N, 1]
+    INDArray broadcastMask = mask;
+    if (mask.rank() == 2) {
+      broadcastMask = mask.getColumn(0); // Convert [N, 1] to [N]
     }
 
-    // Check compatible sizes
-    if (dst.size(0) != src.size(0) || dst.size(0) != output.size(0)) {
-      throw new IllegalArgumentException("All tensors must have same number of rows");
-    }
+    // Calculate the blend for all pixels
+    INDArray srcAlpha = src.getColumn(0);
+    INDArray srcR = src.getColumn(1);
+    INDArray srcG = src.getColumn(2);
+    INDArray srcB = src.getColumn(3);
 
-    // Validate alpha range bounds (optional - could be expensive for large tensors)
-    // Uncomment if you want strict validation:
-    /*
-    if (dst.minNumber().doubleValue() < 0.0 || dst.maxNumber().doubleValue() > 1.0) {
-      throw new IllegalArgumentException("dst values must be in range [0, 1]");
-    }
-    if (src.minNumber().doubleValue() < 0.0 || src.maxNumber().doubleValue() > 1.0) {
-      throw new IllegalArgumentException("src values must be in range [0, 1]");
-    }
-    */
+    // Apply exact integer formula (same as before)
+    INDArray srcAlpha255 = srcAlpha.mul(255.0);
+    INDArray srcR255 = srcR.mul(255.0);
+    INDArray srcG255 = srcG.mul(255.0);
+    INDArray srcB255 = srcB.mul(255.0);
+
+    double alphaScale = alpha * 256.0;
+    INDArray effectiveAlpha = srcAlpha255.mul(alphaScale).div(256.0);
+    INDArray roundingMask = effectiveAlpha.gte(127.5);
+    effectiveAlpha.addi(roundingMask.castTo(DataType.FLOAT));
+
+    // Calculate deltas (what to add to dst)
+    INDArray deltaR = srcR255.mul(effectiveAlpha).div(256.0);
+    INDArray deltaG = srcG255.mul(effectiveAlpha).div(256.0);
+    INDArray deltaB = srcB255.mul(effectiveAlpha).div(256.0);
+    INDArray deltaAlpha = effectiveAlpha;
+
+    // Apply mask: only add deltas where mask is true
+    // Use .mul() instead of .muli() to avoid in-place shape issues
+    deltaR = deltaR.mul(broadcastMask);
+    deltaG = deltaG.mul(broadcastMask);
+    deltaB = deltaB.mul(broadcastMask);
+    deltaAlpha = deltaAlpha.mul(broadcastMask);
+
+    // Apply to output (convert to 255 space, add deltas, clip, convert back)
+    INDArray outAlpha = output.getColumn(0);
+    INDArray outR = output.getColumn(1);
+    INDArray outG = output.getColumn(2);
+    INDArray outB = output.getColumn(3);
+
+    // Scale to 255, add deltas, clip, scale back
+    outAlpha.muli(255.0).addi(deltaAlpha);
+    outAlpha.assign(Transforms.min(outAlpha, 255.0));
+    outAlpha.divi(255.0);
+
+    outR.muli(255.0).addi(deltaR);
+    outR.assign(Transforms.min(outR, 255.0));
+    outR.divi(255.0);
+
+    outG.muli(255.0).addi(deltaG);
+    outG.assign(Transforms.min(outG, 255.0));
+    outG.divi(255.0);
+
+    outB.muli(255.0).addi(deltaB);
+    outB.assign(Transforms.min(outB, 255.0));
+    outB.divi(255.0);
   }
 }

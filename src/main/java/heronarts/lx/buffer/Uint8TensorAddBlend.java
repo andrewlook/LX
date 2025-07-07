@@ -1,11 +1,12 @@
 package heronarts.lx.buffer;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.indexing.NDArrayIndex;
 import org.nd4j.linalg.ops.transforms.Transforms;
 
-public class Uint8TensorAddBlend {
+public class Uint8TensorAddBlend extends BaseTensorBlend {
 
   /**
    * Blends the src buffer onto the destination buffer at the specified alpha amount.
@@ -20,7 +21,7 @@ public class Uint8TensorAddBlend {
    */
   public void blend(INDArray dst, INDArray src, double alpha, INDArray output, int start, int num) {
     // Validate inputs
-    validateInputs(dst, src, output);
+    validateInputs(DataType.UINT8, dst, src, output);
 
     // Work on slices
     INDArray dstSlice = dst.get(NDArrayIndex.interval(start, start + num), NDArrayIndex.all());
@@ -71,39 +72,71 @@ public class Uint8TensorAddBlend {
     outSlice.getColumn(3).assign(outB.castTo(DataType.UINT8));
   }
 
-  /**
-   * Convenience method to blend entire tensors
-   */
-  public void blend(INDArray dst, INDArray src, double alpha, INDArray output) {
-    blend(dst, src, alpha, output, 0, (int)dst.size(0));
-  }
+  @Override
+  public void blend(INDArray dst, INDArray src, double alpha, INDArray output, INDArray mask) {
+    validateInputs(DataType.UINT8, dst, src, output);
+    validateMask(mask, dst.size(0));
 
-  private void validateInputs(INDArray dst, INDArray src, INDArray output) {
-    // Check data types
-    if (dst.dataType() != DataType.UINT8) {
-      throw new IllegalArgumentException("dst must be UINT8, got: " + dst.dataType());
-    }
-    if (src.dataType() != DataType.UINT8) {
-      throw new IllegalArgumentException("src must be UINT8, got: " + src.dataType());
-    }
-    if (output.dataType() != DataType.UINT8) {
-      throw new IllegalArgumentException("output must be UINT8, got: " + output.dataType());
+    if (output != dst) {
+      output.assign(dst);
     }
 
-    // Check shapes
-    if (dst.rank() != 2 || dst.size(1) != 4) {
-      throw new IllegalArgumentException("dst must be 2D with shape [N, 4], got: " + java.util.Arrays.toString(dst.shape()));
-    }
-    if (src.rank() != 2 || src.size(1) != 4) {
-      throw new IllegalArgumentException("src must be 2D with shape [N, 4], got: " + java.util.Arrays.toString(src.shape()));
-    }
-    if (output.rank() != 2 || output.size(1) != 4) {
-      throw new IllegalArgumentException("output must be 2D with shape [N, 4], got: " + java.util.Arrays.toString(output.shape()));
+    // Ensure mask is the right shape for broadcasting - should be [N] not [N, 1]
+    INDArray broadcastMask = mask;
+    if (mask.rank() == 2) {
+      broadcastMask = mask.getColumn(0); // Convert [N, 1] to [N]
     }
 
-    // Check compatible sizes
-    if (dst.size(0) != src.size(0) || dst.size(0) != output.size(0)) {
-      throw new IllegalArgumentException("All tensors must have same number of rows");
-    }
+    // Calculate the blend for all pixels
+    INDArray srcAlpha = src.getColumn(0).castTo(DataType.FLOAT);
+    INDArray srcR = src.getColumn(1).castTo(DataType.FLOAT);
+    INDArray srcG = src.getColumn(2).castTo(DataType.FLOAT);
+    INDArray srcB = src.getColumn(3).castTo(DataType.FLOAT);
+
+    // Calculate effective source alpha using the original integer formula
+    double alphaScale = alpha * 256.0;
+    INDArray effectiveAlpha = srcAlpha.mul(alphaScale).div(256.0);
+
+    // Add rounding: srcAlpha = a + (a >= 127.5 ? 1 : 0)
+    INDArray roundingMask = effectiveAlpha.gte(127.5);
+    effectiveAlpha.addi(roundingMask.castTo(DataType.FLOAT));
+
+    // Calculate deltas (what to add to dst)
+    INDArray deltaR = srcR.mul(effectiveAlpha).div(256.0);
+    INDArray deltaG = srcG.mul(effectiveAlpha).div(256.0);
+    INDArray deltaB = srcB.mul(effectiveAlpha).div(256.0);
+    INDArray deltaAlpha = effectiveAlpha;
+
+    // Apply mask: only add deltas where mask is true
+    // Use .mul() instead of .muli() to avoid in-place shape issues
+    deltaR = deltaR.mul(broadcastMask);
+    deltaG = deltaG.mul(broadcastMask);
+    deltaB = deltaB.mul(broadcastMask);
+    deltaAlpha = deltaAlpha.mul(broadcastMask);
+
+    // Apply to output (dst values + masked deltas)
+    INDArray outAlpha = output.getColumn(0).castTo(DataType.FLOAT);
+    INDArray outR = output.getColumn(1).castTo(DataType.FLOAT);
+    INDArray outG = output.getColumn(2).castTo(DataType.FLOAT);
+    INDArray outB = output.getColumn(3).castTo(DataType.FLOAT);
+
+    // Add deltas and clip
+    outAlpha.addi(deltaAlpha);
+    outAlpha.assign(Transforms.min(outAlpha, 255.0));
+
+    outR.addi(deltaR);
+    outR.assign(Transforms.min(outR, 255.0));
+
+    outG.addi(deltaG);
+    outG.assign(Transforms.min(outG, 255.0));
+
+    outB.addi(deltaB);
+    outB.assign(Transforms.min(outB, 255.0));
+
+    // Convert back to UINT8 and write to output
+    output.getColumn(0).assign(outAlpha.castTo(DataType.UINT8));
+    output.getColumn(1).assign(outR.castTo(DataType.UINT8));
+    output.getColumn(2).assign(outG.castTo(DataType.UINT8));
+    output.getColumn(3).assign(outB.castTo(DataType.UINT8));
   }
 }
