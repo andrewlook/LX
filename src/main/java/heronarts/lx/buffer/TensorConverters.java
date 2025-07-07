@@ -19,7 +19,7 @@ public class TensorConverters {
   static final INDArray G_SHIFT = Nd4j.scalar(LXColor.G_SHIFT);
   static final INDArray B_MASK = Nd4j.scalar(LXColor.B_MASK);
 
-  public static INDArray intArrayTo2DTensorUint8(int[] arr) {
+  public static INDArray intArrayToUint8Tensor2D(int[] arr) {
     System.out.println("About to convert: " + Arrays.toString(arr));
 
     INDArray tensor = Nd4j.createFromArray(arr);
@@ -43,5 +43,39 @@ public class TensorConverters {
 
     // stack along dimension 1, creating a new tensor with shape (arr.length, 4)
     return Nd4j.stack(1, alpha, r, g, b);
+  }
+
+  public static INDArray intArrayToFloatTensor2D(int[] arr) {
+    INDArray floatArr = intArrayToUint8Tensor2D(arr).castTo(DataType.FLOAT);
+    floatArr.divi(255.0); // divide in-place
+    return floatArr;
+  }
+
+  public static int[] uint8Tensor2DToIntArray(INDArray uint8Tensor) {
+    // Extract channels and convert to INT32 for bitwise ops
+    INDArray alpha = uint8Tensor.getColumn(0).castTo(DataType.INT32);
+    INDArray r = uint8Tensor.getColumn(1).castTo(DataType.INT32);
+    INDArray g = uint8Tensor.getColumn(2).castTo(DataType.INT32);
+    INDArray b = uint8Tensor.getColumn(3).castTo(DataType.INT32);
+
+    // Shift and combine in one expression
+    INDArray combined = Nd4j.bitwise().or(
+        Nd4j.bitwise().or(
+            Nd4j.bitwise().leftShift(alpha, ALPHA_SHIFT),
+            Nd4j.bitwise().leftShift(r, R_SHIFT)
+        ),
+        Nd4j.bitwise().or(
+            Nd4j.bitwise().leftShift(g, G_SHIFT),
+            b
+        )
+    );
+
+    // More efficient conversion to int array
+    return combined.data().asInt();
+  }
+
+  public static int[] floatTensor2DToIntArray(INDArray floatTensor) {
+    INDArray uint8Tensor = floatTensor.mul(255.0).castTo(DataType.UINT8);
+    return uint8Tensor2DToIntArray(uint8Tensor);
   }
 }
