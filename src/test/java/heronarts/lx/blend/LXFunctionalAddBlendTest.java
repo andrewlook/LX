@@ -18,7 +18,7 @@ import static heronarts.lx.blend.BlendTestHelpers.bprint;
 import static heronarts.lx.blend.BlendTestHelpers.copyOf;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
-class LXBlendTest {
+class LXFunctionalAddBlendTest {
   private final LXModel mockModel = new LXModel(List.of(TEST_POINTS));
   private final LX mockLX = new LX(mockModel);
   private final LXBlend add = new AddBlend(mockLX);

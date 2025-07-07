@@ -17,7 +17,7 @@ class TensorConvertersTest {
   @Test
   public void testConvertUint8() {
     INDArray uint8Tensor = intArrayToUint8Tensor2D(TEST_DEST);
-    debugTensor(uint8Tensor);
+    debugTensor(uint8Tensor, "DEST UINT8");
     printAsBinaryUint8(uint8Tensor, "UINT8");
     int[] roundtrip = uint8Tensor2DToIntArray(uint8Tensor);
     assertArrayEquals(TEST_DEST, roundtrip);
@@ -26,7 +26,7 @@ class TensorConvertersTest {
   @Test
   public void testConvertFloat() {
     INDArray floatTensor = intArrayToFloatTensor2D(TEST_DEST);
-    debugTensor(floatTensor);
+    debugTensor(floatTensor, "DEST FLOAT");
     printAsBinaryUint8(floatTensor, "FLOAT");
     int[] roundtrip = floatTensor2DToIntArray(floatTensor);
     assertArrayEquals(TEST_DEST, roundtrip);

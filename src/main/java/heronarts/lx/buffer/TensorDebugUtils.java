@@ -6,12 +6,12 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 
 public class TensorDebugUtils {
 
-  public static void debugTensor(INDArray arr) {
-    System.out.println("[[[[[[[[[[[[[[");
+  public static void debugTensor(INDArray arr, String label) {
+    System.out.println("------------- " + label + " -------------");
     System.out.println("Data type: " + arr.dataType());
     System.out.println("Shape: " + Arrays.toString(arr.shape()));
     System.out.println("Values: \n" + arr);
-    System.out.println("]]]]]]]]]]]]]]");
+    System.out.println("-------------/" + label + "/-------------");
   }
 
   public static void printAsBinary(INDArray array, String label) {

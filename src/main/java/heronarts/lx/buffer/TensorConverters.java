@@ -23,8 +23,6 @@ public class TensorConverters {
     System.out.println("About to convert: " + Arrays.toString(arr));
 
     INDArray tensor = Nd4j.createFromArray(arr);
-    debugTensor(tensor);
-    printAsBinary(tensor, "INT32 TENSOR");
     DataType dtype = tensor.dataType();
 
     INDArray alpha = Nd4j.bitwise.rightShift(
