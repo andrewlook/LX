@@ -1,9 +1,9 @@
 package heronarts.lx.buffer;
 
-import heronarts.lx.color.LXColor;
 import org.junit.jupiter.api.Test;
 import org.nd4j.linalg.api.ndarray.INDArray;
 
+import static heronarts.lx.blend.BlendTestHelpers.TEST_DEST;
 import static heronarts.lx.buffer.TensorConverters.floatTensor2DToIntArray;
 import static heronarts.lx.buffer.TensorConverters.intArrayToFloatTensor2D;
 import static heronarts.lx.buffer.TensorConverters.intArrayToUint8Tensor2D;
@@ -13,19 +13,6 @@ import static heronarts.lx.buffer.TensorDebugUtils.printAsBinaryUint8;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 class TensorConvertersTest {
-
-  static final int[] TEST_DEST = new int[]{
-      LXColor.BLACK,
-      LXColor.WHITE,
-      LXColor.GREEN,
-      LXColor.BLACK,
-  };
-  static final int[] TEST_SOURCE = new int[]{
-      LXColor.WHITE,
-      LXColor.BLACK,
-      LXColor.RED,
-      LXColor.GREEN
-  };
 
   @Test
   public void testConvertUint8() {
