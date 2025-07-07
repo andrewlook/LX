@@ -43,16 +43,21 @@ public class FloatTensorAddBlend {
     INDArray srcG = srcSlice.getColumn(2);
     INDArray srcB = srcSlice.getColumn(3);
 
-    // For float [0,1] values, adapt the formula from integer version
-    // Original integer: effectiveAlpha = (srcAlpha * alpha * 256) / 256 + rounding
-    // Float equivalent: effectiveAlpha = srcAlpha * alpha + rounding_adjustment
+    // Calculate effective source alpha - adapt integer formula to [0,1] space
+    // Original: effectiveAlpha = (srcAlpha * alpha * 256) / 256
+    // Then: effectiveAlpha += (effectiveAlpha >= 127.5 ? 1 : 0)
     INDArray effectiveAlpha = srcAlpha.mul(alpha);
 
-    // Add rounding equivalent for [0,1] range
-    // Original checked >= 127.5/255 ≈ 0.5, so we check >= 0.5
-    // Original added 1/255, so we add equivalent in [0,1] space
-    INDArray roundingMask = effectiveAlpha.gte(0.5);
-    effectiveAlpha.addi(roundingMask.castTo(DataType.FLOAT).div(255.0)); // Add 1/255
+    // To match the integer version exactly, we need to:
+    // 1. Scale to [0,255] range temporarily for the rounding logic
+    // 2. Apply the same rounding rule
+    // 3. Scale back to [0,1]
+    INDArray scaledAlpha = effectiveAlpha.mul(255.0);
+    INDArray roundingMask = scaledAlpha.gte(127.5);
+    scaledAlpha.addi(roundingMask.castTo(DataType.FLOAT));
+
+    // Scale back to [0,1] range
+    effectiveAlpha = scaledAlpha.div(255.0);
 
     // Additive blend in [0,1] space: out = dst + (src * effectiveAlpha)
     outR.addi(srcR.mul(effectiveAlpha));
