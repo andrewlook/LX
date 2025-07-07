@@ -41,6 +41,7 @@
 		<gson.version>2.13.1</gson.version>
 		<coremidi4j.version>1.6</coremidi4j.version>
 		<jmh.version>1.37</jmh.version>
+		<dl4j-master.version>1.0.0-M2.1</dl4j-master.version>
 
 		<maven-assembly-plugin.version>3.6.0</maven-assembly-plugin.version>
 		<exec-maven-plugin.version>3.1.1</exec-maven-plugin.version>
@@ -71,6 +72,11 @@
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-simple</artifactId>
 			<version>2.0.16</version>
+		</dependency>
+		<dependency>
+			<groupId>org.nd4j</groupId>
+			<artifactId>nd4j-native</artifactId>
+			<version>${dl4j-master.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
