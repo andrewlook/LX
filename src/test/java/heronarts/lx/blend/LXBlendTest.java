@@ -4,14 +4,12 @@ import java.util.Arrays;
 import java.util.List;
 
 import heronarts.lx.LX;
-import heronarts.lx.buffer.ModelBuffer;
 import heronarts.lx.color.LXColor;
 import heronarts.lx.model.LXModel;
 import heronarts.lx.model.LXPoint;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static heronarts.lx.blend.LXBlend.BlendTarget.target;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 class LXBlendTest {
@@ -65,7 +63,7 @@ class LXBlendTest {
         0xFFFFFF00, // RED   + GREEN
         0xFF00FF00, // BLACK + GREEN
     };
-    add.blend(dst, src, 1.0, out, target(mockModel));
+    add.blend(dst, src, 1.0, out, mockModel);
     assertArrayEquals(expected, out);
   }
 
@@ -77,25 +75,12 @@ class LXBlendTest {
         0xFFFF0000,
         0xFF00FF00
     };
-    add.blend(out, src, 1.0, out, target(mockModel));
+    add.blend(out, src, 1.0, out, mockModel);
     bprint(expected);
     bprint(out);
     assertArrayEquals(expected, out);
   }
 
-  @Test
-  void testBlendToDest() {
-    int[] expected = new int[]{
-        0xFFFFFFFF,
-        0xFF000000,
-        0xFFFF0000,
-        0xFF00FF00
-    };
-    add.blendToDest(out, src, 1.0, target(mockModel));
-    bprint(expected);
-    bprint(out);
-    assertArrayEquals(expected, out);
-  }
 
   @Test
   void testAddBlendHalfAlpha() {
@@ -105,7 +90,7 @@ class LXBlendTest {
         0xFF7FFF00, // GREEN + (0.5 * RED)
         0xFF007F00, // BLACK + (0.5 * GREEN)
     };
-    add.blend(dst, src, 0.5, out, target(mockModel));
+    add.blend(dst, src, 0.5, out, mockModel);
     bprint(expected);
     bprint(out);
     assertArrayEquals(expected, out);
