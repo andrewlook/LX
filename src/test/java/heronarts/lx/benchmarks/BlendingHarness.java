@@ -50,7 +50,7 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
  *   - For each "invocation": ("numTests")
  *     - Select a different pair of dest/source arrays, blend them into actual[].
  */
-@BenchmarkMode(Mode.All)
+@BenchmarkMode(Mode.SampleTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
 @Fork(value = 1, warmups = 1)

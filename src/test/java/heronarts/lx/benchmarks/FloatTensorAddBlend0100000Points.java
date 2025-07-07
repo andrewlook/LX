@@ -15,7 +15,7 @@ import org.openjdk.jmh.annotations.Timeout;
 import org.openjdk.jmh.runner.RunnerException;
 
 
-@BenchmarkMode(Mode.All)
+@BenchmarkMode(Mode.SampleTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
 @Fork(value = 1, warmups = 1)

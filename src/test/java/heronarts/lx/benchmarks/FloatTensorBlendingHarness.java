@@ -21,15 +21,12 @@ import org.openjdk.jmh.annotations.Timeout;
 import static heronarts.lx.buffer.TensorConverters.intArrayToFloatTensor2D;
 import static heronarts.lx.buffer.TensorConverters.floatTensor2DToIntArray;
 
-@BenchmarkMode(Mode.All)
+@BenchmarkMode(Mode.SampleTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
 @Fork(value = 1, warmups = 1)
 @Timeout(time = 10, timeUnit = TimeUnit.SECONDS)
 public class FloatTensorBlendingHarness extends BlendingHarness {
-  public LX lx;
-  public LXModel model;
-
   // Per-trial state
   public INDArray[] destinationsND;
   public INDArray[] sourcesND;

@@ -15,9 +15,9 @@ import org.openjdk.jmh.annotations.Timeout;
 import org.openjdk.jmh.runner.RunnerException;
 
 
-@BenchmarkMode(Mode.All)
+@BenchmarkMode(Mode.SampleTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@State(Scope.Benchmark)
+@State(Scope.Thread)
 @Fork(value = 1, warmups = 1)
 @Timeout(time = 10, timeUnit = TimeUnit.SECONDS)
 public class Uint8TensorAddBlend0005000Points extends Uint8TensorBlendingHarness {

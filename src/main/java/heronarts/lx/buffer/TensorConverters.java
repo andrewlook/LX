@@ -20,8 +20,6 @@ public class TensorConverters {
   static final INDArray B_MASK = Nd4j.scalar(LXColor.B_MASK);
 
   public static INDArray intArrayToUint8Tensor2D(int[] arr) {
-    System.out.println("About to convert: " + Arrays.toString(arr));
-
     INDArray tensor = Nd4j.createFromArray(arr);
     DataType dtype = tensor.dataType();
 
