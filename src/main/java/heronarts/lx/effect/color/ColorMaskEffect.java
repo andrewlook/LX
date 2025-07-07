@@ -22,7 +22,7 @@ import heronarts.lx.LX;
 import heronarts.lx.LXCategory;
 import heronarts.lx.LXComponent;
 import heronarts.lx.LXComponentName;
-import heronarts.lx.blend.LXBlend;
+import heronarts.lx.blend.LXFunctionalBlend;
 import heronarts.lx.color.LXColor;
 import heronarts.lx.color.LinkedColorParameter;
 import heronarts.lx.effect.LXEffect;
@@ -45,9 +45,9 @@ public class ColorMaskEffect extends LXEffect {
     LERP("Lerp", LXColor::lerp);
 
     public final String label;
-    public final LXBlend.FunctionalBlend.BlendFunction function;
+    public final LXFunctionalBlend.BlendFunction function;
 
-    private Mode(String label, LXBlend.FunctionalBlend.BlendFunction function) {
+    private Mode(String label, LXFunctionalBlend.BlendFunction function) {
       this.label = label;
       this.function = function;
     }
@@ -59,17 +59,17 @@ public class ColorMaskEffect extends LXEffect {
   }
 
   public final EnumParameter<Mode> mode =
-    new EnumParameter<Mode>("Mode", Mode.MULTIPLY)
-    .setDescription("How to apply the color mask");
+      new EnumParameter<Mode>("Mode", Mode.MULTIPLY)
+          .setDescription("How to apply the color mask");
 
   public final LinkedColorParameter color =
-    new LinkedColorParameter("Color", LXColor.WHITE)
-    .setDescription("Masking color");
+      new LinkedColorParameter("Color", LXColor.WHITE)
+          .setDescription("Masking color");
 
   public final CompoundParameter depth =
-    new CompoundParameter("Depth", 1)
-    .setUnits(CompoundParameter.Units.PERCENT_NORMALIZED)
-    .setDescription("Amount of masking to apply");
+      new CompoundParameter("Depth", 1)
+          .setUnits(CompoundParameter.Units.PERCENT_NORMALIZED)
+          .setDescription("Amount of masking to apply");
 
   public ColorMaskEffect(LX lx) {
     super(lx);
@@ -86,7 +86,7 @@ public class ColorMaskEffect extends LXEffect {
     }
     final int color = this.color.calcColor();
     final int alpha = LXColor.blendMask(enabledAmount);
-    final LXBlend.FunctionalBlend.BlendFunction blend = this.mode.getEnum().function;
+    final LXFunctionalBlend.BlendFunction blend = this.mode.getEnum().function;
     for (LXPoint p : model.points) {
       colors[p.index] = blend.apply(colors[p.index], color, alpha);
     }

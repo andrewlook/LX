@@ -21,8 +21,8 @@ package heronarts.lx.effect;
 import heronarts.lx.LX;
 import heronarts.lx.LXCategory;
 import heronarts.lx.LXComponent;
-import heronarts.lx.ModelBuffer;
-import heronarts.lx.blend.LXBlend;
+import heronarts.lx.blend.LXFunctionalBlend;
+import heronarts.lx.buffer.ModelBuffer;
 import heronarts.lx.color.LXColor;
 import heronarts.lx.model.LXPoint;
 import heronarts.lx.modulator.Interval;
@@ -47,9 +47,9 @@ public class FreezeEffect extends LXEffect {
     DIFFERENCE("Difference", LXColor::difference);
 
     public final String label;
-    public final LXBlend.FunctionalBlend.BlendFunction function;
+    public final LXFunctionalBlend.BlendFunction function;
 
-    private Mode(String label, LXBlend.FunctionalBlend.BlendFunction function) {
+    private Mode(String label, LXFunctionalBlend.BlendFunction function) {
       this.label = label;
       this.function = function;
     }
@@ -60,42 +60,42 @@ public class FreezeEffect extends LXEffect {
     }
   }
 
-  private final ModelBuffer buffer = new ModelBuffer(lx);
+  private final ModelBuffer<?> buffer = ModelBuffer.shim(lx);
 
   public final Interval interval = new Interval();
 
   public final BooleanParameter lock =
-    new BooleanParameter("Lock", false)
-    .setDescription("Locks the freeze effect active");
+      new BooleanParameter("Lock", false)
+          .setDescription("Locks the freeze effect active");
 
   public final BooleanParameter hold =
-    new BooleanParameter("Hold", false)
-    .setMode(BooleanParameter.Mode.MOMENTARY)
-    .setDescription("Freezes the frame only while held");
+      new BooleanParameter("Hold", false)
+          .setMode(BooleanParameter.Mode.MOMENTARY)
+          .setDescription("Freezes the frame only while held");
 
   public final TriggerParameter resample =
-    new TriggerParameter("Resample", this::resample)
-    .setDescription("Samples a new underlying frame");
+      new TriggerParameter("Resample", this::resample)
+          .setDescription("Samples a new underlying frame");
 
   public final CompoundParameter mix =
-    new CompoundParameter("Mix", 1)
-    .setUnits(CompoundParameter.Units.PERCENT_NORMALIZED)
-    .setDescription("Level of the frozen frame");
+      new CompoundParameter("Mix", 1)
+          .setUnits(CompoundParameter.Units.PERCENT_NORMALIZED)
+          .setDescription("Level of the frozen frame");
 
   public final CompoundParameter attackMs =
-    new CompoundParameter("Attack", 0, 0, 1000)
-    .setUnits(CompoundParameter.Units.MILLISECONDS_RAW)
-    .setDescription("Time to blend into the frozen frame");
+      new CompoundParameter("Attack", 0, 0, 1000)
+          .setUnits(CompoundParameter.Units.MILLISECONDS_RAW)
+          .setDescription("Time to blend into the frozen frame");
 
   public final CompoundParameter releaseMs =
-    new CompoundParameter("Release", 50, 0, 10000)
-    .setExponent(2)
-    .setUnits(CompoundParameter.Units.MILLISECONDS_RAW)
-    .setDescription("Time to blend out from the frozen frame");
+      new CompoundParameter("Release", 50, 0, 10000)
+          .setExponent(2)
+          .setUnits(CompoundParameter.Units.MILLISECONDS_RAW)
+          .setDescription("Time to blend out from the frozen frame");
 
   public final EnumParameter<Mode> mode =
-    new EnumParameter<Mode>("Mode", Mode.REPLACE)
-    .setDescription("How to blend the frozen frame");
+      new EnumParameter<Mode>("Mode", Mode.REPLACE)
+          .setDescription("How to blend the frozen frame");
 
   public FreezeEffect(LX lx) {
     super(lx);
@@ -143,7 +143,7 @@ public class FreezeEffect extends LXEffect {
 
   @Override
   protected void run(double deltaMs, double enabledAmount) {
-    final int[] array = this.buffer.getArray();
+    final int[] array = this.buffer.writableArray();
     if (this.capture) {
       for (LXPoint p : model.points) {
         array[p.index] = colors[p.index];
@@ -158,7 +158,7 @@ public class FreezeEffect extends LXEffect {
     }
 
     final Mode mode = this.mode.getEnum();
-    LXBlend.FunctionalBlend.BlendFunction blend = mode.function;
+    LXFunctionalBlend.BlendFunction blend = mode.function;
 
     if (this.lock.isOn() || this.hold.isOn()) {
       this.basis = LXUtils.min(1, this.basis + deltaMs / this.attackMs.getValue());
