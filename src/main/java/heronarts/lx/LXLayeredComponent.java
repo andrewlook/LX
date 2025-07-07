@@ -18,14 +18,15 @@
 
 package heronarts.lx;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import heronarts.lx.buffer.LXBuffer;
 import heronarts.lx.color.LXColor;
 import heronarts.lx.color.LXPalette;
 import heronarts.lx.model.LXModel;
 import heronarts.lx.model.LXPoint;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * Base class for system components that run in the engine, which have common
@@ -34,7 +35,7 @@ import java.util.List;
  */
 public abstract class LXLayeredComponent extends LXModelComponent implements LXLoopTask {
 
-  private LXBuffer buffer = null;
+  private LXBuffer<?> buffer = null;
 
   protected int[] colors = null;
 
@@ -47,46 +48,46 @@ public abstract class LXLayeredComponent extends LXModelComponent implements LXL
   protected final LXPalette palette;
 
   protected LXLayeredComponent(LX lx) {
-    this(lx, null, (LXBuffer) null);
+    this(lx, null, (LXBuffer<?>) null);
   }
 
   protected LXLayeredComponent(LX lx, String label) {
-    this(lx, label, (LXBuffer) null);
+    this(lx, label, (LXBuffer<?>) null);
   }
 
   protected LXLayeredComponent(LX lx, LXDeviceComponent component) {
     this(lx, null, component.getBuffer());
   }
 
-  protected LXLayeredComponent(LX lx, LXBuffer buffer) {
+  protected LXLayeredComponent(LX lx, LXBuffer<?> buffer) {
     this(lx, null, buffer);
   }
 
-  protected LXLayeredComponent(LX lx, String label, LXBuffer buffer) {
+  protected LXLayeredComponent(LX lx, String label, LXBuffer<?> buffer) {
     super(lx, label);
     this.palette = lx.engine.palette;
     if (buffer != null) {
       this.buffer = buffer;
-      this.colors = buffer.getArray();
+      this.colors = buffer.writableArray();
     }
     addArray("layer", this.layers);
   }
 
-  protected LXBuffer getBuffer() {
+  protected LXBuffer<?> getBuffer() {
     return this.buffer;
   }
 
   public int[] getColors() {
-    return getBuffer().getArray();
+    return getBuffer().writableArray();
   }
 
   protected LXLayeredComponent setBuffer(LXDeviceComponent component) {
     return setBuffer(component.getBuffer());
   }
 
-  public LXLayeredComponent setBuffer(LXBuffer buffer) {
+  public LXLayeredComponent setBuffer(LXBuffer<?> buffer) {
     this.buffer = buffer;
-    this.colors = buffer.getArray();
+    this.colors = buffer.writableArray();
     return this;
   }
 
@@ -100,7 +101,7 @@ public abstract class LXLayeredComponent extends LXModelComponent implements LXL
     // reference. Even if a doofus assigns colors to something else, we'll reset it
     // here on each pass of the loop. Better than subclasses having to call getColors()
     // all the time.
-    this.colors = this.buffer.getArray();
+    this.colors = this.buffer.writableArray();
 
     super.loop(deltaMs);
     onLoop(deltaMs);
@@ -135,19 +136,22 @@ public abstract class LXLayeredComponent extends LXModelComponent implements LXL
     this.profiler.loopNanos = System.nanoTime() - loopStart;
   }
 
-  protected /* abstract */ void onLoop(double deltaMs) {}
+  protected /* abstract */ void onLoop(double deltaMs) {
+  }
 
-  protected /* abstract */ void afterLayers(double deltaMs) {}
+  protected /* abstract */ void afterLayers(double deltaMs) {
+  }
 
-  protected /* abstract */ void applyEffects(double deltaMs) {}
+  protected /* abstract */ void applyEffects(double deltaMs) {
+  }
 
   private void checkForReentrancy(LXLayer target, String operation) {
     if (this.loopingLayer != null) {
       throw new IllegalStateException(
-        "LXLayeredComponent may not modify layers while looping," +
-        " component: " + toString() +
-        " looping: " + this.loopingLayer.toString(this) +
-        " " + operation + ": " + (target != null ? target.toString() : "null")
+          "LXLayeredComponent may not modify layers while looping," +
+              " component: " + toString() +
+              " looping: " + this.loopingLayer.toString(this) +
+              " " + operation + ": " + (target != null ? target.toString() : "null")
       );
     }
   }
