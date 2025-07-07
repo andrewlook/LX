@@ -29,6 +29,8 @@ import heronarts.lx.clip.LXGroupClip;
 import heronarts.lx.effect.LXEffect;
 import heronarts.lx.parameter.LXParameter;
 
+import static heronarts.lx.blend.LXBlend.BlendTarget.target;
+
 public class LXGroup extends LXAbstractChannel {
 
   public class Profiler extends LXAbstractChannel.Profiler {
@@ -44,7 +46,7 @@ public class LXGroup extends LXAbstractChannel {
   public final List<LXChannel> channels = Collections.unmodifiableList(this.mutableChannels);
 
   public LXGroup(LX lx, int index) {
-    super(lx, index, "Group-" + (index+1));
+    super(lx, index, "Group-" + (index + 1));
   }
 
   @Override
@@ -116,18 +118,17 @@ public class LXGroup extends LXAbstractChannel {
     // Because of channel views, channel blends may not touch all pixels, so start
     // by splatting transparency onto the group buffer
     this.blendBuffer.copyFrom(this.lx.engine.mixer.backgroundTransparent);
-    this.colors = this.blendBuffer.getArray();
+    this.colors = this.blendBuffer.writableArray();
 
     // Blend all channels that are enabled.
     for (LXChannel channel : this.channels) {
       final long blendStart = System.nanoTime();
       if (channel.enabled.isOn()) {
-        channel.blendMode.getObject().blend(
-          this.colors,
-          channel.getColors(),
-          channel.fader.getValue(),
-          this.colors,
-          channel.getModelView()
+        channel.blendMode.getObject().blendToDest(
+            this.colors,
+            channel.getColors(),
+            channel.fader.getValue(),
+            target(channel.getModelView())
         );
       }
       ((LXAbstractChannel.Profiler) channel.profiler).blendNanos = System.nanoTime() - blendStart;
