@@ -113,7 +113,7 @@ public class BlendingHarness {
     this.index = (this.index + 1) % this.numChannels;
   }
 
-  public void baseRunner(Class<?> clazz) throws RunnerException {
+  public static void baseRunner(Class<?> clazz) throws RunnerException {
     String simpleName = clazz.getSimpleName();
     System.out.println("\n\n----------------\nPreparing to run: " + simpleName + "\n----------------\n\n");
     String fname = "target/benchmark_" + simpleName + ".json";

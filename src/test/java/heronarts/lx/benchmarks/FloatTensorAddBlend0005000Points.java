@@ -20,7 +20,7 @@ import org.openjdk.jmh.runner.RunnerException;
 @State(Scope.Benchmark)
 @Fork(value = 1, warmups = 1)
 @Timeout(time = 10, timeUnit = TimeUnit.SECONDS)
-public class AddBlend0005000Points extends BlendingHarness {
+public class FloatTensorAddBlend0005000Points extends FloatTensorBlendingHarness {
   static final int NUM_CHANNELS = 16;
   static final int NUM_POINTS_PER_CHANNEL = 5_000;
 
@@ -31,10 +31,10 @@ public class AddBlend0005000Points extends BlendingHarness {
 
   @Benchmark
   public void measureLXBlend() {
-    blendToTest.blend(dst, src, alpha, actual, model);
+    floatTensorAdd.blend(dst, src, alpha, actual, 0, model.size);
   }
 
   public static void main(String[] args) throws RunnerException {
-    baseRunner(AddBlend0005000Points.class);
+    baseRunner(FloatTensorAddBlend0005000Points.class);
   }
 }
