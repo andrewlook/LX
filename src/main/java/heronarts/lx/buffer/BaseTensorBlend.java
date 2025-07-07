@@ -1,12 +1,8 @@
 package heronarts.lx.buffer;
 
-import java.util.Arrays;
-
 import heronarts.lx.model.LXModel;
-import heronarts.lx.model.LXPoint;
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.factory.Nd4j;
 
 public abstract class BaseTensorBlend {
 
@@ -39,33 +35,14 @@ public abstract class BaseTensorBlend {
 
   // ============= Model Points Indexing =====================
 
-
   public void blend(INDArray dst, INDArray src, double alpha, INDArray output, LXModel model) {
-    blend(dst, src, alpha, output, extractIndices(model.points));
-  }
-
-  public void blend(INDArray dst, INDArray src, double alpha, INDArray output, int[] indices) {
-    INDArray mask = indicesToMask(indices, dst.size(0));
-    blend(dst, src, alpha, output, mask);
+    blend(dst, src, alpha, output, model.getIndicesMask());
   }
 
   /**
    * @param mask Boolean tensor [N] or [N, 1] - true where blending should occur
    */
   public abstract void blend(INDArray dst, INDArray src, double alpha, INDArray output, INDArray mask);
-
-  public static int[] extractIndices(LXPoint[] points) {
-    return Arrays.stream(points).mapToInt(p -> p.index).toArray();
-  }
-
-  public static INDArray indicesToMask(int[] indices, long totalSize) {
-    float[] maskArray = new float[(int)totalSize];
-    for (int idx : indices) {
-      maskArray[idx] = 1.0f;
-    }
-    // Create as 1D array [N] instead of [N, 1]
-    return Nd4j.createFromArray(maskArray).castTo(DataType.FLOAT);
-  }
 
   protected void validateMask(INDArray mask, long expectedSize) {
     if (mask.rank() > 2) {

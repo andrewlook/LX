@@ -3,9 +3,7 @@ package heronarts.lx.benchmarks;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
-import heronarts.lx.LX;
 import heronarts.lx.buffer.FloatTensorAddBlend;
-import heronarts.lx.model.LXModel;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -18,8 +16,8 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Timeout;
 
-import static heronarts.lx.buffer.TensorConverters.intArrayToFloatTensor2D;
 import static heronarts.lx.buffer.TensorConverters.floatTensor2DToIntArray;
+import static heronarts.lx.buffer.TensorConverters.intArrayToFloatTensor2D;
 
 @BenchmarkMode(Mode.SampleTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)

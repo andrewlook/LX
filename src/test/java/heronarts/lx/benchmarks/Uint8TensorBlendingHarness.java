@@ -3,9 +3,7 @@ package heronarts.lx.benchmarks;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
-import heronarts.lx.LX;
 import heronarts.lx.buffer.Uint8TensorAddBlend;
-import heronarts.lx.model.LXModel;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
