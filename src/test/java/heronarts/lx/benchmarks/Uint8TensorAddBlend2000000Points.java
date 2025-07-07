@@ -30,8 +30,13 @@ public class Uint8TensorAddBlend2000000Points extends Uint8TensorBlendingHarness
   }
 
   @Benchmark
-  public void measureLXBlend() {
+  public void measureUintBlendRange() {
     uint8TensorAdd.blend(dst, src, alpha, actual, 0, model.size);
+  }
+
+  @Benchmark
+  public void measureUintBlendModel() {
+    uint8TensorAdd.blend(dst, src, alpha, actual, model);
   }
 
   public static void main(String[] args) throws RunnerException {

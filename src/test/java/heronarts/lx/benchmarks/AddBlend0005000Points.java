@@ -30,7 +30,12 @@ public class AddBlend0005000Points extends BlendingHarness {
   }
 
   @Benchmark
-  public void measureLXBlend() {
+  public void measureLXBlendRange() {
+    blendToTest.blend(dst, src, alpha, actual, 0, model.size);
+  }
+
+  @Benchmark
+  public void measureLXBlendModel() {
     blendToTest.blend(dst, src, alpha, actual, model);
   }
 

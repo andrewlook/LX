@@ -30,10 +30,15 @@ public class FloatTensorAddBlend0005000Points extends FloatTensorBlendingHarness
   }
 
   @Benchmark
-  public void measureLXBlend() {
+  public void measureFloatBlendRange() {
     floatTensorAdd.blend(dst, src, alpha, actual, 0, model.size);
   }
 
+  @Benchmark
+  public void measureFloatBlendModel() {
+    floatTensorAdd.blend(dst, src, alpha, actual, model);
+  }
+  
   public static void main(String[] args) throws RunnerException {
     baseRunner(FloatTensorAddBlend0005000Points.class);
   }
