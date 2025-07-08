@@ -50,7 +50,7 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
  *   - For each "invocation": ("numTests")
  *     - Select a different pair of dest/source arrays, blend them into actual[].
  */
-@BenchmarkMode(Mode.All)
+@BenchmarkMode(Mode.SampleTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
 @Fork(value = 1, warmups = 1)
@@ -113,7 +113,7 @@ public class BlendingHarness {
     this.index = (this.index + 1) % this.numChannels;
   }
 
-  public void baseRunner(Class<?> clazz) throws RunnerException {
+  public static void baseRunner(Class<?> clazz) throws RunnerException {
     String simpleName = clazz.getSimpleName();
     System.out.println("\n\n----------------\nPreparing to run: " + simpleName + "\n----------------\n\n");
     String fname = "target/benchmark_" + simpleName + ".json";

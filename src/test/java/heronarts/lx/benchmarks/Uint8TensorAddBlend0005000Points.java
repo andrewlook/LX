@@ -14,14 +14,15 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Timeout;
 import org.openjdk.jmh.runner.RunnerException;
 
+
 @BenchmarkMode(Mode.SampleTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@State(Scope.Benchmark)
+@State(Scope.Thread)
 @Fork(value = 1, warmups = 1)
 @Timeout(time = 10, timeUnit = TimeUnit.SECONDS)
-public class AddBlend0100000Points extends BlendingHarness {
+public class Uint8TensorAddBlend0005000Points extends Uint8TensorBlendingHarness {
   static final int NUM_CHANNELS = 16;
-  static final int NUM_POINTS_PER_CHANNEL = 100_000;
+  static final int NUM_POINTS_PER_CHANNEL = 5_000;
 
   @Setup(Level.Trial)
   public void setupWholeTrial() {
@@ -29,16 +30,16 @@ public class AddBlend0100000Points extends BlendingHarness {
   }
 
   @Benchmark
-  public void measureLXBlendRange() {
-    blendToTest.blend(dst, src, alpha, actual, 0, model.size);
+  public void measureUintBlendRange() {
+    uint8TensorAdd.blend(dst, src, alpha, actual, 0, model.size);
   }
 
   @Benchmark
-  public void measureLXBlendModel() {
-    blendToTest.blend(dst, src, alpha, actual, model);
+  public void measureUintBlendModel() {
+    uint8TensorAdd.blend(dst, src, alpha, actual, model);
   }
 
   public static void main(String[] args) throws RunnerException {
-    baseRunner(AddBlend0100000Points.class);
+    baseRunner(Uint8TensorAddBlend0005000Points.class);
   }
 }

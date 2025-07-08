@@ -12,9 +12,10 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Timeout;
+import org.openjdk.jmh.runner.RunnerException;
 
 
-@BenchmarkMode(Mode.All)
+@BenchmarkMode(Mode.SampleTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
 @Fork(value = 1, warmups = 1)
@@ -29,9 +30,16 @@ public class AddBlend0005000Points extends BlendingHarness {
   }
 
   @Benchmark
-  public void measureLXBlend() {
+  public void measureLXBlendRange() {
+    blendToTest.blend(dst, src, alpha, actual, 0, model.size);
+  }
+
+  @Benchmark
+  public void measureLXBlendModel() {
     blendToTest.blend(dst, src, alpha, actual, model);
   }
 
-  
+  public static void main(String[] args) throws RunnerException {
+    baseRunner(AddBlend0005000Points.class);
+  }
 }

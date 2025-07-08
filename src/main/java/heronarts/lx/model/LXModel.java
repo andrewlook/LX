@@ -21,6 +21,7 @@ package heronarts.lx.model;
 import java.io.File;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -36,6 +37,9 @@ import heronarts.lx.output.LXOutput;
 import heronarts.lx.transform.LXMatrix;
 import heronarts.lx.transform.LXVector;
 import heronarts.lx.utils.LXUtils;
+import org.nd4j.linalg.api.buffer.DataType;
+import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.factory.Nd4j;
 
 /**
  * An LXModel is a representation of a set of points in 3D space. Each LXPoint
@@ -293,6 +297,9 @@ public class LXModel extends LXNormalizationBounds implements LXSerializable {
   public final LXPoint[] points;
 
   private final List<LXPoint> pointList;
+
+  private final int[] indicesArr;
+  private final INDArray indicesMask;
 
   /**
    * An immutable map of String key/value pairs, metadata on the model object
@@ -627,6 +634,8 @@ public class LXModel extends LXNormalizationBounds implements LXSerializable {
     addChildren(this.children = children.clone(), setChildBounds);
     this.points = this.pointList.toArray(new LXPoint[0]);
     this.size = this.points.length;
+    this.indicesArr = extractIndices(this.points);
+    this.indicesMask = indicesToMask(this.indicesArr, this.size);
     this.outputs = Collections.unmodifiableList(new ArrayList<LXOutput>());
     this.meshes = (meshes == null) ? null : Collections.unmodifiableList(new ArrayList<>(meshes));
 
@@ -697,6 +706,8 @@ public class LXModel extends LXNormalizationBounds implements LXSerializable {
     this.points = _points.toArray(new LXPoint[0]);
     this.pointList = Collections.unmodifiableList(_points);
     this.size = _points.size();
+    this.indicesArr = extractIndices(this.points);
+    this.indicesMask = indicesToMask(this.indicesArr, this.size);
 
     this.outputs = Collections.unmodifiableList(new ArrayList<LXOutput>());
     this.metaData = Collections.unmodifiableMap(new HashMap<String, String>());
@@ -732,6 +743,8 @@ public class LXModel extends LXNormalizationBounds implements LXSerializable {
     this.points = _points.toArray(new LXPoint[0]);
     this.pointList = Collections.unmodifiableList(_points);
     this.size = this.points.length;
+    this.indicesArr = extractIndices(this.points);
+    this.indicesMask = indicesToMask(this.indicesArr, this.size);
 
     this.outputs = Collections.unmodifiableList(new ArrayList<LXOutput>(builder.outputs));
     this.metaData = Collections.unmodifiableMap(new HashMap<String, String>());
@@ -1282,6 +1295,27 @@ public class LXModel extends LXNormalizationBounds implements LXSerializable {
    */
   public List<LXPoint> getPoints() {
     return this.pointList;
+  }
+
+  public int[] getIndicesArr() {
+    return this.indicesArr;
+  }
+
+  public INDArray getIndicesMask() {
+    return this.indicesMask;
+  }
+
+  public static int[] extractIndices(LXPoint[] points) {
+    return Arrays.stream(points).mapToInt(p -> p.index).toArray();
+  }
+
+  public static INDArray indicesToMask(int[] indices, long totalSize) {
+    float[] maskArray = new float[(int)totalSize];
+    for (int idx : indices) {
+      maskArray[idx] = 1.0f;
+    }
+    // Create as 1D array [N] instead of [N, 1]
+    return Nd4j.createFromArray(maskArray).castTo(DataType.FLOAT);
   }
 
   /**
