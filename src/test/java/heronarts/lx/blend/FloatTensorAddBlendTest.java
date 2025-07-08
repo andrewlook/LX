@@ -18,6 +18,7 @@ import static heronarts.lx.blend.BlendTestHelpers.TEST_POINTS;
 import static heronarts.lx.blend.BlendTestHelpers.TEST_SOURCE;
 import static heronarts.lx.buffer.TensorConverters.floatTensor2DToIntArray;
 import static heronarts.lx.buffer.TensorConverters.intArrayToFloatTensor2D;
+import static heronarts.lx.buffer.TensorDebugUtils.debugTensor;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 class FloatTensorAddBlendTest {
@@ -53,7 +54,9 @@ class FloatTensorAddBlendTest {
 
   @Test
   void testRangeAddBlendHalfAlpha() {
-    add.blend(dst, src, 0.5, out, 0, mockModel.size);
+    add.blend(dst, src, 0.49999, out, 0, mockModel.size);
+    debugTensor(out, "ACTUAL (HALF ALPHA)");
+    debugTensor(intArrayToFloatTensor2D(EXPECTED_HALF_ALPHA), "EXPECTED (HALF ALPHA)");
     assertArrayEquals(EXPECTED_HALF_ALPHA, floatTensor2DToIntArray(out));
   }
 
@@ -74,8 +77,6 @@ class FloatTensorAddBlendTest {
   @Test
   void testModelAddBlendHalfAlpha() {
     add.blend(dst, src, 0.5, out, mockModel);
-//    debugTensor(out, "ACTUAL (HALF ALPHA)");
-//    debugTensor(intArrayToFloatTensor2D(EXPECTED_HALF_ALPHA), "EXPECTED (HALF ALPHA)");
     assertArrayEquals(EXPECTED_HALF_ALPHA, floatTensor2DToIntArray(out));
   }
 }

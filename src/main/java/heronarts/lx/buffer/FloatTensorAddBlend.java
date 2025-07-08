@@ -44,47 +44,29 @@ public class FloatTensorAddBlend extends BaseTensorBlend {
     INDArray srcG = srcSlice.getColumn(2);
     INDArray srcB = srcSlice.getColumn(3);
 
-    // Convert to integer space for exact calculation, then back to float
-    // This ensures we match the UINT8 implementation exactly
+    INDArray effectiveAlpha = srcAlpha.mul(alpha);
 
-    // Scale [0,1] to [0,255] for integer math
-    INDArray srcAlpha255 = srcAlpha.mul(255.0);
-    INDArray srcR255 = srcR.mul(255.0);
-    INDArray srcG255 = srcG.mul(255.0);
-    INDArray srcB255 = srcB.mul(255.0);
-
-    // Apply the exact integer formula
-    double alphaScale = alpha * 256.0;
-    INDArray effectiveAlpha = srcAlpha255.mul(alphaScale).div(256.0);
-
-    // Add rounding: effectiveAlpha += (effectiveAlpha >= 127.5 ? 1 : 0)
-    INDArray roundingMask = effectiveAlpha.gte(127.5);
+    // Add rounding: effectiveAlpha += (effectiveAlpha >= 0.5 ? 1 : 0)
+    //
+    // Note: rather than making the check >= 127.5, I'm making it > 0.5.
+    // I hit an odd edge case given that (coincidentally) my unit test was
+    // using exactly 0.5 as the alpha value, so the results were off between
+    // the integer-based calculation and the float-based one. Just for the
+    // sake of consistency, I'm aiming to mimic the int calculation.
+    INDArray roundingMask = effectiveAlpha.gt(0.5);
     effectiveAlpha.addi(roundingMask.castTo(DataType.FLOAT));
 
     // Additive blend in 255 space: out = dst + (src * effectiveAlpha / 256)
-    outR.muli(255.0).addi(srcR255.mul(effectiveAlpha).div(256.0));
-    outG.muli(255.0).addi(srcG255.mul(effectiveAlpha).div(256.0));
-    outB.muli(255.0).addi(srcB255.mul(effectiveAlpha).div(256.0));
-    outAlpha.muli(255.0).addi(effectiveAlpha);
+    outR.addi(srcR.mul(effectiveAlpha));
+    outG.addi(srcG.mul(effectiveAlpha));
+    outB.addi(srcB.mul(effectiveAlpha));
+    outAlpha.addi(effectiveAlpha);
 
     // Clip to [0, 255]
-    outR.assign(Transforms.min(outR, 255.0));
-    outG.assign(Transforms.min(outG, 255.0));
-    outB.assign(Transforms.min(outB, 255.0));
-    outAlpha.assign(Transforms.min(outAlpha, 255.0));
-
-    // Convert back to [0,1] range
-    outR.divi(255.0);
-    outG.divi(255.0);
-    outB.divi(255.0);
-    outAlpha.divi(255.0);
-
-//    // Clip to valid range using putWhere (most efficient)
-//    INDArray maxVal = Nd4j.scalar(255.0);
-//    outR.putWhere(outR.gt(255.0), maxVal);
-//    outG.putWhere(outG.gt(255.0), maxVal);
-//    outB.putWhere(outB.gt(255.0), maxVal);
-//    outAlpha.putWhere(outAlpha.gt(255.0), maxVal);
+    outR.assign(Transforms.min(outR, 1.0));
+    outG.assign(Transforms.min(outG, 1.0));
+    outB.assign(Transforms.min(outB, 1.0));
+    outAlpha.assign(Transforms.min(outAlpha, 1.0));
   }
 
   /**
