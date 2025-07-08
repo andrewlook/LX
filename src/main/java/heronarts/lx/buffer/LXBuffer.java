@@ -16,20 +16,31 @@
  * @author Mark C. Slee <mark@heronarts.com>
  */
 
-package heronarts.lx;
+package heronarts.lx.buffer;
 
-public interface LXBuffer {
-  public int[] getArray();
+public interface LXBuffer<T extends LXBuffer<T>> {
+  /**
+   * If true, return "ModelDelegateBuffer" instead of "ModelIntArrayBuffer"
+   */
+  boolean SHIM_MODEL_DELEGATE = true;
+  /**
+   * If true, return "LXNDArrayBuffer" instead of "LXIntArrayBufferImpl"
+   */
+  boolean SHIM_NDARRAY = false;
 
-  public default LXBuffer copyTo(LXBuffer that) {
-    final int[] array = getArray();
-    System.arraycopy(array, 0, that.getArray(), 0, array.length);
-    return this;
-  }
+  T copyTo(LXBuffer<?> that);
 
-  public default LXBuffer copyFrom(LXBuffer that) {
-    final int[] array = getArray();
-    System.arraycopy(that.getArray(), 0, array, 0, array.length);
-    return this;
-  }
+  T copyFrom(LXBuffer<?> that);
+
+  T self();
+
+  int[] readOnlyArray();
+
+  int[] writableArray();
+
+  void initArray(int numPoints);
+
+  int length();
+
+  T setFromIntArray(int[] arr);
 }

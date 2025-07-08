@@ -16,49 +16,46 @@
  * @author Mark C. Slee <mark@heronarts.com>
  */
 
-package heronarts.lx;
+package heronarts.lx.buffer;
 
 import java.util.Arrays;
 
-import heronarts.lx.model.LXModel;
+import heronarts.lx.LX;
 
-public class ModelBuffer implements LXBuffer {
+public class ModelArrayBuffer<T extends LXArrayBuffer<T>> extends ModelBuffer<T> {
 
-  private final LX lx;
   private int[] array;
   private final int defaultColor;
 
-  private final LX.Listener modelListener = new LX.Listener() {
-    @Override
-    public void modelChanged(LX lx, LXModel model) {
-      if (array.length != model.size) {
-        initArray(model);
-      }
-    }
-  };
-
-  public ModelBuffer(LX lx) {
+  protected ModelArrayBuffer(LX lx) {
     this(lx, 0);
   }
 
-  public ModelBuffer(LX lx, int defaultColor) {
-    this.lx = lx;
+  protected ModelArrayBuffer(LX lx, int defaultColor) {
+    super(lx);
     this.defaultColor = defaultColor;
-    initArray(lx.model);
-    lx.addListener(this.modelListener);
+    initArray(lx.getModel().size);
   }
 
-  private void initArray(LXModel model) {
-    this.array = new int[model.size];
+  @Override
+  public void initArray(int numPoints) {
+    this.array = new int[numPoints];
     Arrays.fill(this.array, this.defaultColor);
   }
 
-  public int[] getArray() {
+  @Override
+  public int[] writableArray() {
     return this.array;
   }
 
-  public void dispose() {
-    this.lx.removeListener(this.modelListener);
+  @Override
+  public int[] readOnlyArray() {
+    return this.writableArray();
   }
 
+  @Override
+  public T setFromIntArray(int[] arr) {
+    this.array = arr;
+    return self();
+  }
 }

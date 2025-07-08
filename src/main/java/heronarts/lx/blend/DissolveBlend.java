@@ -1,13 +1,13 @@
 /**
  * Copyright 2016- Mark C. Slee, Heron Arts LLC
- *
+ * <p>
  * This file is part of the LX Studio software library. By using
  * LX, you agree to the terms of the LX Studio Software License
  * and Distribution Agreement, available at: http://lx.studio/license
- *
+ * <p>
  * Please note that the LX license is not open-source. The license
  * allows for free, non-commercial use.
- *
+ * <p>
  * HERON ARTS MAKES NO WARRANTY, EXPRESS, IMPLIED, STATUTORY, OR
  * OTHERWISE, AND SPECIFICALLY DISCLAIMS ANY WARRANTY OF
  * MERCHANTABILITY, NON-INFRINGEMENT, OR FITNESS FOR A PARTICULAR
@@ -35,23 +35,20 @@ public class DissolveBlend extends LXBlend {
   }
 
   @Override
-  public void blend(int[] dst, int[] src, double alpha, int[] output, LXModel model) {
+  public void blend(int[] dst, int[] src, double alpha, int[] output, BlendTarget target) {
     // Multiply the src alpha only by half!
     final int srcAlpha = (int) (alpha * LXColor.BLEND_ALPHA_HALF);
     final int dstAlpha = LXColor.BLEND_ALPHA_FULL - srcAlpha;
-    for (LXPoint p : model.points) {
-      final int i = p.index;
-      output[i] = LXColor.add(LXColor.add(LXColor.CLEAR, dst[i], dstAlpha), src[i], srcAlpha);
-    }
-  }
 
-  @Override
-  public void blend(int[] dst, int[] src, double alpha, int[] output, int start, int num) {
-    // Multiply the src alpha only by half!
-    final int srcAlpha = (int) (alpha * LXColor.BLEND_ALPHA_HALF);
-    final int dstAlpha = LXColor.BLEND_ALPHA_FULL - srcAlpha;
-    for (int i = start; i < start + num; ++i) {
-      output[i] = LXColor.add(LXColor.add(LXColor.CLEAR, dst[i], dstAlpha), src[i], srcAlpha);
+    if (target.model != null) {
+      for (LXPoint p : target.model.points) {
+        final int i = p.index;
+        output[i] = LXColor.add(LXColor.add(LXColor.CLEAR, dst[i], dstAlpha), src[i], srcAlpha);
+      }
+    } else {
+      for (int i = target.start; i < target.start + target.num; ++i) {
+        output[i] = LXColor.add(LXColor.add(LXColor.CLEAR, dst[i], dstAlpha), src[i], srcAlpha);
+      }
     }
   }
 }

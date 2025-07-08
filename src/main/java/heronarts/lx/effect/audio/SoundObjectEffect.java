@@ -22,8 +22,8 @@ import heronarts.lx.LX;
 import heronarts.lx.LXCategory;
 import heronarts.lx.LXComponent;
 import heronarts.lx.LXComponentName;
-import heronarts.lx.ModelBuffer;
-import heronarts.lx.blend.LXBlend;
+import heronarts.lx.blend.LXFunctionalBlend;
+import heronarts.lx.buffer.ModelBuffer;
 import heronarts.lx.color.LXColor;
 import heronarts.lx.effect.LXEffect;
 import heronarts.lx.model.LXPoint;
@@ -45,9 +45,9 @@ public class SoundObjectEffect extends LXEffect {
     LERP("Lerp", LXColor::lerp);
 
     public final String label;
-    public final LXBlend.FunctionalBlend.BlendFunction function;
+    public final LXFunctionalBlend.BlendFunction function;
 
-    private MaskMode(String label, LXBlend.FunctionalBlend.BlendFunction function) {
+    private MaskMode(String label, LXFunctionalBlend.BlendFunction function) {
       this.label = label;
       this.function = function;
     }
@@ -60,26 +60,26 @@ public class SoundObjectEffect extends LXEffect {
 
   public final SoundObjectPattern.Engine engine;
 
-  private final ModelBuffer blendBuffer;
+  private final ModelBuffer<?> blendBuffer;
 
   public final EnumParameter<MaskMode> maskMode =
-    new EnumParameter<MaskMode>("Mode", MaskMode.MULTIPLY)
-    .setDescription("How to apply the sound object mask");
+      new EnumParameter<MaskMode>("Mode", MaskMode.MULTIPLY)
+          .setDescription("How to apply the sound object mask");
 
   public final CompoundParameter maskDepth =
-    new CompoundParameter("Depth", 1)
-    .setUnits(CompoundParameter.Units.PERCENT_NORMALIZED)
-    .setDescription("Depth of masking effect");
+      new CompoundParameter("Depth", 1)
+          .setUnits(CompoundParameter.Units.PERCENT_NORMALIZED)
+          .setDescription("Depth of masking effect");
 
   public final BooleanParameter cueMask =
-    new BooleanParameter("CUE", false)
-    .setMode(BooleanParameter.Mode.MOMENTARY)
-    .setDescription("Directly render the mask");
+      new BooleanParameter("CUE", false)
+          .setMode(BooleanParameter.Mode.MOMENTARY)
+          .setDescription("Directly render the mask");
 
   public SoundObjectEffect(LX lx) {
     super(lx);
     this.engine = new SoundObjectPattern.Engine(lx);
-    this.blendBuffer = new ModelBuffer(lx);
+    this.blendBuffer = ModelBuffer.shim(lx);
 
     addParameter("baseSize", this.engine.baseSize);
     addParameter("signalToSize", this.engine.signalToSize);
@@ -109,7 +109,7 @@ public class SoundObjectEffect extends LXEffect {
     final boolean cueMask = this.cueMask.isOn();
     enabledAmount *= this.maskDepth.getValue();
     if (cueMask || (enabledAmount > 0)) {
-      final int[] blend = this.blendBuffer.getArray();
+      final int[] blend = this.blendBuffer.writableArray();
       this.engine.run(this.model, blend, deltaMs);
       if (cueMask) {
         for (LXPoint p : model.points) {
@@ -117,7 +117,7 @@ public class SoundObjectEffect extends LXEffect {
         }
       } else {
         final int alpha = LXColor.blendMask(enabledAmount);
-        final LXBlend.FunctionalBlend.BlendFunction mask = this.maskMode.getEnum().function;
+        final LXFunctionalBlend.BlendFunction mask = this.maskMode.getEnum().function;
         for (LXPoint p : model.points) {
           colors[p.index] = mask.apply(colors[p.index], blend[p.index], alpha);
         }

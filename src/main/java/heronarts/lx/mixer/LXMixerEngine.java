@@ -30,16 +30,16 @@ import java.util.concurrent.Future;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-
 import heronarts.lx.LX;
 import heronarts.lx.LXComponent;
 import heronarts.lx.LXDeviceComponent;
 import heronarts.lx.LXEngine;
 import heronarts.lx.LXRegistry;
 import heronarts.lx.LXSerializable;
-import heronarts.lx.ModelBuffer;
 import heronarts.lx.blend.AddBlend;
 import heronarts.lx.blend.LXBlend;
+import heronarts.lx.buffer.BlendStack;
+import heronarts.lx.buffer.ModelBuffer;
 import heronarts.lx.clip.LXClip;
 import heronarts.lx.color.LXColor;
 import heronarts.lx.effect.LXEffect;
@@ -56,20 +56,26 @@ import heronarts.lx.parameter.ObjectParameter;
 import heronarts.lx.pattern.LXPattern;
 import heronarts.lx.utils.LXUtils;
 
+import static heronarts.lx.blend.LXBlend.BlendTarget.target;
+import static heronarts.lx.buffer.BufferUtils.bufferLength;
+
 /**
  * Encapsulation of all the LX channel blending and mixer
  */
 public class LXMixerEngine extends LXComponent implements LXOscComponent {
 
   public static class PatternFriendAccess {
-    private PatternFriendAccess() {}
+    private PatternFriendAccess() {
+    }
   }
 
   static final PatternFriendAccess patternFriendAccess = new PatternFriendAccess();
 
   public interface Listener {
     public void channelAdded(LXMixerEngine mixer, LXAbstractChannel channel);
+
     public void channelRemoved(LXMixerEngine mixer, LXAbstractChannel channel);
+
     public void channelMoved(LXMixerEngine mixer, LXAbstractChannel channel);
   }
 
@@ -97,71 +103,71 @@ public class LXMixerEngine extends LXComponent implements LXOscComponent {
   private final AddBlend addBlend;
 
   public final DiscreteParameter focusedChannel =
-    new DiscreteParameter("Channel", 1)
-    .setDescription("Which channel is currently focused in the UI");
+      new DiscreteParameter("Channel", 1)
+          .setDescription("Which channel is currently focused in the UI");
 
   public final DiscreteParameter focusedChannelAux =
-    new DiscreteParameter("Aux", 1)
-    .setDescription("Which channel is currently focused in the auxiliary UI");
+      new DiscreteParameter("Aux", 1)
+          .setDescription("Which channel is currently focused in the auxiliary UI");
 
   public final CompoundParameter crossfader =
-    new CompoundParameter("Crossfader", 0.5)
-    .setUnits(CompoundParameter.Units.PERCENT_NORMALIZED)
-    .setDescription("Applies blending between output groups A and B")
-    .setPolarity(LXParameter.Polarity.BIPOLAR);
+      new CompoundParameter("Crossfader", 0.5)
+          .setUnits(CompoundParameter.Units.PERCENT_NORMALIZED)
+          .setDescription("Applies blending between output groups A and B")
+          .setPolarity(LXParameter.Polarity.BIPOLAR);
 
   public final ObjectParameter<LXBlend> crossfaderBlendMode;
   private LXBlend activeCrossfaderBlend;
 
   public final BooleanParameter cueA =
-    new BooleanParameter("Cue-A", false)
-    .setDescription("Enables cue preview of crossfade group A");
+      new BooleanParameter("Cue-A", false)
+          .setDescription("Enables cue preview of crossfade group A");
 
   public final BooleanParameter cueB =
-    new BooleanParameter("Cue-B", false)
-    .setDescription("Enables cue preview of crossfade group B");
+      new BooleanParameter("Cue-B", false)
+          .setDescription("Enables cue preview of crossfade group B");
 
   public final BooleanParameter auxA =
-    new BooleanParameter("Aux-A", false)
-    .setDescription("Enables aux preview of crossfade group A");
+      new BooleanParameter("Aux-A", false)
+          .setDescription("Enables aux preview of crossfade group A");
 
   public final BooleanParameter auxB =
-    new BooleanParameter("Aux-B", false)
-    .setDescription("Enables aux preview of crossfade group B");
+      new BooleanParameter("Aux-B", false)
+          .setDescription("Enables aux preview of crossfade group B");
 
   public final BooleanParameter autoMuteDefault =
-    new BooleanParameter("Auto-Mute Default", false)
-    .setDescription("Whether new channels have Auto-Mute enabled by default");
+      new BooleanParameter("Auto-Mute Default", false)
+          .setDescription("Whether new channels have Auto-Mute enabled by default");
 
   public final BooleanParameter autoMutePatternDefault =
-    new BooleanParameter("Auto-Mute Pattern Default", false)
-    .setDescription("Whether new rack patterns have Auto-Mute enabled by default");
+      new BooleanParameter("Auto-Mute Pattern Default", false)
+          .setDescription("Whether new rack patterns have Auto-Mute enabled by default");
 
-  public final ModelBuffer backgroundBlack;
-  public final ModelBuffer backgroundTransparent;
-  private final ModelBuffer blendBufferLeft;
-  private final ModelBuffer blendBufferRight;
+  public final ModelBuffer<?> backgroundBlack;
+  public final ModelBuffer<?> backgroundTransparent;
+  private final ModelBuffer<?> blendBufferLeft;
+  private final ModelBuffer<?> blendBufferRight;
 
   public final BooleanParameter viewCondensed =
-    new BooleanParameter("View Condensed", false)
-    .setDescription("Whether the mixer view should be condensed");
+      new BooleanParameter("View Condensed", false)
+          .setDescription("Whether the mixer view should be condensed");
 
   public final BooleanParameter viewStacked =
-    new BooleanParameter("View Stacked", false)
-    .setDescription("Whether the mixer view is stacked on the device bin");
+      new BooleanParameter("View Stacked", false)
+          .setDescription("Whether the mixer view is stacked on the device bin");
 
   public final BooleanParameter viewDeviceBin =
-    new BooleanParameter("View Device Bin", true)
-    .setDescription("Whether the device bin is shown in stacked view");
+      new BooleanParameter("View Device Bin", true)
+          .setDescription("Whether the device bin is shown in stacked view");
 
   public LXMixerEngine(LX lx) {
     super(lx, "Mixer");
 
     // Background and blending buffers
-    this.backgroundBlack = new ModelBuffer(lx, LXColor.BLACK);
-    this.backgroundTransparent = new ModelBuffer(lx, 0);
-    this.blendBufferLeft = new ModelBuffer(lx);
-    this.blendBufferRight = new ModelBuffer(lx);
+    this.backgroundBlack = ModelBuffer.shim(lx, LXColor.BLACK);
+    this.backgroundTransparent = ModelBuffer.shim(lx, 0);
+    this.blendBufferLeft = ModelBuffer.shim(lx);
+    this.blendBufferRight = ModelBuffer.shim(lx);
     LX.initProfiler.log("Engine: Mixer: Buffers");
 
     // Set up global add blend
@@ -170,8 +176,8 @@ public class LXMixerEngine extends LXComponent implements LXOscComponent {
 
     // Master crossfader blend modes
     this.crossfaderBlendMode =
-      new ObjectParameter<LXBlend>("Crossfader Blend", new LXBlend[1])
-      .setDescription("Sets the blend mode used for the master crossfader");
+        new ObjectParameter<LXBlend>("Crossfader Blend", new LXBlend[1])
+            .setDescription("Sets the blend mode used for the master crossfader");
     updateCrossfaderBlendOptions();
     LX.initProfiler.log("Engine: Mixer: Blends");
 
@@ -283,7 +289,7 @@ public class LXMixerEngine extends LXComponent implements LXOscComponent {
   public boolean handleOscMessage(OscMessage message, String[] parts, int index) {
     String path = parts[index];
     if (path.equals(PATH_CHANNEL)) {
-      String channelIndex = parts[index+1];
+      String channelIndex = parts[index + 1];
       LXBus channel = null;
       if (channelIndex.equals(PATH_FOCUSED)) {
         channel = getFocusedChannel();
@@ -304,9 +310,9 @@ public class LXMixerEngine extends LXComponent implements LXOscComponent {
         return false;
       } else {
         if (channel instanceof LXChannel) {
-          return ((LXChannel)channel).handleOscMessage(message, parts, index+2);
+          return ((LXChannel) channel).handleOscMessage(message, parts, index + 2);
         } else {
-          return channel.handleOscMessage(message, parts, index+2);
+          return channel.handleOscMessage(message, parts, index + 2);
         }
       }
     }
@@ -437,9 +443,9 @@ public class LXMixerEngine extends LXComponent implements LXOscComponent {
 
   public LXMixerEngine selectChannel(LXBus bus, boolean multipleSelection) {
     multipleSelection =
-      multipleSelection &&
-      (this.masterBus != bus) &&
-      !this.masterBus.selected.isOn();
+        multipleSelection &&
+            (this.masterBus != bus) &&
+            !this.masterBus.selected.isOn();
     if (!multipleSelection) {
       for (LXAbstractChannel channel : this.channels) {
         if (channel != bus) {
@@ -473,9 +479,9 @@ public class LXMixerEngine extends LXComponent implements LXOscComponent {
     for (LXAbstractChannel bus : this.channels) {
       final int busIndex = bus.getIndex();
       bus.selected.setValue(
-        (bus.getGroup() == selectedGroup) &&
-        (busIndex >= minIndex) &&
-        (busIndex <= maxIndex)
+          (bus.getGroup() == selectedGroup) &&
+              (busIndex >= minIndex) &&
+              (busIndex <= maxIndex)
       );
     }
     this.masterBus.selected.setValue(false);
@@ -941,67 +947,21 @@ public class LXMixerEngine extends LXComponent implements LXOscComponent {
     return this;
   }
 
-  private class BlendStack {
-
-    private int[] destination;
-    private int[] output;
-
-    void initialize(int[] destination, int[] output) {
-      this.destination = destination;
-      this.output = output;
-
-      if (this.destination == this.output) {
-        LX.error(new Exception("BlendStack initialized with the same destination/output"));
-      } else {
-        // We need to splat the output array right away. Channels may have views applied
-        // which mean blend calls might not touch all the pixels. So we've got to get them
-        // all re-initted upfront.
-        System.arraycopy(this.destination, 0, this.output, 0, this.destination.length);
-        this.destination = this.output;
-      }
-    }
-
-    void blend(LXBlend blend, BlendStack that, double alpha, LXModel model) {
-      blend(blend, that.destination, alpha, model);
-    }
-
-    void blend(LXBlend blend, int[] src, double alpha, LXModel model) {
-      blend.blend(this.destination, src, alpha, this.output, model);
-      this.destination = this.output;
-    }
-
-    void blend(LXBlend blend, int[] src, double alpha, int start, int num) {
-      blend.blend(this.destination, src, alpha, this.output, start, num);
-      this.destination = this.output;
-    }
-
-    void transition(LXBlend blend, int[] src, double lerp, LXModel model) {
-      blend.lerp(this.destination, src, lerp, this.output, model);
-      this.destination = this.output;
-    }
-
-    void copyFrom(BlendStack that) {
-      System.arraycopy(that.destination, 0, this.output, 0, that.destination.length);
-      this.destination = this.output;
-    }
-
-  }
-
-  private final BlendStack blendStackMain = new BlendStack();
-  private final BlendStack blendStackCue = new BlendStack();
-  private final BlendStack blendStackAux = new BlendStack();
-  private final BlendStack blendStackLeft = new BlendStack();
-  private final BlendStack blendStackRight = new BlendStack();
+  private final BlendStack blendStackMain = BlendStack.shim();
+  private final BlendStack blendStackCue = BlendStack.shim();
+  private final BlendStack blendStackAux = BlendStack.shim();
+  private final BlendStack blendStackLeft = BlendStack.shim();
+  private final BlendStack blendStackRight = BlendStack.shim();
   private boolean _blendCueCalled = false;
   private boolean _blendAuxCalled = false;
 
   public void blendCue(int[] cueColors, LXModel cueView) {
-    this.blendStackCue.blend(this.addBlend, cueColors, 1, cueView);
+    this.blendStackCue.blend(this.addBlend, cueColors, 1, target(cueView));
     this._blendCueCalled = true;
   }
 
   public void blendAux(int[] auxColors, LXModel auxView) {
-    this.blendStackAux.blend(this.addBlend, auxColors, 1, auxView);
+    this.blendStackAux.blend(this.addBlend, auxColors, 1, target(auxView));
     this._blendAuxCalled = true;
   }
 
@@ -1015,14 +975,12 @@ public class LXMixerEngine extends LXComponent implements LXOscComponent {
     final long channelStart = System.nanoTime();
 
     // Initialize blend stacks
-    this.blendStackMain.initialize(this.backgroundBlack.getArray(), render.getMain());
-    this.blendStackCue.initialize(this.backgroundBlack.getArray(), render.getCue());
-    this.blendStackAux.initialize(this.backgroundBlack.getArray(), render.getAux());
-    this.blendStackLeft.initialize(this.backgroundBlack.getArray(), this.blendBufferLeft.getArray());
-    this.blendStackRight.initialize(this.backgroundBlack.getArray(), this.blendBufferRight.getArray());
-
+    this.blendStackMain.initialize(this.backgroundBlack.readOnlyArray(), render.getMain());
+    this.blendStackCue.initialize(this.backgroundBlack.readOnlyArray(), render.getCue());
+    this.blendStackAux.initialize(this.backgroundBlack.readOnlyArray(), render.getAux());
+    this.blendStackLeft.initialize(this.backgroundBlack.readOnlyArray(), this.blendBufferLeft.writableArray());
+    this.blendStackRight.initialize(this.backgroundBlack.readOnlyArray(), this.blendBufferRight.writableArray());
     final double crossfadeValue = this.crossfader.getValue();
-
     final boolean leftBusActive = crossfadeValue < 1.;
     final boolean rightBusActive = crossfadeValue > 0.;
 
@@ -1071,8 +1029,8 @@ public class LXMixerEngine extends LXComponent implements LXOscComponent {
     boolean leftExists = false, rightExists = false;
 
     final boolean useMultithreadedCompositor =
-      this.lx.engine.isCompositorMultithreaded.isOn() &&
-      (this.blendStackMain.destination.length > MIN_COMPOSITOR_CHUNK);
+        this.lx.engine.isCompositorMultithreaded.isOn() &&
+            (bufferLength(this.blendStackMain.getDestination()) > MIN_COMPOSITOR_CHUNK);
 
     for (LXAbstractChannel channel : this.channels) {
       // Only blend channels not in a group, group channels were composited above
@@ -1094,7 +1052,7 @@ public class LXMixerEngine extends LXComponent implements LXOscComponent {
           if ((blendStack != null) && channel.enabled.isOn()) {
             final double alpha = channel.fader.getValue();
             if (alpha > 0) {
-              blendStack.blend(channel.blendMode.getObject(), channel.getColors(), alpha, channel.getModelView());
+              blendStack.blend(channel.blendMode.getObject(), channel.getColors(), alpha, target(channel.getModelView()));
             }
           }
         }
@@ -1113,7 +1071,7 @@ public class LXMixerEngine extends LXComponent implements LXOscComponent {
       // that blending is always per-pixel, e.g. the blending of colors[i] does
       // not depend upon the value of colors[j]
       this.compositorFutures.clear();
-      final int bufferSize = this.blendStackMain.destination.length;
+      final int bufferSize = this.blendStackMain.getDestination().length;
 
       // Threads have coordination overhead, not worth breaking up into parts that are too small
       final int chunkSize = LXUtils.max(MIN_COMPOSITOR_CHUNK, (bufferSize / NUM_COMPOSITOR_THREADS));
@@ -1132,9 +1090,7 @@ public class LXMixerEngine extends LXComponent implements LXOscComponent {
                   case B -> blendRight ? this.blendStackRight : null;
                   case BYPASS -> this.blendStackMain;
                 };
-                if (blendStack != null) {
-                  blendStack.blend(channel.blendMode.getObject(), channel.getColors(), alpha, start, num);
-                }
+                blendStack.blend(channel.blendMode.getObject(), channel.getColors(), alpha, target(start, num));
               }
             }
           }));
@@ -1163,13 +1119,13 @@ public class LXMixerEngine extends LXComponent implements LXOscComponent {
       // Blend into the cue buffer, always a direct add blend for any type of channel
       if (channel.cueActive.isOn()) {
         cueBusActive = true;
-        this.blendStackCue.blend(this.addBlend, channel.getColors(), 1, channel.getModelView());
+        this.blendStackCue.blend(this.addBlend, channel.getColors(), 1, target(channel.getModelView()));
       }
 
       // Blend into the aux buffer when in performance mode
       if (isPerformanceMode && channel.auxActive.isOn()) {
         auxBusActive = true;
-        this.blendStackAux.blend(this.addBlend, channel.getColors(), 1, channel.getModelView());
+        this.blendStackAux.blend(this.addBlend, channel.getColors(), 1, target(channel.getModelView()));
       }
     }
 
@@ -1203,15 +1159,15 @@ public class LXMixerEngine extends LXComponent implements LXOscComponent {
     if (leftContent && rightContent) {
       // There are left and right channels assigned!
       final LXBlend blend = this.crossfaderBlendMode.getObject();
-      this.blendStackLeft.transition(blend, this.blendStackRight.destination, crossfadeValue, model);
+      this.blendStackLeft.transition(blend, this.blendStackRight.getDestination(), crossfadeValue, target(model));
       // Add the crossfaded groups to the main buffer
-      this.blendStackMain.blend(this.addBlend, this.blendStackLeft, 1., model);
+      this.blendStackMain.blend(this.addBlend, this.blendStackLeft, 1., target(model));
     } else if (leftContent) {
       // Add the left group to the main buffer
-      this.blendStackMain.blend(this.addBlend, this.blendStackLeft, Math.min(1, 2. * (1-crossfadeValue)), model);
+      this.blendStackMain.blend(this.addBlend, this.blendStackLeft, Math.min(1, 2. * (1 - crossfadeValue)), target(model));
     } else if (rightContent) {
       // Add the right group to the main buffer
-      this.blendStackMain.blend(this.addBlend, this.blendStackRight, Math.min(1, 2. * crossfadeValue), model);
+      this.blendStackMain.blend(this.addBlend, this.blendStackRight, Math.min(1, 2. * crossfadeValue), target(model));
     }
 
     // Step 6: Time to apply master FX to the main blended output
@@ -1228,11 +1184,11 @@ public class LXMixerEngine extends LXComponent implements LXOscComponent {
       final double fader = this.masterBus.fader.getValue();
       if (fader == 0) {
         // Don't multiply if it's just zero!
-        Arrays.fill(this.blendStackMain.output, LXColor.BLACK);
+        Arrays.fill(this.blendStackMain.getOutput(), LXColor.BLACK);
       } else if (fader < 1.) {
         // Apply a pass to scale brightness
         final int mult = LXColor.gray(100. * fader);
-        final int[] output = this.blendStackMain.output;
+        final int[] output = this.blendStackMain.getOutput();
         for (int i = 0; i < output.length; ++i) {
           output[i] = LXColor.multiply(output[i], mult, LXColor.BLEND_ALPHA_FULL);
         }

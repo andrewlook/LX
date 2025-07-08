@@ -21,7 +21,7 @@ package heronarts.lx.effect;
 import heronarts.lx.LX;
 import heronarts.lx.LXCategory;
 import heronarts.lx.LXComponent;
-import heronarts.lx.ModelBuffer;
+import heronarts.lx.buffer.ModelBuffer;
 import heronarts.lx.color.LXColor;
 import heronarts.lx.model.LXPoint;
 import heronarts.lx.parameter.CompoundParameter;
@@ -52,30 +52,30 @@ public class BlurEffect extends LXEffect {
   }
 
   public final CompoundParameter level =
-    new CompoundParameter("Level", 0, 0, 1)
-    .setUnits(CompoundParameter.Units.PERCENT_NORMALIZED)
-    .setDescription("Level of the blur relative to original signal");
+      new CompoundParameter("Level", 0, 0, 1)
+          .setUnits(CompoundParameter.Units.PERCENT_NORMALIZED)
+          .setDescription("Level of the blur relative to original signal");
 
   public final CompoundParameter decay =
-    new CompoundParameter("Decay", 1, 0.01, 60)
-    .setDescription("Decay time for the motion blur to diminish to decay factor")
-    .setExponent(3)
-    .setUnits(CompoundParameter.Units.SECONDS);
+      new CompoundParameter("Decay", 1, 0.01, 60)
+          .setDescription("Decay time for the motion blur to diminish to decay factor")
+          .setExponent(3)
+          .setUnits(CompoundParameter.Units.SECONDS);
 
   public final CompoundParameter decayFactor =
-    new CompoundParameter("Factor", .5, 0.01, 1)
-    .setDescription("Decay factor, the level reached in decay time (e.g. half-life if at 50%)")
-    .setUnits(CompoundParameter.Units.PERCENT_NORMALIZED);
+      new CompoundParameter("Factor", .5, 0.01, 1)
+          .setDescription("Decay factor, the level reached in decay time (e.g. half-life if at 50%)")
+          .setUnits(CompoundParameter.Units.PERCENT_NORMALIZED);
 
   public final EnumParameter<Mode> mode =
-    new EnumParameter<Mode>("Mode", Mode.MIX)
-    .setDescription("Which blending mode the blur uses");
+      new EnumParameter<Mode>("Mode", Mode.MIX)
+          .setDescription("Which blending mode the blur uses");
 
-  private final ModelBuffer blurBuffer;
+  private final ModelBuffer<?> blurBuffer;
 
   public BlurEffect(LX lx) {
     super(lx);
-    this.blurBuffer = new ModelBuffer(lx, LXColor.BLACK);
+    this.blurBuffer = ModelBuffer.shim(lx, LXColor.BLACK);
     addParameter("level", this.level);
     addParameter("decay", this.decay);
     addParameter("decayFactor", this.decayFactor);
@@ -84,7 +84,7 @@ public class BlurEffect extends LXEffect {
 
   @Override
   protected void onEnable() {
-    int[] blurArray = this.blurBuffer.getArray();
+    int[] blurArray = this.blurBuffer.writableArray();
     for (int i = 0; i < blurArray.length; ++i) {
       blurArray[i] = LXColor.BLACK;
     }
@@ -94,20 +94,20 @@ public class BlurEffect extends LXEffect {
     int r = (argb & LXColor.R_MASK) >> LXColor.R_SHIFT;
     int g = (argb & LXColor.G_MASK) >> LXColor.G_SHIFT;
     int b = (argb & LXColor.B_MASK);
-    r = LXUtils.max(0, r-1);
-    g = LXUtils.max(0, g-1);
-    b = LXUtils.max(0, b-1);
+    r = LXUtils.max(0, r - 1);
+    g = LXUtils.max(0, g - 1);
+    b = LXUtils.max(0, b - 1);
     return
-      (argb & LXColor.ALPHA_MASK) |
-      (r << LXColor.R_SHIFT) |
-      (g << LXColor.G_SHIFT) |
-      b;
+        (argb & LXColor.ALPHA_MASK) |
+            (r << LXColor.R_SHIFT) |
+            (g << LXColor.G_SHIFT) |
+            b;
   }
 
   @Override
   public void run(double deltaMs, double amount) {
     final int blurAlpha = (int) (LXColor.BLEND_ALPHA_FULL * amount * this.level.getValue());
-    final int[] blurColors = this.blurBuffer.getArray();
+    final int[] blurColors = this.blurBuffer.writableArray();
 
     final double decayScale = Math.pow(this.decayFactor.getValue(), deltaMs / (1000 * this.decay.getValue()));
     final int decayColor = LXColor.grayn(decayScale);
@@ -134,36 +134,36 @@ public class BlurEffect extends LXEffect {
     // If blur value is present, blend the blur value into the color buffer
     if (blurAlpha > 0) {
       switch (this.mode.getEnum()) {
-      case MIX:
-        for (LXPoint p : model.points) {
-          int i = p.index;
-          this.colors[i] = LXColor.lerp(this.colors[i], blurColors[i], blurAlpha);
-        }
-        break;
-      case ADD:
-        for (LXPoint p : model.points) {
-          int i = p.index;
-          this.colors[i] = LXColor.add(this.colors[i], blurColors[i], blurAlpha);
-        }
-        break;
-      case SCREEN:
-        for (LXPoint p : model.points) {
-          int i = p.index;
-          this.colors[i] = LXColor.screen(this.colors[i], blurColors[i], blurAlpha);
-        }
-        break;
-      case MULTIPLY:
-        for (LXPoint p : model.points) {
-          int i = p.index;
-          this.colors[i] = LXColor.multiply(this.colors[i], blurColors[i], blurAlpha);
-        }
-        break;
-      case LIGHTEST:
-        for (LXPoint p : model.points) {
-          int i = p.index;
-          this.colors[i] = LXColor.lightest(this.colors[i], blurColors[i], blurAlpha);
-        }
-        break;
+        case MIX:
+          for (LXPoint p : model.points) {
+            int i = p.index;
+            this.colors[i] = LXColor.lerp(this.colors[i], blurColors[i], blurAlpha);
+          }
+          break;
+        case ADD:
+          for (LXPoint p : model.points) {
+            int i = p.index;
+            this.colors[i] = LXColor.add(this.colors[i], blurColors[i], blurAlpha);
+          }
+          break;
+        case SCREEN:
+          for (LXPoint p : model.points) {
+            int i = p.index;
+            this.colors[i] = LXColor.screen(this.colors[i], blurColors[i], blurAlpha);
+          }
+          break;
+        case MULTIPLY:
+          for (LXPoint p : model.points) {
+            int i = p.index;
+            this.colors[i] = LXColor.multiply(this.colors[i], blurColors[i], blurAlpha);
+          }
+          break;
+        case LIGHTEST:
+          for (LXPoint p : model.points) {
+            int i = p.index;
+            this.colors[i] = LXColor.lightest(this.colors[i], blurColors[i], blurAlpha);
+          }
+          break;
       }
     }
   }
