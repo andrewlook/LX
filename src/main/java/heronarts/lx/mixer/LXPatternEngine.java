@@ -18,6 +18,7 @@
 
 package heronarts.lx.mixer;
 
+import heronarts.lx.GpuDevice;
 import heronarts.lx.LX;
 import heronarts.lx.LXBuffer;
 import heronarts.lx.LXComponent;
@@ -83,6 +84,11 @@ public class LXPatternEngine implements LXParameterListener, LXSerializable {
   private boolean inListener = false;
   private final List<Listener> addListeners = new ArrayList<>();
   private final List<Listener> removeListeners = new ArrayList<>();
+
+  /**
+   * Can be monitored for changes to the name of any pattern on this engine
+   */
+  public final MutableParameter patternRenamed = new MutableParameter();
 
   public enum AutoCycleMode {
     NEXT("Next"),
@@ -186,10 +192,6 @@ public class LXPatternEngine implements LXParameterListener, LXSerializable {
 
   // NB(mcslee): chain parameters in case there are modulation mappings from the trigger cycle parameter!
   public final QuantizedTriggerParameter launchPatternCycle;
-
-  public final BooleanParameter viewPatternLabel =
-    new BooleanParameter("View Pattern Label", false)
-    .setDescription("Whether to show the active pattern as channel label");
 
   // Listenable parameter for when number of patterns changes
   public final MutableParameter numPatternsChanged = new MutableParameter();
@@ -956,7 +958,9 @@ public class LXPatternEngine implements LXParameterListener, LXSerializable {
     // what the mixing mode is, because sub-patterns/effects may render
     // to views that only touch a subset of the channel's view. We don't
     // want to leave old frame cruft in the channel buffer in that case
-    blendBuffer.copyFrom(this.lx.engine.mixer.backgroundTransparent);
+    if (this.lx.engine.renderMode.cpu) {
+      blendBuffer.copyFrom(this.lx.engine.mixer.backgroundTransparent);
+    }
 
     if (this.compositeMode.getEnum() == CompositeMode.BLEND) {
 
@@ -987,7 +991,7 @@ public class LXPatternEngine implements LXParameterListener, LXSerializable {
           pattern.setModel(patternView);
           pattern.loop(deltaMs);
 
-          if (patternRender) {
+          if (patternRender && this.lx.engine.renderMode.cpu) {
             pattern.compositeBlend.getObject().blend(
               colors,
               pattern.getColors(),
@@ -1046,12 +1050,19 @@ public class LXPatternEngine implements LXParameterListener, LXSerializable {
 
       // Run active pattern
       if (activePattern != null) {
+        // JKB: In GPU mode, clear the buffer for Java patterns
+        if (this.lx.engine.renderMode.gpu && !(activePattern instanceof GpuDevice)) {
+          blendBuffer.copyFrom(this.lx.engine.mixer.backgroundTransparent);
+        }
+
         activePattern.setBuffer(blendBuffer);
         activePattern.setModel(activePattern.getModelView());
         activePattern.loop(deltaMs);
       } else {
         // No active pattern, black it out!
-        blendBuffer.copyFrom(this.lx.engine.mixer.backgroundBlack);
+        if (this.lx.engine.renderMode.cpu) {
+          blendBuffer.copyFrom(this.lx.engine.mixer.backgroundBlack);
+        }
       }
 
       // Run transition!
@@ -1059,17 +1070,25 @@ public class LXPatternEngine implements LXParameterListener, LXSerializable {
         this.autoCycleProgress = 1.;
         this.transitionProgress = (this.lx.engine.nowMillis - this.transitionMillis) / (1000 * this.transitionTimeSecs.getValue());
         final LXPattern nextPattern = getNextPattern();
+
+        // JKB: In GPU mode, clear the buffer for Java patterns
+        if (this.lx.engine.renderMode.gpu && !(nextPattern instanceof GpuDevice)) {
+          renderBuffer.copyFrom(this.lx.engine.mixer.backgroundTransparent);
+        }
+
         nextPattern.setBuffer(this.renderBuffer);
         nextPattern.setModel(nextPattern.getModelView());
         nextPattern.loop(deltaMs);
-        this.transition.loop(deltaMs);
-        this.transition.lerp(
-          colors,
-          this.renderBuffer.getArray(),
-          this.transitionProgress,
-          colors,
-          modelView
-        );
+        if (this.lx.engine.renderMode.cpu) {
+          this.transition.loop(deltaMs);
+          this.transition.lerp(
+            colors,
+            this.renderBuffer.getArray(),
+            this.transitionProgress,
+            colors,
+            modelView
+          );
+        }
       } else {
         this.transitionProgress = 0;
       }
