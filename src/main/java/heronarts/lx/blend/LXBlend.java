@@ -65,6 +65,14 @@ public abstract class LXBlend extends LXModulatorComponent {
         output[p.index] = this.function.apply(dst[p.index], src[p.index], alphaMask);
       }
     }
+
+    @Override
+    public void blend(int[] dst, int[] src, double alpha, int[] output, int start, int num) {
+      int alphaMask = (int) (alpha * LXColor.BLEND_ALPHA_FULL);
+      for (int i = start; i < start+num; ++i) {
+        output[i] = this.function.apply(dst[i], src[i], alphaMask);
+      }
+    }
   }
 
   private String name;
@@ -132,6 +140,18 @@ public abstract class LXBlend extends LXModulatorComponent {
   public abstract void blend(int[] dst, int[] src, double alpha, int[] output, LXModel model);
 
   /**
+   * Blends the src buffer onto the destination buffer at the specified alpha amount.
+   *
+   * @param dst Destination buffer (lower layer)
+   * @param src Source buffer (top layer)
+   * @param alpha Alpha blend, from 0-1
+   * @param output Output buffer, which may be the same as src or dst
+   * @param start Starting index to blend
+   * @param num Number of pixels to blend
+   */
+  public abstract void blend(int[] dst, int[] src, double alpha, int[] output, int start, int num);
+
+  /**
    * Transitions from one buffer to another. By default, this is used by first
    * blending from-to with alpha 0-1, then blending to-from with
    * alpha 1-0. Blends which are asymmetrical may override this method for
@@ -156,7 +176,12 @@ public abstract class LXBlend extends LXModulatorComponent {
       src = from;
       alpha = (1-amt) * 2.;
     }
-    blend(dst, src, alpha, output, model);
+    if (model == this.lx.getModel()) {
+      // Potential 4-6x speedup per Andrew Look's benchmarks
+      blend(dst, src, alpha, output, 0, model.size);
+    } else {
+      blend(dst, src, alpha, output, model);
+    }
   }
 
   /**

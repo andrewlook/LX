@@ -21,8 +21,10 @@ package heronarts.lx.command;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.google.gson.JsonObject;
 
@@ -57,6 +59,8 @@ import heronarts.lx.mixer.LXBus;
 import heronarts.lx.mixer.LXChannel;
 import heronarts.lx.mixer.LXAbstractChannel;
 import heronarts.lx.mixer.LXGroup;
+import heronarts.lx.mixer.LXMixerEngine;
+import heronarts.lx.mixer.LXPatternEngine;
 import heronarts.lx.modulation.LXCompoundModulation;
 import heronarts.lx.modulation.LXModulationContainer;
 import heronarts.lx.modulation.LXModulationEngine;
@@ -65,12 +69,14 @@ import heronarts.lx.modulation.LXTriggerModulation;
 import heronarts.lx.modulator.LXModulator;
 import heronarts.lx.osc.LXOscConnection;
 import heronarts.lx.parameter.BooleanParameter;
+import heronarts.lx.parameter.BoundedParameter;
 import heronarts.lx.parameter.DiscreteParameter;
 import heronarts.lx.parameter.LXListenableNormalizedParameter;
 import heronarts.lx.parameter.LXNormalizedParameter;
 import heronarts.lx.parameter.LXParameter;
 import heronarts.lx.parameter.StringParameter;
 import heronarts.lx.pattern.LXPattern;
+import heronarts.lx.pattern.PatternRack;
 import heronarts.lx.snapshot.LXSnapshot;
 import heronarts.lx.snapshot.LXClipSnapshot;
 import heronarts.lx.snapshot.LXGlobalSnapshot;
@@ -93,6 +99,10 @@ public abstract class LXCommand {
   public static class InvalidCommandException extends Exception {
 
     private static final long serialVersionUID = 1L;
+
+    protected InvalidCommandException(String message) {
+      super(message);
+    }
 
     protected InvalidCommandException(Exception cause) {
       super(cause.getMessage(), cause);
@@ -212,18 +222,45 @@ public abstract class LXCommand {
 
   public static abstract class RemoveComponent extends LXCommand {
 
-    private final List<Modulation.RemoveModulation> removeModulations = new ArrayList<Modulation.RemoveModulation>();
-    private final List<Modulation.RemoveTrigger> removeTriggers = new ArrayList<Modulation.RemoveTrigger>();
-    private final List<Midi.RemoveMapping> removeMidiMappings = new ArrayList<Midi.RemoveMapping>();
-    private final List<Snapshots.RemoveView> removeSnapshotViews = new ArrayList<Snapshots.RemoveView>();
-    private final List<Clip.RemoveParameterLane> removeClipLanes = new ArrayList<>();
-    private final List<Clip.Event.Pattern.RemoveReferences> removePatternClipEvents = new ArrayList<>();
+    /**
+     * Events that remove multiple components in coordinated fashion (e.g. GroupPattern) may
+     * detect the same modulations from multiple sub-actions, say for instance there is a
+     * modulation between PatternA.param -> PatternB.param. The RemovePattern() action for
+     * A and B will *both* pick up that this modulation needs removing. But we only want
+     * that to actually happen once, so we track modulations by ID in this situation.
+     */
+    static class ModulationContext {
+      private Set<Integer> uniqueModulations = new HashSet<>();
+    }
+
+    private final ModulationContext modulationContext;
+
+    final List<Modulation.RemoveModulation> removeModulations = new ArrayList<Modulation.RemoveModulation>();
+    final List<Modulation.RemoveTrigger> removeTriggers = new ArrayList<Modulation.RemoveTrigger>();
+    final List<Midi.RemoveMapping> removeMidiMappings = new ArrayList<Midi.RemoveMapping>();
+    final List<Snapshots.RemoveView> removeSnapshotViews = new ArrayList<Snapshots.RemoveView>();
+    final List<Clip.RemoveClipLane> removeClipLanes = new ArrayList<>();
+    final List<Clip.Event.Pattern.RemoveReferences> removePatternClipEvents = new ArrayList<>();
+    final List<Device.SetRemoteControls> removeRemoteControls = new ArrayList<>();
+
+    private boolean shouldRemoveModulation(LXParameterModulation modulation) {
+      if (this.modulationContext == null) {
+        return true;
+      }
+      if (this.modulationContext.uniqueModulations.contains(modulation.getId())) {
+        return false;
+      }
+      this.modulationContext.uniqueModulations.add(modulation.getId());
+      return true;
+    }
 
     private void _removeModulations(LXModulationEngine modulation, LXComponent component) {
       List<LXCompoundModulation> compounds = modulation.findModulations(component, modulation.modulations);
       if (compounds != null) {
         for (LXCompoundModulation compound : compounds) {
-          this.removeModulations.add(new Modulation.RemoveModulation(modulation, compound));
+          if (shouldRemoveModulation(compound)) {
+            this.removeModulations.add(new Modulation.RemoveModulation(modulation, compound));
+          }
         }
       }
     }
@@ -232,7 +269,9 @@ public abstract class LXCommand {
       List<LXTriggerModulation> triggers = modulation.findModulations(component, modulation.triggers);
       if (triggers != null) {
         for (LXTriggerModulation trigger : triggers) {
-          this.removeTriggers.add(new Modulation.RemoveTrigger(modulation, trigger));
+          if (shouldRemoveModulation(trigger)) {
+            this.removeTriggers.add(new Modulation.RemoveTrigger(modulation, trigger));
+          }
         }
       }
     }
@@ -260,13 +299,40 @@ public abstract class LXCommand {
       }
     }
 
+    protected void removeRemoteControls(LXComponent component) {
+      _removeRemoteControls(component.getParent(), component);
+    }
+
+    private void _removeRemoteControls(LXComponent container, LXComponent component) {
+      if ((container == null) || (container instanceof LXBus)) {
+        return;
+      }
+      if (container instanceof LXDeviceComponent device) {
+        final LXListenableNormalizedParameter[] customRemoteControls = device.getCustomRemoteControls();
+        if (customRemoteControls != null) {
+          boolean removed = false;
+          for (LXListenableNormalizedParameter parameter : customRemoteControls) {
+            if ((parameter != null) && parameter.isDescendant(component)) {
+              removed = true;
+              break;
+            }
+          }
+          if (removed) {
+            // NOTE: only gonna undo() this, don't need actual changes
+            this.removeRemoteControls.add(new Device.SetRemoteControls(device, null));
+          }
+        }
+      }
+      _removeRemoteControls(container.getParent(), component);
+    }
+
     protected void removeClipLanes(LXBus bus, LXComponent component) {
       for (LXClip clip : bus.clips) {
         if (clip != null) {
-          List<ParameterClipLane> lanes = clip.findClipLanes(component);
+          List<LXClipLane<?>> lanes = clip.findClipLanes(component);
           if (lanes != null) {
-            for (ParameterClipLane lane : lanes) {
-              this.removeClipLanes.add(new Clip.RemoveParameterLane(lane));
+            for (LXClipLane<?> lane : lanes) {
+              this.removeClipLanes.add(new Clip.RemoveClipLane(lane));
             }
           }
         }
@@ -274,43 +340,60 @@ public abstract class LXCommand {
     }
 
     protected void removePatternClipEvents(LXPattern pattern) {
-      for (LXClip clip : pattern.getChannel().clips) {
+      for (LXClip clip : pattern.getMixerChannel().clips) {
         if (clip != null) {
           if (clip instanceof LXChannelClip channelClip) {
-            List<Integer> eventIndices = channelClip.patternLane.findEventIndices(pattern);
-            if (eventIndices != null) {
-              this.removePatternClipEvents.add(new Clip.Event.Pattern.RemoveReferences(channelClip.patternLane, eventIndices));
+            for (LXClipLane<?> clipLane : channelClip.lanes) {
+              if (clipLane instanceof PatternClipLane patternLane) {
+                if (pattern.getEngine() == patternLane.engine) {
+                  removePatternClipLaneEvents(patternLane, pattern);
+                }
+              }
             }
           }
         }
       }
     }
 
+    protected void removePatternClipLaneEvents(PatternClipLane lane, LXPattern pattern) {
+      List<Integer> eventIndices = lane.findEventIndices(pattern);
+      if (eventIndices != null) {
+        this.removePatternClipEvents.add(new Clip.Event.Pattern.RemoveReferences(lane, eventIndices));
+      }
+    }
+
     protected RemoveComponent(LXComponent component) {
+      this(component, null);
+    }
+
+    protected RemoveComponent(LXComponent component, ModulationContext modulationContext) {
+      this.modulationContext = modulationContext;
+
       // Tally up all the modulations and triggers that relate to this component and must be restored!
       LXComponent parent = component.getParent();
       while (parent != null) {
-        if (parent instanceof LXModulationContainer) {
-          removeModulationMappings(((LXModulationContainer) parent).getModulationEngine(), component);
+        if (parent instanceof LXModulationContainer modulationContainer) {
+          removeModulationMappings(modulationContainer.getModulationEngine(), component);
         }
         parent = parent.getParent();
       }
 
-      // Also top level mappings and snapshot views
+      // Also top level mappings, snapshot views, remote controls
       removeMidiMappings(component.getLX().engine.midi, component);
       removeSnapshotViews(component.getLX().engine.snapshots, component);
+      removeRemoteControls(component);
 
       // Type-specific removals
       switch (component) {
         case LXPattern pattern -> {
-          removeClipLanes(pattern.getChannel(), pattern);
+          removeClipLanes(pattern.getMixerChannel(), pattern);
           removePatternClipEvents(pattern);
         }
         case LXEffect effect -> {
           if (effect.isBusEffect()) {
             removeClipLanes(effect.getBus(), effect);
           } else if (effect.isPatternEffect()) {
-            removeClipLanes(effect.getPattern().getChannel(), effect);
+            removeClipLanes(effect.getPattern().getMixerChannel(), effect);
           }
         }
         default -> {}
@@ -331,7 +414,10 @@ public abstract class LXCommand {
       for (Snapshots.RemoveView view : this.removeSnapshotViews) {
         view.undo(lx);
       }
-      for (Clip.RemoveParameterLane lane : this.removeClipLanes) {
+      for (Device.SetRemoteControls controls : this.removeRemoteControls) {
+        controls.undo(lx);
+      }
+      for (Clip.RemoveClipLane lane : this.removeClipLanes) {
         lane.undo(lx);
       }
       for (Clip.Event.Pattern.RemoveReferences patternReferences : this.removePatternClipEvents) {
@@ -464,6 +550,41 @@ public abstract class LXCommand {
         }
       }
 
+    }
+
+    protected static class MultiSetValue extends LXCommand {
+
+      private final List<Parameter.SetValue> setValues = new ArrayList<>();
+
+      private final String description;
+
+      protected MultiSetValue(String description) {
+        this.description = description;
+      }
+
+      public void add(LXParameter parameter, double value) {
+        this.setValues.add(new Parameter.SetValue(parameter, value));
+      }
+
+      public void add(BooleanParameter parameter, boolean value) {
+        add(parameter, value ? 1 : 0);
+      }
+
+      @Override
+      public String getDescription() {
+        return this.description;
+      }
+
+      @Override
+      public void perform(LX lx) throws InvalidCommandException {
+        this.setValues.forEach(setValue -> setValue.perform(lx));
+
+      }
+
+      @Override
+      public void undo(LX lx) throws InvalidCommandException {
+        this.setValues.forEach(setValue -> setValue.undo(lx));
+      }
     }
 
     public static class SetIndex extends SetValue {
@@ -746,25 +867,45 @@ public abstract class LXCommand {
 
     public static class AddPattern extends LXCommand {
 
-      private final ComponentReference<LXChannel> channel;
+      private final ComponentReference<LXComponent> component;
       private final Class<? extends LXPattern> patternClass;
       private ComponentReference<LXPattern> pattern = null;
       private JsonObject patternObj;
       private int patternIndex;
 
-      public AddPattern(LXChannel channel, Class<? extends LXPattern> patternClass) {
-        this(channel, patternClass, null);
+      public AddPattern(LXPatternEngine.Container container, Class<? extends LXPattern> patternClass) {
+        this(container.getPatternEngine(), patternClass);
       }
 
-      public AddPattern(LXChannel channel, Class<? extends LXPattern> patternClass, JsonObject patternObject) {
-        this(channel, patternClass, patternObject, -1);
+      public AddPattern(LXPatternEngine engine, Class<? extends LXPattern> patternClass) {
+        this(engine, patternClass, null);
       }
 
-      public AddPattern(LXChannel channel, Class<? extends LXPattern> patternClass, JsonObject patternObject, int patternIndex) {
-        this.channel = new ComponentReference<LXChannel>(channel);
+      public AddPattern(LXPatternEngine engine, Class<? extends LXPattern> patternClass, int patternIndex) {
+        this(engine, patternClass, null, patternIndex);
+      }
+
+      public AddPattern(LXPatternEngine.Container container, Class<? extends LXPattern> patternClass, JsonObject patternObject) {
+        this(container.getPatternEngine(), patternClass, patternObject);
+      }
+
+      public AddPattern(LXPatternEngine engine, Class<? extends LXPattern> patternClass, JsonObject patternObject) {
+        this(engine, patternClass, patternObject, -1);
+      }
+
+      public AddPattern(LXPatternEngine.Container container, Class<? extends LXPattern> patternClass, JsonObject patternObject, int patternIndex) {
+        this(container.getPatternEngine(), patternClass, patternObject, patternIndex);
+      }
+
+      public AddPattern(LXPatternEngine engine, Class<? extends LXPattern> patternClass, JsonObject patternObject, int patternIndex) {
+        this.component = new ComponentReference<LXComponent>(engine.component);
         this.patternClass = patternClass;
         this.patternObj = patternObject;
         this.patternIndex = patternIndex;
+      }
+
+      private LXPatternEngine getPatternEngine() {
+        return ((LXPatternEngine.Container) this.component.get()).getPatternEngine();
       }
 
       @Override
@@ -781,7 +922,7 @@ public abstract class LXCommand {
           }
           // New pattern, we need to store its ID for future redo operations...
           this.patternObj = LXSerializable.Utils.toObject(instance);
-          this.channel.get().addPattern(instance, this.patternIndex);
+          getPatternEngine().addPattern(instance, this.patternIndex);
           this.pattern = new ComponentReference<LXPattern>(instance);
         } catch (LX.InstantiationException x) {
           throw new InvalidCommandException(x);
@@ -793,31 +934,45 @@ public abstract class LXCommand {
         if (this.pattern == null) {
           throw new IllegalStateException("Pattern was not successfully added, cannot undo");
         }
-        this.channel.get().removePattern(this.pattern.get());
+        getPatternEngine().removePattern(this.pattern.get());
+      }
+
+      ComponentReference<LXPattern> getPattern() {
+        return this.pattern;
       }
 
     }
 
     public static class RemovePattern extends RemoveComponent {
 
-      private final ComponentReference<LXChannel> channel;
+      private final String path;
+      private final ComponentReference<LXComponent> component;
       private final ComponentReference<LXPattern> pattern;
       private final JsonObject patternObj;
       private final int patternIndex;
       private final boolean isActive;
       private final boolean isFocused;
 
-      public RemovePattern(LXChannel channel, LXPattern pattern) {
-        super(pattern);
-        if (!channel.patterns.contains(pattern)) {
-          throw new IllegalArgumentException("Cannot remove pattern not present on channel: " + pattern + " !! " + channel);
+      public RemovePattern(LXPatternEngine.Container container, LXPattern pattern) {
+        this(container.getPatternEngine(), pattern);
+      }
+
+      public RemovePattern(LXPatternEngine engine, LXPattern pattern) {
+        this(engine, pattern, null);
+      }
+
+      private RemovePattern(LXPatternEngine engine, LXPattern pattern, ModulationContext context) {
+        super(pattern, context);
+        if (!engine.patterns.contains(pattern)) {
+          throw new IllegalArgumentException("Cannot remove pattern not present in engine: " + pattern + " !! " + engine.component);
         }
-        this.channel = new ComponentReference<LXChannel>(channel);
+        this.path = pattern.getCanonicalPath();
+        this.component = new ComponentReference<LXComponent>(engine.component);
         this.pattern = new ComponentReference<LXPattern>(pattern);
         this.patternObj = LXSerializable.Utils.toObject(pattern);
         this.patternIndex = pattern.getIndex();
-        this.isActive = channel.getActivePattern() == pattern;
-        this.isFocused = channel.getFocusedPattern() == pattern;
+        this.isActive = engine.getActivePattern() == pattern;
+        this.isFocused = engine.getFocusedPattern() == pattern;
       }
 
       @Override
@@ -825,28 +980,215 @@ public abstract class LXCommand {
         return "Delete Pattern";
       }
 
+      private LXPatternEngine getPatternEngine() {
+        return ((LXPatternEngine.Container) this.component.get()).getPatternEngine();
+      }
+
       @Override
       public void perform(LX lx) throws InvalidCommandException {
-        this.channel.get().removePattern(this.pattern.get());
+        getPatternEngine().removePattern(this.pattern.get());
       }
 
       @Override
       public void undo(LX lx) throws InvalidCommandException {
-        LXChannel channel = this.channel.get();
-        LXPattern pattern = channel.loadPattern(this.patternObj, this.patternIndex);
+        undoPattern(lx);
+        undoReferences(lx);
+      }
+
+      private void undoPattern(LX lx) {
+        LXPatternEngine engine = getPatternEngine();
+        LXPattern pattern = engine.loadPattern(this.patternObj, this.patternIndex);
         if (this.isActive) {
-          channel.goPattern(pattern, true);
+          engine.goPattern(pattern, true);
         }
         if (this.isFocused) {
-          channel.focusedPattern.setValue(pattern.getIndex());
+          engine.focusedPattern.setValue(pattern.getIndex());
         }
+      }
+
+      private void undoReferences(LX lx) throws InvalidCommandException {
         super.undo(lx);
       }
     }
 
+    public static class RemovePatterns extends LXCommand {
+
+      private final List<RemovePattern> removePatterns = new ArrayList<>();
+
+      public RemovePatterns(LXPatternEngine patternEngine, List<LXPattern> patterns) {
+        final RemoveComponent.ModulationContext context = new RemoveComponent.ModulationContext();
+        for (LXPattern pattern : patterns) {
+          this.removePatterns.add(new RemovePattern(patternEngine, pattern, context));
+        }
+      }
+
+      @Override
+      public String getDescription() {
+        return "Delete Patterns";
+      }
+
+      @Override
+      public void perform(LX lx) throws InvalidCommandException {
+        for (int i = this.removePatterns.size() - 1; i >=0; --i) {
+          this.removePatterns.get(i).perform(lx);
+        }
+      }
+
+      @Override
+      public void undo(LX lx) throws InvalidCommandException {
+        for (RemovePattern removePattern : this.removePatterns) {
+          removePattern.undoPattern(lx);
+        }
+        for (RemovePattern removePattern : this.removePatterns) {
+          removePattern.undoReferences(lx);
+        }
+      }
+
+    }
+
+    public static class GroupPatterns extends LXCommand {
+
+      private final ComponentReference<LXComponent> component;
+      private final RemovePatterns removePatterns;
+      private final AddPattern addRack;
+      private final int focusedIndex;
+      private final int targetIndex;
+      private final int engineTargetIndex;
+      private ComponentReference<LXPattern> rack;
+      private final Map<String, String> pathChanges = new HashMap<>();
+
+      public GroupPatterns(LXPatternEngine patternEngine, List<LXPattern> patterns) {
+        this.component = new ComponentReference<>(patternEngine.component);
+        final LXPattern targetPattern = patternEngine.getTargetPattern();
+        if (targetPattern != null) {
+          this.targetIndex = patterns.indexOf(targetPattern);
+          this.engineTargetIndex = patternEngine.patterns.indexOf(targetPattern);
+        } else {
+          this.targetIndex = this.engineTargetIndex = -1;
+        }
+        this.focusedIndex = patternEngine.focusedPattern.getValuei();
+        this.removePatterns = new RemovePatterns(patternEngine, patterns);
+        this.addRack = new AddPattern(patternEngine, PatternRack.class, patterns.get(0).getIndex());
+      }
+
+      private LXPatternEngine getPatternEngine() {
+        return ((LXPatternEngine.Container) this.component.get()).getPatternEngine();
+      }
+
+      @Override
+      public String getDescription() {
+        return "Group Patterns to Rack";
+      }
+
+      @Override
+      public void perform(LX lx) throws InvalidCommandException {
+        final LXPatternEngine engine = getPatternEngine();
+
+        final Map<LXPattern, String> patternPath = new HashMap<>();
+        engine.patterns.forEach(pattern -> patternPath.put(pattern, pattern.getCanonicalPath()));
+
+        this.removePatterns.perform(lx);
+        this.addRack.perform(lx);
+        this.rack = this.addRack.getPattern();
+        final PatternRack rack = (PatternRack) this.rack.get();
+
+        // Path may have updated since # of patterns may have changed
+        engine.patterns.forEach(pattern -> {
+          if (pattern != rack) {
+            String originalPath = patternPath.get(pattern);
+            String newPath = pattern.getCanonicalPath();
+            if (!newPath.equals(originalPath)) {
+              this.pathChanges.put(originalPath, newPath);
+            }
+          }
+        });
+
+
+        final LXPatternEngine rackEngine = rack.getPatternEngine();
+        rackEngine.compositeMode.setValue(engine.compositeMode.getEnum());
+        rackEngine.compositeDampingEnabled.setValue(engine.compositeDampingEnabled.isOn());
+        rackEngine.compositeDampingTimeSecs.setValue(engine.compositeDampingTimeSecs.getValue());
+        rackEngine.autoCycleEnabled.setValue(engine.autoCycleEnabled.isOn());
+        rackEngine.autoCycleMode.setValue(engine.autoCycleMode.getEnum());
+        rackEngine.autoCycleTimeSecs.setValue(engine.autoCycleTimeSecs.getValue());
+        rackEngine.transitionTimeSecs.setValue(engine.transitionTimeSecs.getValue());
+        rackEngine.transitionEnabled.setValue(engine.transitionEnabled.isOn());
+        rackEngine.transitionBlendMode.setIndex(engine.transitionBlendMode.getIndex());
+
+        movePatterns(lx, rackEngine, rack);
+        if (this.targetIndex >= 0) {
+          rackEngine.goPattern(rack.patterns.get(this.targetIndex), true);
+          engine.goPattern(rack, true);
+        }
+        if (engine.focusedPattern.getValuei() != rack.getIndex()) {
+          engine.focusedPattern.setValue(rack.getIndex());
+        } else {
+          engine.focusedPattern.bang();
+        }
+      }
+
+      private void movePatterns(LX lx, LXPatternEngine engine, PatternRack rack) throws InvalidCommandException {
+        int patternIndex = 0;
+        for (RemovePattern removePattern : this.removePatterns.removePatterns) {
+          final LXPattern moved = engine.loadPattern(removePattern.patternObj, patternIndex++);
+
+          // Modulations may have references between *multiple* moved patterns as both
+          // source and target, so we need to build a full map of all the path changes
+          this.pathChanges.put(removePattern.path, moved.getCanonicalPath());
+        }
+
+        // Now that all patterns are moved, update references to all of them
+        for (RemovePattern removePattern : this.removePatterns.removePatterns) {
+          final String toPath = this.pathChanges.get(removePattern.path);
+
+          for (Modulation.RemoveModulation modulation : removePattern.removeModulations) {
+            modulation.move(lx, this.pathChanges);
+          }
+          for (Modulation.RemoveTrigger trigger : removePattern.removeTriggers) {
+            trigger.move(lx, this.pathChanges);
+          }
+          for (Midi.RemoveMapping mapping : removePattern.removeMidiMappings) {
+            mapping.move(lx, removePattern.path, toPath);
+          }
+          for (Snapshots.RemoveView view : removePattern.removeSnapshotViews) {
+            view.move(lx, removePattern.path, toPath, rack);
+          }
+          for (Device.SetRemoteControls controls : removePattern.removeRemoteControls) {
+            controls.move(lx, removePattern.path, toPath);
+          }
+          for (Clip.RemoveClipLane lane : removePattern.removeClipLanes) {
+            lane.move(lx, removePattern.path, toPath);
+          }
+          for (Clip.Event.Pattern.RemoveReferences patternReferences : removePattern.removePatternClipEvents) {
+            patternReferences.move(lx, rack);
+          }
+        }
+      }
+
+      @Override
+      public void undo(LX lx) throws InvalidCommandException {
+        this.addRack.undo(lx);
+        this.removePatterns.undo(lx);
+        final LXPatternEngine engine = getPatternEngine();
+        if (this.engineTargetIndex >= 0) {
+          engine.goPattern(engine.patterns.get(this.engineTargetIndex), true);
+        }
+        if (engine.focusedPattern.getValuei() != this.focusedIndex) {
+          engine.focusedPattern.setValue(this.focusedIndex);
+        } else {
+          engine.focusedPattern.bang();
+        }
+      }
+    }
+
     public static class ReloadPattern extends RemovePattern {
-      public ReloadPattern(LXChannel channel, LXPattern pattern) {
-        super(channel, pattern);
+
+      public ReloadPattern(LXPatternEngine.Container container, LXPattern pattern) {
+        this(container.getPatternEngine(), pattern);
+      }
+
+      public ReloadPattern(LXPatternEngine engine, LXPattern pattern) {
+        super(engine, pattern);
       }
 
       @Override
@@ -877,13 +1219,17 @@ public abstract class LXCommand {
 
     public static class MovePattern extends LXCommand {
 
-      private final ComponentReference<LXChannel> channel;
+      private final ComponentReference<LXComponent> component;
       private final ComponentReference<LXPattern> pattern;
       private final int fromIndex;
       private final int toIndex;
 
-      public MovePattern(LXChannel channel, LXPattern pattern, int toIndex) {
-        this.channel = new ComponentReference<LXChannel>(channel);
+      public MovePattern(LXPatternEngine.Container container, LXPattern pattern, int toIndex) {
+        this(container.getPatternEngine(), pattern, toIndex);
+      }
+
+      public MovePattern(LXPatternEngine engine, LXPattern pattern, int toIndex) {
+        this.component = new ComponentReference<LXComponent>(engine.component);
         this.pattern = new ComponentReference<LXPattern>(pattern);
         this.fromIndex = pattern.getIndex();
         this.toIndex = toIndex;
@@ -894,26 +1240,34 @@ public abstract class LXCommand {
         return "Move Pattern";
       }
 
+      private LXPatternEngine getPatternEngine() {
+        return ((LXPatternEngine.Container) this.component.get()).getPatternEngine();
+      }
+
       @Override
       public void perform(LX lx) {
-        this.channel.get().movePattern(this.pattern.get(), this.toIndex);
+        getPatternEngine().movePattern(this.pattern.get(), this.toIndex);
       }
 
       @Override
       public void undo(LX lx) {
-        this.channel.get().movePattern(this.pattern.get(), this.fromIndex);
+        getPatternEngine().movePattern(this.pattern.get(), this.fromIndex);
       }
     }
 
     public static class GoPattern extends LXCommand {
 
-      private final ComponentReference<LXChannel> channel;
+      private final ComponentReference<LXComponent> component;
       private final ComponentReference<LXPattern> prevPattern;
       private final ComponentReference<LXPattern> nextPattern;
 
-      public GoPattern(LXChannel channel, LXPattern nextPattern) {
-        this.channel = new ComponentReference<LXChannel>(channel);
-        this.prevPattern = new ComponentReference<LXPattern>(channel.getActivePattern());
+      public GoPattern(LXPatternEngine.Container container, LXPattern nextPattern) {
+        this(container.getPatternEngine(), nextPattern);
+      }
+
+      public GoPattern(LXPatternEngine engine, LXPattern nextPattern) {
+        this.component = new ComponentReference<LXComponent>(engine.component);
+        this.prevPattern = new ComponentReference<LXPattern>(engine.getActivePattern());
         this.nextPattern = new ComponentReference<LXPattern>(nextPattern);
       }
 
@@ -922,27 +1276,31 @@ public abstract class LXCommand {
         return "Change Pattern";
       }
 
+      private LXPatternEngine getPatternEngine() {
+        return ((LXPatternEngine.Container) this.component.get()).getPatternEngine();
+      }
+
       @Override
       public void perform(LX lx) throws InvalidCommandException {
-        this.channel.get().goPattern(this.nextPattern.get());
+        getPatternEngine().goPattern(this.nextPattern.get());
       }
 
       @Override
       public void undo(LX lx) throws InvalidCommandException {
-        this.channel.get().goPattern(this.prevPattern.get());
+        getPatternEngine().goPattern(this.prevPattern.get());
       }
     }
 
     public static class PatternCycle extends LXCommand {
 
-      private final ComponentReference<LXChannel> channel;
+      private final ComponentReference<LXComponent> component;
       private final ComponentReference<LXPattern> prevPattern;
       private ComponentReference<LXPattern> targetPattern;
 
-      public PatternCycle(LXChannel channel) {
-        this.channel = new ComponentReference<LXChannel>(channel);
-        if (channel.isPlaylist() && !channel.isInTransition()) {
-          final LXPattern prev = channel.getActivePattern();
+      public PatternCycle(LXPatternEngine patternEngine) {
+        this.component = new ComponentReference<LXComponent>(patternEngine.component);
+        if (patternEngine.isPlaylist() && !patternEngine.isInTransition()) {
+          final LXPattern prev = patternEngine.getActivePattern();
           this.prevPattern = (prev != null) ? new ComponentReference<LXPattern>(prev) : null;
         } else {
           this.prevPattern = null;
@@ -959,21 +1317,25 @@ public abstract class LXCommand {
         return (this.prevPattern == null);
       }
 
+      private LXPatternEngine getPatternEngine() {
+        return ((LXPatternEngine.Container) this.component.get()).getPatternEngine();
+      }
+
       @Override
       public void perform(LX lx) throws InvalidCommandException {
-        final LXChannel channel = this.channel.get();
+        final LXPatternEngine engine = getPatternEngine();
         if (this.targetPattern == null) {
-          channel.triggerPatternCycle.trigger();
-          this.targetPattern = new ComponentReference<LXPattern>(channel.getTargetPattern());
+          engine.triggerPatternCycle.trigger();
+          this.targetPattern = new ComponentReference<LXPattern>(engine.getTargetPattern());
         } else {
-          this.channel.get().goPattern(this.targetPattern.get());
+          engine.goPattern(this.targetPattern.get());
         }
       }
 
       @Override
       public void undo(LX lx) throws InvalidCommandException {
         if (this.prevPattern != null) {
-          this.channel.get().goPattern(this.prevPattern.get());
+          getPatternEngine().goPattern(this.prevPattern.get());
         }
       }
     }
@@ -1036,7 +1398,7 @@ public abstract class LXCommand {
 
       private final ComponentReference<LXComponent> container;
       private final ComponentReference<LXEffect> effect;
-      private final JsonObject effectObj;
+      final JsonObject effectObj;
       private final int effectIndex;
 
       public RemoveEffect(LXComponent container, LXEffect effect) {
@@ -1058,10 +1420,18 @@ public abstract class LXCommand {
         }
       }
 
+      protected LXEffect.Container getEffectContainer() {
+        return (LXEffect.Container) this.container.get();
+      }
+
+      protected LXEffect getEffect() {
+        return this.effect.get();
+      }
+
       @Override
       public void perform(LX lx) throws InvalidCommandException {
         checkLocked();
-        ((LXEffect.Container) this.container.get()).removeEffect(this.effect.get());
+        getEffectContainer().removeEffect(this.effect.get());
       }
 
       @Override
@@ -1146,6 +1516,92 @@ public abstract class LXCommand {
         } else if (parent instanceof LXPattern) {
           ((LXPattern) parent).moveEffect(this.effect.get(), this.fromIndex);
         }
+      }
+    }
+
+    public static class RelocateEffect extends RemoveEffect {
+
+      private final String fromPath;
+      private final ComponentReference<LXComponent> target;
+      private final int effectIndex;
+      private ComponentReference<LXEffect> moved;
+      private final Map<String, String> pathChanges = new HashMap<>();
+
+      public RelocateEffect(LXEffect effect, LXEffect.Container target, int effectIndex) {
+        super(effect.getParent(), effect);
+        this.target = new ComponentReference<>((LXComponent) target);
+        this.fromPath = effect.getCanonicalPath();
+        this.effectIndex = effectIndex;
+      }
+
+      @Override
+      public String getDescription() {
+        return "Relocate Effect";
+      }
+
+      private LXEffect.Container getTargetContainer() {
+        return (LXEffect.Container) this.target.get();
+      }
+
+      @Override
+      public void perform(LX lx) throws InvalidCommandException {
+        final LXEffect.Container originalContainer = getEffectContainer();
+        final LXEffect.Container targetContainer = getTargetContainer();
+
+        // Cache original effect paths
+        final Map<LXEffect, String> effectPath = new HashMap<>();
+        originalContainer.getEffects().forEach(effect -> effectPath.put(effect, effect.getCanonicalPath()));
+
+        // Remove it
+        super.perform(lx);
+
+        final LXEffect moved = targetContainer.loadEffect(lx, this.effectObj, this.effectIndex);
+        this.moved = new ComponentReference<>(moved);
+
+        // Path may have updated since # of patterns may have changed
+        originalContainer.getEffects().forEach(effect -> {
+          String originalPath = effectPath.get(effect);
+          String newPath = effect.getCanonicalPath();
+          if (!newPath.equals(originalPath)) {
+            this.pathChanges.put(originalPath, newPath);
+          }
+        });
+
+        final String toPath = moved.getCanonicalPath();
+        this.pathChanges.put(this.fromPath, toPath);
+
+        final Map<String, String> pathChanges = new HashMap<>();
+        pathChanges.put(this.fromPath, toPath);
+
+        // Restore references to the effect in a new position
+        for (Modulation.RemoveModulation modulation : this.removeModulations) {
+          modulation.move(lx, pathChanges, moved);
+        }
+        for (Modulation.RemoveTrigger trigger : this.removeTriggers) {
+          trigger.move(lx, pathChanges, moved);
+        }
+        for (Midi.RemoveMapping mapping : this.removeMidiMappings) {
+          mapping.move(lx, this.fromPath, toPath);
+        }
+        for (Snapshots.RemoveView view : this.removeSnapshotViews) {
+          view.move(lx, this.fromPath, toPath, null);
+        }
+        for (Clip.RemoveClipLane lane : this.removeClipLanes) {
+          lane.move(lx, this.fromPath, toPath);
+        }
+
+        // TODO(relocate): this is more subtle, the effect could have moved *out* of a
+        // context where it's a valid remote control, would need to check these...
+        // for (Device.SetRemoteControls controls : this.removeRemoteControls) {
+        //   controls.move(lx, this.fromPath, toPath);
+        // }
+      }
+
+      @Override
+      public void undo(LX lx) throws InvalidCommandException {
+        getTargetContainer().removeEffect(this.moved.get());
+        this.moved = null;
+        super.undo(lx);
       }
     }
 
@@ -1242,6 +1698,24 @@ public abstract class LXCommand {
           this.device.get().setCustomRemoteControls(toControls(this.oldCustomControls));
         }
       }
+
+      private void move(LX lx, String fromPath, String toPath) {
+        if (this.oldCustomControls != null) {
+          final String prefix = this.device.get().getCanonicalPath();
+          fromPath = LXPath.stripPrefix(fromPath, prefix);
+          toPath = LXPath.stripPrefix(toPath, prefix);
+          int i = 0;
+          final String[] moveCustomControls = new String[this.oldCustomControls.length];
+          for (String str : this.oldCustomControls) {
+            if (str != null) {
+              moveCustomControls[i] = LXPath.replacePrefix(str, fromPath, toPath);
+            }
+            ++i;
+          }
+          this.device.get().setCustomRemoteControls(toControls(moveCustomControls));
+        }
+      }
+
     }
 
     public static class ClearRemoteControls extends RemoteControls {
@@ -1622,6 +2096,23 @@ public abstract class LXCommand {
 
     }
 
+    public static class AutoMute extends Parameter.MultiSetValue {
+
+      public AutoMute(LXPatternEngine patternEngine, boolean autoMute) {
+        super("Auto-Mute " + (autoMute ? "All Patterns" : " No Patterns"));
+        for (LXPattern pattern : patternEngine.patterns) {
+          add(pattern.autoMute, autoMute);
+        }
+      }
+
+      public AutoMute(LXMixerEngine mixer, boolean autoMute) {
+        super("Auto-Mute " + (autoMute ? "All Channels" : " No Channels"));
+        for (LXAbstractChannel bus : mixer.channels) {
+          add(bus.autoMute, autoMute);
+        }
+      }
+    }
+
   }
 
   public static class Modulation {
@@ -1865,11 +2356,30 @@ public abstract class LXCommand {
       @Override
       public void undo(LX lx) throws InvalidCommandException {
         try {
-          LXCompoundModulation modulation = new LXCompoundModulation(lx, this.engine.get(), this.modulationObj);
-          this.engine.get().addModulation(modulation);
+          final LXModulationEngine engine = this.engine.get();
+          final LXCompoundModulation modulation = new LXCompoundModulation(lx, engine, this.modulationObj);
+          engine.addModulation(modulation);
           modulation.load(lx, this.modulationObj);
-          this.modulation = new ComponentReference<LXCompoundModulation>(modulation);
+          this.modulation = new ComponentReference<>(modulation);
           super.undo(lx);
+        } catch (LXParameterModulation.ModulationException mx) {
+          throw new InvalidCommandException(mx);
+        }
+      }
+
+      private void move(LX lx, Map<String, String> pathChanges) throws InvalidCommandException {
+        move(lx, pathChanges, null);
+      }
+
+      private void move(LX lx, Map<String, String> pathChanges, LXComponent moved) throws InvalidCommandException {
+        try {
+          final LXModulationEngine engine = this.engine.get();
+          JsonObject moveObj = LXParameterModulation.move(this.modulationObj, engine, pathChanges, moved);
+          if (moveObj != null) {
+            final LXCompoundModulation modulation = new LXCompoundModulation(lx, engine, moveObj);
+            engine.addModulation(modulation);
+            modulation.load(lx, moveObj);
+          }
         } catch (LXParameterModulation.ModulationException mx) {
           throw new InvalidCommandException(mx);
         }
@@ -1974,6 +2484,24 @@ public abstract class LXCommand {
           trigger.load(lx, this.triggerObj);
           this.trigger = new ComponentReference<LXTriggerModulation>(trigger);
           super.undo(lx);
+        } catch (LXParameterModulation.ModulationException mx) {
+          throw new InvalidCommandException(mx);
+        }
+      }
+
+      private void move(LX lx, Map<String, String> pathChanges) throws InvalidCommandException {
+        move(lx, pathChanges, null);
+      }
+
+      private void move(LX lx, Map<String, String> pathChanges, LXComponent moved) throws InvalidCommandException {
+        try {
+          final LXModulationEngine engine = this.engine.get();
+          JsonObject moveObj = LXParameterModulation.move(this.triggerObj, engine, pathChanges, moved);
+          if (moveObj != null) {
+            final LXTriggerModulation trigger = new LXTriggerModulation(lx, engine, moveObj);
+            engine.addTrigger(trigger);
+            trigger.load(lx, moveObj);
+          }
         } catch (LXParameterModulation.ModulationException mx) {
           throw new InvalidCommandException(mx);
         }
@@ -2473,31 +3001,254 @@ public abstract class LXCommand {
       }
     }
 
-    private static class RemoveView extends LXCommand {
+    public static class RemoveView extends LXCommand {
 
-      private ComponentReference<LXSnapshot> snapshot;
-      private LXSnapshot.View view;
+      private final ComponentReference<LXSnapshot> snapshot;
+      private final String viewPath;
       private final JsonObject viewObj;
+      private final String label;
 
       public RemoveView(LXSnapshot.View view) {
         this.snapshot = new ComponentReference<LXSnapshot>(view.getSnapshot());
-        this.view = view;
+        this.viewPath = view.getViewPath();
         this.viewObj = LXSerializable.Utils.toObject(view.getSnapshot().getLX(), view);
+        this.label = view.getLabel();
       }
 
       @Override
       public String getDescription() {
-        return "Delete Snapshot View";
+        return "Delete Snapshot View " + this.label;
       }
 
       @Override
       public void perform(LX lx) {
-        this.snapshot.get().removeView(this.view);
+        final LXSnapshot snapshot = this.snapshot.get();
+        snapshot.removeView(snapshot.getView(this.viewPath));
+      }
+
+      @Override
+      public void undo(LX lx) {
+        this.snapshot.get().addView(this.viewObj);
+      }
+
+      private void move(LX lx, String fromPath, String toPath, PatternRack rack) throws InvalidCommandException {
+        this.snapshot.get().moveView(this.viewObj, fromPath, toPath, rack);
+      }
+    }
+
+    public static class RemoveViews extends LXCommand {
+
+      private final List<RemoveView> removeViews = new ArrayList<>();
+      private final String label;
+
+      public RemoveViews(String label, List<LXSnapshot.View> views) {
+        this.label = label;
+        views.forEach(view -> this.removeViews.add(new RemoveView(view)));
+      }
+
+      @Override
+      public String getDescription() {
+        return "Remove Snapshot Views " + this.label;
+      }
+
+      @Override
+      public void perform(LX lx) throws InvalidCommandException {
+        this.removeViews.forEach(removeView -> removeView.perform(lx));
       }
 
       @Override
       public void undo(LX lx) throws InvalidCommandException {
-        this.view = this.snapshot.get().addView(this.viewObj);
+        this.removeViews.forEach(removeView -> removeView.undo(lx));
+      }
+    }
+
+    public static class UpdateView extends LXCommand {
+
+      private final ComponentReference<LXSnapshot> snapshot;
+      private final String viewPath;
+      private final String label;
+
+      private boolean discrete = false, string = false;
+
+      private int fromInt;
+      private double fromValue;
+      private double fromNormalized;
+      private String fromString;
+
+      private int toInt;
+      private double toValue;
+      private double toNormalized;
+      private String toString;
+
+      private UpdateView(LXSnapshot.ParameterView view) {
+        this.snapshot = new ComponentReference<LXSnapshot>(view.getSnapshot());
+        this.viewPath = view.getViewPath();
+        this.label = view.getLabel();
+      }
+
+      public UpdateView(LXSnapshot.ParameterView view, boolean toogle) {
+        this(view);
+        this.toValue = this.toNormalized = (view.getParameterValue() > 0) ? 0 : 1;
+      }
+
+      public UpdateView(LXSnapshot.ParameterView view, BoundedParameter replacement) {
+        this(view);
+        this.toValue = replacement.getValue();
+        this.toNormalized = (view.parameter instanceof BoundedParameter bounded) ? bounded.getNormalized(this.toValue) : LXUtils.clamp(this.toValue, 0, 1);
+      }
+
+      public UpdateView(LXSnapshot.ParameterView view, DiscreteParameter replacement) {
+        this(view);
+        this.toInt = replacement.getValuei();
+        this.toNormalized = replacement.getNormalized();
+        this.discrete = true;
+      }
+
+      public UpdateView(LXSnapshot.ParameterView view, StringParameter replacement) {
+        this(view);
+        this.toString = replacement.getString();
+        this.string = true;
+      }
+
+      @Override
+      public String getDescription() {
+        return "Update Snapshot View " + this.label;
+      }
+
+      private LXSnapshot.ParameterView getParameterView() {
+        return (LXSnapshot.ParameterView) this.snapshot.get().getView(this.viewPath);
+      }
+
+      @Override
+      public void perform(LX lx) throws InvalidCommandException {
+        try {
+          final LXSnapshot.ParameterView view = getParameterView();
+
+          this.fromInt = view.getParameterDiscreteValue();
+          this.fromString = view.getParameterStringValue();
+          this.fromValue = view.getParameterValue();
+          this.fromNormalized = view.getParameterNormalizedValue();
+
+          if (this.discrete) {
+            view.updateDiscrete(this.toInt, this.toNormalized);
+          } else if (this.string) {
+            view.updateString(this.toString);
+          } else {
+            view.updateNormalized(this.toValue, this.toNormalized);
+          }
+        } catch (Exception x) {
+          throw new InvalidCommandException(x);
+        }
+
+      }
+
+      @Override
+      public void undo(LX lx) throws InvalidCommandException {
+        try {
+          final LXSnapshot.ParameterView view = getParameterView();
+          if (this.discrete) {
+            view.updateDiscrete(this.fromInt, this.fromNormalized);
+          } else if (this.string) {
+            view.updateString(this.fromString);
+          } else {
+            view.updateNormalized(this.fromValue, this.fromNormalized);
+          }
+        } catch (Exception x) {
+          throw new InvalidCommandException(x);
+        }
+      }
+    }
+
+    public static class UpdateChannelFaderView extends LXCommand {
+
+      private final ComponentReference<LXSnapshot> snapshot;
+      private final String viewPath;
+
+      private double fromValue;
+      private final double toValue;
+
+      public UpdateChannelFaderView(LXSnapshot.ChannelFaderView view, BoundedParameter replacement) {
+        this.snapshot = new ComponentReference<LXSnapshot>(view.getSnapshot());
+        this.viewPath = view.getViewPath();
+        this.toValue = replacement.getValue();
+      }
+
+      @Override
+      public String getDescription() {
+        return "Update Snapshot Channel Fader View";
+      }
+
+      private LXSnapshot.ChannelFaderView getChannelFaderView() {
+        return (LXSnapshot.ChannelFaderView) this.snapshot.get().getView(this.viewPath);
+      }
+
+      private void updateValue(double value) throws InvalidCommandException {
+        try {
+          getChannelFaderView().update(value);
+        } catch (Exception x) {
+          throw new InvalidCommandException(x);
+        }
+      }
+
+      @Override
+      public void perform(LX lx) throws InvalidCommandException {
+        updateValue(this.toValue);
+      }
+
+      @Override
+      public void undo(LX lx) throws InvalidCommandException {
+        updateValue(this.fromValue);
+      }
+    }
+
+    public static class UpdatePatternView extends LXCommand {
+
+      private final ComponentReference<LXSnapshot> snapshot;
+      private final String viewPath;
+      private int fromIndex;
+      private final int toIndex;
+
+      public UpdatePatternView(LXSnapshot.View view, int patternIndex) {
+        this.snapshot = new ComponentReference<LXSnapshot>(view.getSnapshot());
+        this.viewPath = view.getViewPath();
+        this.toIndex = patternIndex;
+      }
+
+      @Override
+      public String getDescription() {
+        return "Update Snapshot Active Pattern";
+      }
+
+      @Override
+      public void perform(LX lx) throws InvalidCommandException {
+        try {
+          switch (this.snapshot.get().getView(this.viewPath)) {
+          case LXSnapshot.ActivePatternView active -> {
+            this.fromIndex = active.getPattern().getIndex();
+            active.update(this.toIndex);
+          }
+          case LXSnapshot.RackPatternView rack -> {
+            this.fromIndex = rack.getPattern().getIndex();
+            rack.update(this.toIndex);
+          }
+          default -> throw new InvalidCommandException("UpdatePatternView can only operate ActivePatternView or RackPatternView");
+          }
+        } catch (Exception x) {
+          throw new InvalidCommandException(x);
+        }
+      }
+
+      @Override
+      public void undo(LX lx) throws InvalidCommandException {
+        try {
+          switch (this.snapshot.get().getView(this.viewPath)) {
+          case LXSnapshot.ActivePatternView active -> active.update(this.fromIndex);
+          case LXSnapshot.RackPatternView rack -> rack.update(this.fromIndex);
+          default -> throw new InvalidCommandException("UpdatePatternView can only operate ActivePatternView or RackPatternView");
+          }
+        } catch (Exception x) {
+          throw new InvalidCommandException(x);
+        }
       }
     }
   }
@@ -2702,6 +3453,14 @@ public abstract class LXCommand {
           remove.undo(lx);
         }
       }
+    }
+
+    public static class ArrangeFixtures extends Parameter.MultiSetValue {
+
+      public ArrangeFixtures() {
+        super("Arrange Fixtures");
+      }
+
     }
 
     public static class ModifyFixturePositions extends LXCommand {
@@ -3178,14 +3937,14 @@ public abstract class LXCommand {
       }
     }
 
-    public static class RemoveParameterLane extends RemoveComponent {
+    public static class RemoveClipLane extends RemoveComponent {
 
       private final ComponentReference<LXClip> clip;
-      private final ComponentReference<ParameterClipLane> parameterLane;
+      private final ComponentReference<LXClipLane<?>> parameterLane;
       private final int laneIndex;
       private final JsonObject laneObj;
 
-      public RemoveParameterLane(ParameterClipLane parameterLane) {
+      public RemoveClipLane(LXClipLane<?> parameterLane) {
         super(parameterLane);
         this.clip = new ComponentReference<>(parameterLane.clip);
         this.parameterLane = new ComponentReference<>(parameterLane);
@@ -3200,16 +3959,20 @@ public abstract class LXCommand {
 
       @Override
       public void perform(LX lx) throws InvalidCommandException {
-        final ParameterClipLane clipLane = this.parameterLane.get();
-        clipLane.clip.removeParameterLane(clipLane);
+        final LXClipLane<?> clipLane = this.parameterLane.get();
+        clipLane.clip.removeClipLane(clipLane);
       }
 
       @Override
       public void undo(LX lx) throws InvalidCommandException {
-        ParameterClipLane lane = this.clip.get().addParameterLane(lx, this.laneObj, this.laneIndex);
+        final LXClipLane<?> lane = this.clip.get().loadLane(lx, this.laneObj, this.laneIndex);
         if (lane != null) {
           super.undo(lx);
         }
+      }
+
+      private void move(LX lx, String fromPath, String toPath) {
+        this.clip.get().moveLane(lx, this.laneObj, this.laneIndex, fromPath, toPath);
       }
 
     }
@@ -3728,6 +4491,10 @@ public abstract class LXCommand {
           public void undo(LX lx) throws InvalidCommandException {
             this.clipLane.get().load(lx, this.preState);
           }
+
+          private void move(LX lx, PatternRack rack) {
+            this.clipLane.get().update(lx, this.preState, rack);
+          }
         }
 
         public static class Increment extends LXCommand {
@@ -3756,9 +4523,9 @@ public abstract class LXCommand {
               PatternClipEvent event = lane.events.get(this.eventIndex);
               LXPattern pattern = event.getPattern();
               int index = pattern.getIndex();
-              int newIndex = LXUtils.constrain(index + increment, 0, pattern.getChannel().patterns.size() - 1);
+              int newIndex = LXUtils.constrain(index + increment, 0, pattern.getEngine().patterns.size() - 1);
               if (newIndex != index) {
-                event.setPattern(pattern.getChannel().patterns.get(newIndex));
+                event.setPattern(pattern.getEngine().patterns.get(newIndex));
               }
             } catch (Exception x) {
               throw new InvalidCommandException(x);
@@ -3771,7 +4538,7 @@ public abstract class LXCommand {
             PatternClipLane lane = this.clipLane.get();
             try {
               PatternClipEvent event = lane.events.get(this.eventIndex);
-              event.setPattern(event.getPattern().getChannel().patterns.get(this.fromPatternIndex));
+              event.setPattern(event.getPattern().getEngine().patterns.get(this.fromPatternIndex));
             } catch (Exception x) {
               throw new InvalidCommandException(x);
             }
@@ -3827,7 +4594,7 @@ public abstract class LXCommand {
             try {
               PatternClipEvent clipEvent = clipLane.events.get(this.eventIndex);
               clipLane.moveEvent(clipEvent, cursor);
-              clipEvent.setPattern(clipEvent.getPattern().getChannel().patterns.get(patternIndex));
+              clipEvent.setPattern(clipEvent.getPattern().getEngine().patterns.get(patternIndex));
             } catch (Exception x) {
               throw new InvalidCommandException(x);
             }
@@ -4184,6 +4951,10 @@ public abstract class LXCommand {
       @Override
       public void undo(LX lx) throws InvalidCommandException {
         lx.engine.midi.addMapping(this.mapping = LXMidiMapping.create(lx, this.mappingObj));
+      }
+
+      private void move(LX lx, String fromPath, String toPath)  throws InvalidCommandException {
+        lx.engine.midi.addMapping(LXMidiMapping.move(lx, this.mappingObj, fromPath, toPath));
       }
     }
 

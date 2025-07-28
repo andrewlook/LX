@@ -70,7 +70,7 @@ import com.google.gson.stream.JsonWriter;
  */
 public class LX {
 
-  public static final String VERSION = "1.1.0";
+  public static final String VERSION = "1.1.1-TE.2-SNAPSHOT";
 
   public static class InstantiationException extends Exception {
 
@@ -173,7 +173,6 @@ public class LX {
      * Sometimes we need to know if we are P4LX, but we don't want LX library to have
      * any dependency upon P4LX.
      */
-    public boolean isP4LX = false;
     public boolean immutableModel = false;
     public boolean focusChannelOnCue = false;
     public boolean focusActivePattern = false;
@@ -448,6 +447,10 @@ public class LX {
   }
 
   public LX(Flags flags, LXModel model) {
+    this(null, flags, model);
+  }
+
+  public LX(LXPreferences preferences, Flags flags, LXModel model) {
     LX.initProfiler.init();
     this.flags = flags;
     this.flags.immutableModel = (model != null);
@@ -476,12 +479,18 @@ public class LX {
     LX.initProfiler.log("Registry");
 
     // Load the global preferences before plugin initialization
-    this.preferences = new LXPreferences(this);
+    this.preferences = (preferences == null) ? new LXPreferences(flags) : preferences;
+    this.preferences.setLX(this);
     if (this.flags.loadPreferences) {
       this.preferences.load();
     } else {
       this.preferences.loadEULA();
     }
+
+    // Glue registry watch service to package preference
+    this.preferences.autoReloadPackages.addListener(p -> {
+      this.registry.enableWatchService(this.preferences.autoReloadPackages.isOn());
+    }, true);
 
     // Scheduler
     this.scheduler = new LXScheduler(this);
@@ -508,7 +517,7 @@ public class LX {
     this.registry.initializePlugins();
   }
 
-  protected void fail(Throwable x) {
+  public void fail(Throwable x) {
     String logLocation = "the console output.";
     if (LX.EXPLICIT_LOG_FILE != null) {
       logLocation = LX.EXPLICIT_LOG_FILE.getAbsolutePath();
@@ -693,7 +702,16 @@ public class LX {
     // Dispose of the old model after notifying listeners of model change
     if (oldModel != null) {
       oldModel.dispose();
+      oldModel = null;
     }
+
+    // NOTE(mcslee): decent chance that there's memory to be reclaimed after
+    // this operation, with the old model being retired. There may be stale references
+    // to the previous model hanging around in LXModelComponent objects or the UI
+    // rendering, but this hint helps get us more aggressively reclaiming those, and as
+    // model re-generation is not a real-time animation feature, this is a good time to
+    // prioritize taking time for GC that won't interrupt normal smooth operation
+    System.gc();
 
     return this;
   }
@@ -714,6 +732,7 @@ public class LX {
    */
   public void dispose() {
     LX.dispose(this.engine);
+    this.registry.closeWatchService();
   }
 
   /**
@@ -1010,7 +1029,7 @@ public class LX {
         } catch (IOException iox) {
           LX.error(iox, "Could not auto-save project to output file: " + autosave.toString());
         }
-      }).start();
+      }, "LX Auto-Save Write Thread").start();
     }
   }
 

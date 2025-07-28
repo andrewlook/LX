@@ -325,6 +325,18 @@ public abstract class LXFixture extends LXComponent implements LXFixtureContaine
 
   public static final double POSITION_RANGE = 1000000;
 
+  public static BoundedParameter newPositionParameter(String label, String description) {
+    return new BoundedParameter(label, 0, -POSITION_RANGE, POSITION_RANGE)
+    .setFormatter(LXParameter.Formatter.DECIMAL_2_TO_8_PLACES)
+    .setDescription(description);
+  }
+
+  public static BoundedParameter newRotationParameter(String label, String description) {
+    return new BoundedParameter(label, 0, -360, 360)
+    .setUnits(LXParameter.Units.DEGREES)
+    .setDescription(description);
+  }
+
   public final BooleanParameter selected =
     new BooleanParameter("Selected", false)
     .setDescription("Whether this fixture is selected for editing");
@@ -334,31 +346,22 @@ public abstract class LXFixture extends LXComponent implements LXFixtureContaine
      .setDescription("Causes the fixture to flash red for identification");
 
   public final BoundedParameter x =
-    new BoundedParameter("X", 0, -POSITION_RANGE, POSITION_RANGE)
-    .setDescription("Base X position of the fixture in space");
+    newPositionParameter("X", "Base X position of the fixture in space");
 
   public final BoundedParameter y =
-    new BoundedParameter("Y", 0, -POSITION_RANGE, POSITION_RANGE)
-    .setDescription("Base Y position of the fixture in space");
+    newPositionParameter("Y", "Base Y position of the fixture in space");
 
   public final BoundedParameter z =
-    new BoundedParameter("Z", 0, -POSITION_RANGE, POSITION_RANGE)
-    .setDescription("Base Z position of the fixture in space");
+    newPositionParameter("Z", "Base Z position of the fixture in space");
 
   public final BoundedParameter yaw =
-    new BoundedParameter("Yaw", 0, -360, 360)
-    .setDescription("Rotation of the fixture about the vertical axis")
-    .setUnits(LXParameter.Units.DEGREES);
+    newRotationParameter("Yaw", "Rotation of the fixture about the vertical axis");
 
   public final BoundedParameter pitch =
-    new BoundedParameter("Pitch", 0, -360, 360)
-    .setDescription("Rotation of the fixture about the horizontal plane")
-    .setUnits(LXParameter.Units.DEGREES);
+    newRotationParameter("Pitch", "Rotation of the fixture about the horizontal plane");
 
   public final BoundedParameter roll =
-    new BoundedParameter("Roll", 0, -360, 360)
-    .setDescription("Rotation of the fixture about its normal vector")
-    .setUnits(LXParameter.Units.DEGREES);
+    newRotationParameter("Roll", "Rotation of the fixture about the forward vector");
 
   public final BoundedParameter scale =
     new BoundedParameter("Scale", 1, 0, 1000)
@@ -388,6 +391,14 @@ public abstract class LXFixture extends LXComponent implements LXFixtureContaine
   public final StringParameter tags =
     new StringParameter("Tags", "")
     .setDescription("Tags to be applied to the fixture in model");
+
+  public final BooleanParameter hasCustomPointSize =
+    new BooleanParameter("Custom Point Size", false)
+    .setDescription("Whether to use a custom point size in the UI");
+
+  public final BoundedParameter pointSize =
+    new BoundedParameter("Point Size", 5, 0.10, 100000)
+    .setDescription("Size of fixture points in the UI");
 
   final List<LXFixture> mutableChildren = new ArrayList<LXFixture>();
 
@@ -463,6 +474,8 @@ public abstract class LXFixture extends LXComponent implements LXFixtureContaine
     addGeometryParameter("pitch", this.pitch);
     addGeometryParameter("roll", this.roll);
     addGeometryParameter("scale", this.scale);
+    addGeometryParameter("hasCustomPointSize", this.hasCustomPointSize);
+    addGeometryParameter("pointSize", this.pointSize);
 
     // Output parameters
     addParameter("selected", this.selected);
@@ -805,6 +818,20 @@ public abstract class LXFixture extends LXComponent implements LXFixtureContaine
     this.transforms.add(transform);
   }
 
+  private float getPointSize() {
+    if (this.hasCustomPointSize.isOn()) {
+      return this.pointSize.getValuef();
+    }
+    if (this.container instanceof LXFixture fixture) {
+      return fixture.getPointSize();
+    }
+    return LXPoint.DEFAULT_POINT_SIZE;
+  }
+
+  public LXModel getModel() {
+    return this.model;
+  }
+
   /**
    * Invoked when this fixture has been loaded or added to some container. Will
    * rebuild the points and the metrics, and notify container of the change to
@@ -812,7 +839,7 @@ public abstract class LXFixture extends LXComponent implements LXFixtureContaine
    */
   protected final void regenerate() {
     // We may have a totally new size, blow out the points array and rebuild
-    int numPoints = size();
+    final int numPoints = size();
     this.mutablePoints.clear();
     for (int i = 0; i < numPoints; ++i) {
       LXPoint p = constructPoint(i);
@@ -910,6 +937,13 @@ public abstract class LXFixture extends LXComponent implements LXFixtureContaine
   private final LXMatrix _computePointGeometryMatrix = new LXMatrix();
 
   private void regeneratePointGeometry() {
+    // Set default point size on all points
+    final float pointSize = getPointSize();
+    for (LXPoint p : this.points) {
+      p.size = pointSize;
+    }
+
+    // Generate point geometry
     this._computePointGeometryMatrix.set(this.geometryMatrix);
     computePointGeometry(this._computePointGeometryMatrix, this.points);
 

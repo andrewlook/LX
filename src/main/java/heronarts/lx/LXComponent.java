@@ -49,6 +49,7 @@ import heronarts.lx.osc.LXOscEngine;
 import heronarts.lx.osc.OscArgument;
 import heronarts.lx.osc.OscInt;
 import heronarts.lx.osc.OscMessage;
+import heronarts.lx.osc.OscRgba;
 import heronarts.lx.parameter.AggregateParameter;
 import heronarts.lx.parameter.BooleanParameter;
 import heronarts.lx.parameter.BoundedParameter;
@@ -646,6 +647,16 @@ public abstract class LXComponent implements LXPath, LXParameterListener, LXSeri
   }
 
   /**
+   * Returns whether this parameter is stored along with snapshots
+   *
+   * @param parameter Parameter
+   * @return true if this can be included in snapshots
+   */
+  public boolean isSnapshotControl(LXParameter parameter) {
+    return !(parameter == this.label);
+  }
+
+  /**
    * Determines whether the given LX object is contained by this
    * parent, at any depth in the tree of child components and parameters.
    *
@@ -734,31 +745,35 @@ public abstract class LXComponent implements LXPath, LXParameterListener, LXSeri
 
   private boolean handleOscParameter(OscMessage message, LXParameter parameter, String[] parts, int index) {
     // Handle OSC messages for different parameter types
-    if (parameter instanceof BooleanParameter) {
-      ((BooleanParameter) parameter).setValue(message.getBoolean());
-    } else if (parameter instanceof StringParameter) {
-      ((StringParameter) parameter).setValue(message.getString());
-    } else if (parameter instanceof AggregateParameter) {
-      if (parts.length >= index + 1) {
-        LXParameter subparameter = ((AggregateParameter) parameter).subparameters.get(parts[index+1]);
+    if (parameter instanceof BooleanParameter booleanParameter) {
+      booleanParameter.setValue(message.getBoolean());
+    } else if (parameter instanceof StringParameter stringParameter) {
+      stringParameter.setValue(message.getString());
+    } else if (parameter instanceof AggregateParameter aggregateParameter) {
+      if (parts.length > index + 1) {
+        final LXParameter subparameter = aggregateParameter.subparameters.get(parts[index+1]);
         if (subparameter != null) {
           return handleOscParameter(message, subparameter, parts, index+1);
         } else {
           LXOscEngine.error("Component " + this + " did not find anything at OSC path: " + path + " (" + message + ")");
           return false;
         }
-      } else if (parameter instanceof ColorParameter) {
-        ((ColorParameter) parameter).setColor(message.getInt());
+      } else if (parameter instanceof ColorParameter color) {
+        final OscArgument arg = message.get();
+        if (arg instanceof OscRgba rgba) {
+          color.setColor(rgba.toARGB());
+        } else {
+          color.setColor(arg.toInt());
+        }
       }
-    } else if (parameter instanceof DiscreteParameter) {
+    } else if (parameter instanceof DiscreteParameter discreteParameter) {
       OscArgument arg = message.get();
-      if ((arg instanceof OscInt) || ((DiscreteParameter) parameter).getOscMode() == LXNormalizedParameter.OscMode.ABSOLUTE) {
+      if ((arg instanceof OscInt) || discreteParameter.getOscMode() == LXNormalizedParameter.OscMode.ABSOLUTE) {
         parameter.setValue(arg.toInt());
       } else {
-        ((DiscreteParameter) parameter).setNormalized(arg.toFloat());
+        discreteParameter.setNormalized(arg.toFloat());
       }
-    } else if (parameter instanceof LXNormalizedParameter) {
-      LXNormalizedParameter normalizedParameter = (LXNormalizedParameter) parameter;
+    } else if (parameter instanceof LXNormalizedParameter normalizedParameter) {
       if (normalizedParameter.getOscMode() == LXNormalizedParameter.OscMode.ABSOLUTE) {
         normalizedParameter.setValue(message.getFloat());
       } else {
@@ -853,8 +868,7 @@ public abstract class LXComponent implements LXPath, LXParameterListener, LXSeri
 
     JsonObject range = null;
 
-    if (parameter instanceof AggregateParameter) {
-      final AggregateParameter aggregate = (AggregateParameter) parameter;
+    if (parameter instanceof AggregateParameter aggregate) {
       final JsonObject contents = new JsonObject();
       for (Map.Entry<String, LXListenableParameter> parameterEntry : aggregate.subparameters.entrySet()) {
         JsonObject subparameterOscQuery = toOscQuery(parameterEntry.getValue(), aggregate);
@@ -863,24 +877,23 @@ public abstract class LXComponent implements LXPath, LXParameterListener, LXSeri
         }
       }
       obj.add("CONTENTS", contents);
-    } else if (parameter instanceof BooleanParameter) {
-      boolean isOn = ((BooleanParameter) parameter).isOn();
+    } else if (parameter instanceof BooleanParameter booleanParameter) {
+      final boolean isOn = booleanParameter.isOn();
       obj.addProperty("VALUE", isOn);
       obj.addProperty("TYPE", isOn ? "T" : "F");
-    } else if (parameter instanceof StringParameter) {
-      obj.addProperty("VALUE", ((StringParameter)parameter).getString());
+    } else if (parameter instanceof StringParameter stringParameter) {
+      obj.addProperty("VALUE", stringParameter.getString());
       obj.addProperty("TYPE", "s");
-    } else if (parameter instanceof ColorParameter) {
-      obj.addProperty("VALUE", ((ColorParameter)parameter).getBaseColor());
+    } else if (parameter instanceof ColorParameter color) {
+      obj.addProperty("VALUE", color.getBaseColor());
       obj.addProperty("TYPE", "r");
-    } else if (parameter instanceof DiscreteParameter) {
-      obj.addProperty("VALUE", ((DiscreteParameter) parameter).getBaseValuei());
+    } else if (parameter instanceof DiscreteParameter discreteParameter) {
+      obj.addProperty("VALUE", discreteParameter.getBaseValuei());
       obj.addProperty("TYPE", "i");
       range = new JsonObject();
-      range.addProperty("MIN", ((DiscreteParameter) parameter).getMinValue());
-      range.addProperty("MAX", ((DiscreteParameter) parameter).getMaxValue());
-    } else if (parameter instanceof BoundedParameter) {
-      BoundedParameter boundedParameter = (BoundedParameter) parameter;
+      range.addProperty("MIN", discreteParameter.getMinValue());
+      range.addProperty("MAX", discreteParameter.getMaxValue());
+    } else if (parameter instanceof BoundedParameter boundedParameter) {
       obj.addProperty("TYPE", "f");
       range = new JsonObject();
       if (boundedParameter.getOscMode() == CompoundParameter.OscMode.ABSOLUTE) {
@@ -892,8 +905,8 @@ public abstract class LXComponent implements LXPath, LXParameterListener, LXSeri
         range.addProperty("MAX", 1f);
         obj.addProperty("VALUE", boundedParameter.getBaseNormalizedf());
       }
-    } else if (parameter instanceof LXNormalizedParameter) {
-      obj.addProperty("VALUE", ((LXNormalizedParameter) parameter).getNormalizedf());
+    } else if (parameter instanceof LXNormalizedParameter normalizedParameter) {
+      obj.addProperty("VALUE", normalizedParameter.getNormalizedf());
       obj.addProperty("TYPE", "f");
       range = new JsonObject();
       range.addProperty("MIN", 0f);
@@ -1067,10 +1080,13 @@ public abstract class LXComponent implements LXPath, LXParameterListener, LXSeri
       parent = parent.getParent();
     }
 
-    // The global midi, modulation, and snapshot engines need to know we're gone
+    // The global midi, modulation, snapshot, remote control engines need to know we're gone
     this.lx.engine.midi.removeMappings(this);
     this.lx.engine.modulation.removeModulations(this);
     this.lx.engine.snapshots.removeSnapshotViews(this);
+    if (isDescendant(this.lx.engine.mixer)) {
+      this.lx.engine.mixer.removeRemoteControls(this);
+    }
 
     // Remove all of the parameters
     for (LXParameter parameter : new ArrayList<LXParameter>(this.parameters.values())) {
@@ -1141,6 +1157,19 @@ public abstract class LXComponent implements LXPath, LXParameterListener, LXSeri
     }
     parameter.setComponent(this, INTERNAL_PREFIX + path);
     this.internalParameters.put(path, parameter);
+    return this;
+  }
+
+  /**
+   * Add all parameters from a collection as internal parameters
+   *
+   * @param parameters Collection of parameters to add as internal
+   * @return this
+   */
+  protected final LXComponent addInternalParameters(LXParameter.Collection parameters) {
+    for (Map.Entry<String, LXParameter> entry : parameters.entrySet()) {
+      addInternalParameter(entry.getKey(), entry.getValue());
+    }
     return this;
   }
 
@@ -1379,6 +1408,24 @@ public abstract class LXComponent implements LXPath, LXParameterListener, LXSeri
     } catch (IOException iox) {
       LX.error("Could not load preset file: " + iox.getLocalizedMessage());
       this.lx.pushError(iox, "Could not load preset file: " + iox.getLocalizedMessage());
+    } catch (Exception x) {
+      LX.error(x, "Exception in loadPreset: " + x.getLocalizedMessage());
+      this.lx.pushError(x, "Exception in loadPreset: " + x.getLocalizedMessage());
+    } finally {
+      this.lx.componentRegistry.projectLoading = false;
+    }
+  }
+
+  public void loadPreset(JsonObject obj) {
+    if (!(this instanceof LXPresetComponent)) {
+      throw new IllegalStateException("Cannot load a preset for non-LXPresetComponent: " + getClass().getName());
+    }
+
+    try {
+      this.lx.componentRegistry.projectLoading = true;
+      this.lx.componentRegistry.setIdCounter(this.lx.getMaxId(obj, this.lx.componentRegistry.getIdCounter()) + 1);
+      load(this.lx, obj);
+      this.lx.componentRegistry.projectLoading = false;
     } catch (Exception x) {
       LX.error(x, "Exception in loadPreset: " + x.getLocalizedMessage());
       this.lx.pushError(x, "Exception in loadPreset: " + x.getLocalizedMessage());

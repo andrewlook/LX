@@ -167,6 +167,8 @@ public class LXStructure extends LXComponent implements LXFixtureContainer {
     new BooleanParameter("Show Normalization Bounds", false)
     .setDescription("Outline the normalization bounds in the preview window");
 
+  public final LXStructureLabelConfig labelConfig = new LXStructureLabelConfig();
+
   private final List<Listener> listeners = new ArrayList<Listener>();
 
   private final List<LXFixture> mutableFixtures = new ArrayList<LXFixture>();
@@ -202,7 +204,7 @@ public class LXStructure extends LXComponent implements LXFixtureContainer {
     addNormalizationParameter("normalizationHeight", this.normalizationHeight);
     addNormalizationParameter("normalizationDepth", this.normalizationDepth);
     addInternalParameter("showNormalizationBounds", this.showNormalizationBounds);
-
+    addInternalParameters(this.labelConfig);
     addChild("views", this.views = new LXViewEngine(lx));
 
     if (immutable != null) {
@@ -231,7 +233,7 @@ public class LXStructure extends LXComponent implements LXFixtureContainer {
   }
 
   private void addNormalizationParameter(String path, LXListenableParameter p) {
-    this.normalizationParameters.put(path, p);
+    this.normalizationParameters.add(path, p);
     addParameter(path, p);
     p.addListener(this::normalizationChanged);
   }
@@ -625,10 +627,6 @@ public class LXStructure extends LXComponent implements LXFixtureContainer {
       this.output.clear();
     }
 
-    // NOTE(mcslee): good chance that there's memory to be reclaimed after
-    // this operation
-    System.gc();
-
     return this;
   }
 
@@ -734,6 +732,7 @@ public class LXStructure extends LXComponent implements LXFixtureContainer {
 
   private static final String KEY_FIXTURES = "fixtures";
   private static final String KEY_NORMALIZATION = "normalization";
+  private static final String KEY_LABEL_CONFIG = "labelConfig";
   private static final String KEY_STATIC_MODEL = "staticModel";
   private static final String KEY_FILE = "file";
 
@@ -899,6 +898,9 @@ public class LXStructure extends LXComponent implements LXFixtureContainer {
       if (obj.has(KEY_NORMALIZATION)) {
         loadParameters(this, obj.get(KEY_NORMALIZATION).getAsJsonObject(), this.normalizationParameters);
       }
+      if (obj.has(KEY_LABEL_CONFIG)) {
+        loadParameters(this, obj.get(KEY_LABEL_CONFIG).getAsJsonObject(), this.labelConfig);
+      }
       this.modelFile = file;
       this.modelName.setValue(file.getName());
       this.isStatic.bang();
@@ -932,6 +934,7 @@ public class LXStructure extends LXComponent implements LXFixtureContainer {
     obj.addProperty(LX.KEY_TIMESTAMP, System.currentTimeMillis());
     saveFixtures(this.lx, obj);
     obj.add(KEY_NORMALIZATION, LXSerializable.Utils.saveParameters(this.normalizationParameters));
+    obj.add(KEY_LABEL_CONFIG, LXSerializable.Utils.saveParameters(this.labelConfig));
 
     try (JsonWriter writer = new JsonWriter(new FileWriter(file))) {
       writer.setIndent("  ");

@@ -27,8 +27,8 @@ import com.google.gson.JsonObject;
 import heronarts.lx.LX;
 import heronarts.lx.LXComponent;
 import heronarts.lx.LXDeviceComponent;
+import heronarts.lx.command.LXCommand;
 import heronarts.lx.mixer.LXBus;
-import heronarts.lx.model.LXModel;
 import heronarts.lx.modulator.LinearEnvelope;
 import heronarts.lx.osc.LXOscComponent;
 import heronarts.lx.parameter.BooleanParameter;
@@ -36,7 +36,6 @@ import heronarts.lx.parameter.LXParameter;
 import heronarts.lx.parameter.LXParameterListener;
 import heronarts.lx.parameter.MutableParameter;
 import heronarts.lx.pattern.LXPattern;
-import heronarts.lx.structure.view.LXViewDefinition;
 
 /**
  * Class to represent an effect that may be applied to the color array. Effects
@@ -242,18 +241,6 @@ public abstract class LXEffect extends LXDeviceComponent implements LXComponent.
   }
 
   @Override
-  public LXModel getModelView() {
-    LXViewDefinition view = this.view.getObject();
-    if (view != null) {
-      return view.getModelView();
-    }
-    if (isPatternEffect()) {
-      return getPattern().getModelView();
-    }
-    return super.getModelView();
-  }
-
-  @Override
   public String getPath() {
     return "effect/" + (this.index+1);
   }
@@ -397,6 +384,11 @@ public abstract class LXEffect extends LXDeviceComponent implements LXComponent.
    * @param enabledAmount The amount of the effect to apply, scaled from 0-1
    */
   protected abstract void run(double deltaMs, double enabledAmount);
+
+  @Override
+  public void reload() {
+    this.lx.command.perform(new LXCommand.Channel.ReloadEffect(getParent(), this));
+  }
 
   @Override
   public void dispose() {

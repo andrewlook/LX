@@ -23,18 +23,21 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardWatchEventKinds;
+import java.nio.file.WatchEvent;
+import java.nio.file.WatchKey;
+import java.nio.file.WatchService;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -60,8 +63,11 @@ import heronarts.lx.blend.NormalBlend;
 import heronarts.lx.blend.SpotlightBlend;
 import heronarts.lx.blend.SubtractBlend;
 import heronarts.lx.effect.LXEffect;
+import heronarts.lx.mixer.LXAbstractChannel;
+import heronarts.lx.mixer.LXChannel;
 import heronarts.lx.modulator.LXModulator;
 import heronarts.lx.pattern.LXPattern;
+import heronarts.lx.pattern.PatternRack;
 import heronarts.lx.structure.LXFixture;
 
 /**
@@ -130,6 +136,7 @@ public class LXRegistry implements LXSerializable {
   static {
     DEFAULT_PATTERNS = new ArrayList<Class<? extends LXPattern>>();
     DEFAULT_PATTERNS.add(heronarts.lx.dmx.DmxPattern.class);
+    DEFAULT_PATTERNS.add(heronarts.lx.pattern.PatternRack.class);
     DEFAULT_PATTERNS.add(heronarts.lx.pattern.audio.SoundObjectPattern.class);
     DEFAULT_PATTERNS.add(heronarts.lx.pattern.color.GradientPattern.class);
     DEFAULT_PATTERNS.add(heronarts.lx.pattern.color.SolidPattern.class);
@@ -149,6 +156,7 @@ public class LXRegistry implements LXSerializable {
     DEFAULT_EFFECTS.add(heronarts.lx.effect.color.ColorizeEffect.class);
     DEFAULT_EFFECTS.add(heronarts.lx.effect.color.ColorMaskEffect.class);
     DEFAULT_EFFECTS.add(heronarts.lx.effect.color.GradientMaskEffect.class);
+    DEFAULT_EFFECTS.add(heronarts.lx.effect.color.TransparifyEffect.class);
     DEFAULT_EFFECTS.add(heronarts.lx.effect.DynamicsEffect.class);
     DEFAULT_EFFECTS.add(heronarts.lx.effect.InvertEffect.class);
     DEFAULT_EFFECTS.add(heronarts.lx.effect.HueSaturationEffect.class);
@@ -390,11 +398,21 @@ public class LXRegistry implements LXSerializable {
     private boolean isEnabled = false;
     private Throwable exception = null;
     private final boolean cliEnabled;
+    private final boolean trusted;
 
     private Plugin(Class<? extends LXPlugin> clazz) {
+      this(clazz, false);
+    }
+
+    private Plugin(Class<? extends LXPlugin> clazz, boolean trusted) {
       this.clazz = clazz;
       this.cliEnabled = isPluginCliEnabled(clazz);
       this.isEnabled = restorePluginEnabled(clazz);
+      this.trusted = trusted;
+    }
+
+    public boolean isTrusted() {
+      return this.trusted;
     }
 
     private boolean isPluginCliEnabled(Class<? extends LXPlugin> clazz) {
@@ -515,6 +533,8 @@ public class LXRegistry implements LXSerializable {
 
   private boolean contentReloading = false;
 
+  private WatchService watchService = null;
+
   public LXRegistry(LX lx) {
     this.lx = lx;
     this.classLoader = new LXClassLoader(lx);
@@ -557,9 +577,142 @@ public class LXRegistry implements LXSerializable {
     }
   }
 
+  void enableWatchService(boolean enabled) {
+    if (enabled) {
+      if (this.watchService == null) {
+        final Path path = this.lx.getMediaFolder(LX.Media.PACKAGES).toPath();
+        LX.debug("Registering package directory with LXRegistry.WatchService: " + path);
+        try {
+          this.watchService = FileSystems.getDefault().newWatchService();
+          path.register(this.watchService, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_MODIFY, StandardWatchEventKinds.ENTRY_DELETE);
+        } catch (IOException iox) {
+          LX.error(iox, "Failed to register LXRegistry.WatchService");
+          if (this.watchService != null) {
+            try {
+              this.watchService.close();
+            } catch (IOException iox2) {
+              LX.error(iox2, "Error closing LXRegistry.WatchService in error handler");
+            }
+          }
+          this.watchService = null;
+        }
+      }
+    } else {
+      if (this.watchService != null) {
+        LX.debug("Closing package directory LXRegistry.WatchService");
+        try {
+          this.watchService.close();
+        } catch (IOException iox) {
+          LX.error(iox, "Error closing LXRegistry.WatchService");
+        }
+        this.watchService = null;
+      }
+    }
+  }
+
+  public void runWatchService() {
+    if (this.watchService == null) {
+      return;
+    }
+
+    final boolean autoReload = this.lx.preferences.autoReloadPackages.isOn();
+    boolean changed = false;
+    WatchKey watchKey = null;
+    List<LXClassLoader.Package> modifiedPackages = null;
+    while ((watchKey = this.watchService.poll()) != null) {
+      for (WatchEvent<?> event : watchKey.pollEvents()) {
+        final Path path = (Path) event.context();
+        LX.log("Detected change " + event.kind() + " to package file: " + path);
+        changed = true;
+        if (autoReload && (event.kind() == StandardWatchEventKinds.ENTRY_MODIFY)) {
+          final LXClassLoader.Package pkg = getPackage(path);
+          if (pkg != null) {
+            if (modifiedPackages == null) {
+              modifiedPackages = new ArrayList<>();
+            }
+            modifiedPackages.add(pkg);
+          }
+        }
+      }
+      watchKey.reset();
+    }
+    if (changed && autoReload) {
+      reloadContent();
+      if (modifiedPackages != null) {
+        for (LXClassLoader.Package pkg : modifiedPackages) {
+          reloadPackageDevices(pkg);
+        }
+      }
+    }
+  }
+
+  void closeWatchService() {
+    if (this.watchService != null) {
+      try {
+        this.watchService.close();
+      } catch (IOException iox) {
+        LX.error(iox, "Could not close LXRegistry.WatchService");
+      }
+      this.watchService = null;
+    }
+  }
+
+  private LXClassLoader.Package getPackage(Path path) {
+    for (LXClassLoader.Package pkg : this.packages) {
+      if (pkg.jarFile.equals(this.lx.getMediaFile(LX.Media.PACKAGES, path.toString(), false))) {
+        return pkg;
+      }
+    }
+    LX.error("Could not find LXClassLoader.Package for modified path: " + path);
+    return null;
+  }
+
+  private void reloadPackageDevices(LXClassLoader.Package pkg) {
+    for (LXAbstractChannel bus : this.lx.engine.mixer.channels) {
+      if (bus instanceof LXChannel channel) {
+        reloadPackagePatterns(pkg, channel.patterns);
+      }
+      reloadPackageEffects(pkg, bus.effects);
+    }
+    reloadPackageEffects(pkg, lx.engine.mixer.masterBus.effects);
+  }
+
+  private void reloadPackagePatterns(LXClassLoader.Package pkg, List<LXPattern> patterns) {
+    if (!patterns.isEmpty()) {
+      new ArrayList<LXPattern>(patterns).forEach(pattern -> {
+        if (pkg.hasClass(pattern.getClass())) {
+          LX.debug("Reloading pattern: " + pattern);
+          pattern.reload();
+        } else {
+          if (pattern instanceof PatternRack rack) {
+            reloadPackagePatterns(pkg, rack.patterns);
+          }
+          reloadPackageEffects(pkg, pattern.effects);
+        }
+      });
+    }
+  }
+
+  private void reloadPackageEffects(LXClassLoader.Package pkg, List<LXEffect> effects) {
+    if (!effects.isEmpty()) {
+      new ArrayList<LXEffect>(effects).forEach(effect -> {
+        if (pkg.hasClass(effect.getClass())) {
+          LX.debug("Reloading effect: " + effect);
+          effect.reload();
+        }
+      });
+    }
+  }
+
   public void reloadContent() {
+    reloadContent(true);
+  }
+
+  private void reloadContent(boolean disposeClassLoader) {
     LX.log("Reloading custom content folders");
-    this.classLoader.dispose();
+    if (disposeClassLoader) {
+      this.classLoader.dispose();
+    }
     this.mutablePackages.clear();
     this.mutablePlugins.clear();
 
@@ -572,6 +725,7 @@ public class LXRegistry implements LXSerializable {
     // objects defined by a new instance of the LXClassLoader.
     this.classLoader = new LXClassLoader(this.lx);
     this.classLoader.load();
+
     loadClasspathPlugins();
 
     // Reload the available JSON fixture list
@@ -618,10 +772,14 @@ public class LXRegistry implements LXSerializable {
       return false;
     }
     try {
+      // Close the classloader first, otherwise on Windows it may hold handles to
+      // destinationFile and bork the Files.copy() call
+      this.classLoader.dispose();
       Files.copy(file.toPath(), destinationFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
       installPackageMedia(destinationFile);
-      reloadContent();
+      reloadContent(false);
     } catch (Throwable x) {
+      LX.error(x, "Error installing package file " + file.getName() + ": " + x.getLocalizedMessage());
       this.lx.pushError(x, "Error installing package file " + file.getName() + ": " + x.getLocalizedMessage());
       return false;
     }
@@ -651,7 +809,7 @@ public class LXRegistry implements LXSerializable {
       while (entries.hasMoreElements()) {
         final JarEntry entry = entries.nextElement();
         final String fileName = entry.getName();
-        if (fileName.startsWith("fixtures/") && fileName.endsWith(".lxf")) {
+        if (fileName.startsWith("fixtures/") && !entry.isDirectory()) {
           copyPackageMedia(packageDir, LX.Media.FIXTURES, jarFile, entry);
         } else if (fileName.startsWith("models/") && fileName.endsWith(".lxm")) {
           copyPackageMedia(packageDir, LX.Media.MODELS, jarFile, entry);
@@ -756,6 +914,10 @@ public class LXRegistry implements LXSerializable {
   }
 
   public void uninstallPackage(LXClassLoader.Package pack) {
+    uninstallPackage(pack, true);
+  }
+
+  public void uninstallPackage(LXClassLoader.Package pack, boolean reload) {
     File destinationFile = lx.getMediaFile(LX.Media.DELETED, pack.jarFile.getName(), true);
     try {
       if (destinationFile.exists()) {
@@ -765,10 +927,31 @@ public class LXRegistry implements LXSerializable {
         destinationFile = lx.getMediaFile(LX.Media.DELETED, pack.jarFile.getName() + "-" + suffix, true);
       }
       Files.move(pack.jarFile.toPath(), destinationFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-      reloadContent();
+      if (reload) {
+        reloadContent();
+      }
     } catch (IOException iox) {
+      LX.error(iox, "Could not remove package file " + pack.jarFile.getName());
       this.lx.pushError(iox, "Could not remove package file " + pack.jarFile.getName());
     }
+  }
+
+  /**
+   * Find a package that matches the package name in the given file
+   *
+   * @param file Package file
+   * @return Existing package which matches, or null if none exists
+   */
+  public LXClassLoader.Package findPackage(File file) {
+    final String packageName = this.classLoader.loadPackageName(file);
+    if (packageName != null) {
+      for (LXClassLoader.Package pkg : this.packages) {
+        if (packageName.equals(pkg.getName())) {
+          return pkg;
+        }
+      }
+    }
+    return null;
   }
 
   public enum ComponentType {
@@ -796,19 +979,7 @@ public class LXRegistry implements LXSerializable {
     return null;
   }
 
-  private final Map<String, LXClassLoader.Package> duplicates = new HashMap<String, LXClassLoader.Package>();
-
   protected void addClass(Class<?> clz, LXClassLoader.Package pack) {
-    final String className = clz.getName();
-    final LXClassLoader.Package duplicate = duplicates.get(className);
-    if (duplicate != null) {
-      String thisFile = lx.getMediaPath(LX.Media.PACKAGES, pack.jarFile);
-      String originalFile = lx.getMediaPath(LX.Media.PACKAGES, duplicate.jarFile);
-      LX.error("Ignoring duplicate class: " + className + " in " + thisFile + " + " + originalFile);
-      return;
-    }
-    this.duplicates.put(className, pack);
-
     if (LXPattern.class.isAssignableFrom(clz)) {
       addPattern(clz.asSubclass(LXPattern.class));
     }
@@ -822,13 +993,11 @@ public class LXRegistry implements LXSerializable {
       addFixture(clz.asSubclass(LXFixture.class));
     }
     if (LXPlugin.class.isAssignableFrom(clz)) {
-      addPlugin(clz.asSubclass(LXPlugin.class));
+      addPlugin(clz.asSubclass(LXPlugin.class), pack.trusted);
     }
   }
 
   protected void removeClass(Class<?> clz) {
-    this.duplicates.remove(clz.getName());
-
     if (LXPattern.class.isAssignableFrom(clz)) {
       removePattern(clz.asSubclass(LXPattern.class));
     }
@@ -1269,8 +1438,12 @@ public class LXRegistry implements LXSerializable {
   }
 
   protected void addPlugin(Class<? extends LXPlugin> plugin) {
+    addPlugin(plugin, false);
+  }
+
+  protected void addPlugin(Class<? extends LXPlugin> plugin, boolean trusted) {
     Objects.requireNonNull(plugin, "May not add null LXRegistry.addPlugin");
-    this.mutablePlugins.add(new Plugin(plugin));
+    this.mutablePlugins.add(new Plugin(plugin, trusted));
   }
 
   protected void initializePlugins() {

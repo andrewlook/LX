@@ -97,6 +97,7 @@ public class JsonFixture extends LXFixture {
   private static final String KEY_SCALE_Y = "scaleY";
   private static final String KEY_SCALE_Z = "scaleZ";
   private static final String KEY_SCALE = "scale";
+  private static final String KEY_POINT_SIZE = "pointSize";
   private static final String KEY_DIRECTION = "direction";
   private static final String KEY_NORMAL = "normal";
   private static final String KEY_END = "end";
@@ -187,14 +188,26 @@ public class JsonFixture extends LXFixture {
   private static final String KEY_MESH = "mesh";
   private static final String KEY_MESHES = "meshes";
   private static final String KEY_MESH_COLOR = "color";
+  private static final String KEY_MESH_TEXTURE = "texture";
   private static final String KEY_MESH_FILE = "file";
   private static final String KEY_MESH_VERTICES = "vertices";
+  private static final String KEY_MESH_INVERT_NORMALS = "invertNormals";
   private static final String KEY_MESH_RECT_WIDTH = "width";
   private static final String KEY_MESH_RECT_HEIGHT = "height";
   private static final String KEY_MESH_RECT_DEPTH = "depth";
   private static final String KEY_MESH_RECT_AXIS = "axis";
 
+  private static final String KEY_MESH_LIGHTING = "lighting";
+  private static final String KEY_MESH_LIGHTING_COLOR = "color";
+  private static final String KEY_MESH_LIGHTING_DIRECTION = "direction";
+  private static final String KEY_MESH_LIGHTING_AMBIENT = "ambient";
+  private static final String KEY_MESH_LIGHTING_DIFFUSE = "diffuse";
+  private static final String KEY_MESH_LIGHTING_SPECULAR = "specular";
+  private static final String KEY_MESH_LIGHTING_SHININESS = "shininess";
+
   private static final String MESH_TYPE_UNIFORM_FILL = "uniformFill";
+  private static final String MESH_TYPE_TEXTURE_2D = "texture2d";
+  private static final String MESH_TYPE_PHONG = "phong";
 
   private static final String LABEL_PLACEHOLDER = "UNKNOWN";
 
@@ -470,6 +483,7 @@ public class JsonFixture extends LXFixture {
     private ParameterDefinition(String name, String label, String description, float value, float defaultFloat, float minFloat, float maxFloat) {
       this(name, label, description, ParameterType.FLOAT,
         (BoundedParameter) new BoundedParameter(label, defaultFloat, minFloat, maxFloat)
+        .setFormatter(LXParameter.Formatter.DECIMAL_2_TO_8_PLACES)
         .setValue(value)
       );
     }
@@ -793,7 +807,7 @@ public class JsonFixture extends LXFixture {
 
       if (loadParameters) {
         loadLabel(obj);
-        loadTags(this, obj, true, true, false);
+        loadTags(this, obj, true, false);
         loadParameters(obj);
         this.parametersReloaded.bang();
       }
@@ -904,36 +918,38 @@ public class JsonFixture extends LXFixture {
         parameter.isReferenced = true;
 
         switch (returnType) {
-        case FLOAT:
-          if (parameter.type == ParameterType.FLOAT || parameter.type == ParameterType.INT) {
-            parameterValue = String.valueOf(parameter.parameter.getValue());
-          } else {
+        case FLOAT -> {
+          switch (parameter.type) {
+          case FLOAT, INT -> parameterValue = String.valueOf(parameter.parameter.getValue());
+          case BOOLEAN -> parameterValue = String.valueOf(parameter.booleanParameter.isOn());
+          default -> {
             addWarning("Cannot load non-numeric parameter $" + parameterName + " into a float type: " + key);
             return null;
           }
-          break;
-        case INT:
-          if (parameter.type == ParameterType.INT) {
-            parameterValue = String.valueOf(parameter.intParameter.getValuei());
-          } else if (parameter.type == ParameterType.FLOAT) {
-            parameterValue = String.valueOf(parameter.floatParameter.getValue());
-          } else {
+          }
+        }
+        case INT -> {
+          switch (parameter.type) {
+          case INT -> parameterValue = String.valueOf(parameter.intParameter.getValuei());
+          case FLOAT -> parameterValue = String.valueOf(parameter.floatParameter.getValue());
+          case BOOLEAN -> parameterValue = String.valueOf(parameter.booleanParameter.isOn());
+          default -> {
             addWarning("Cannot load non-numeric parameter $" + parameterName + " into an integer type: " + key);
             return null;
           }
-          break;
-        case STRING:
-        case STRING_SELECT:
+          }
+        }
+        case STRING, STRING_SELECT -> {
           parameterValue = parameter.getValueAsString();
-          break;
-        case BOOLEAN:
+        }
+        case BOOLEAN -> {
           if (parameter.type == ParameterType.BOOLEAN) {
             parameterValue = String.valueOf(parameter.booleanParameter.isOn());
           } else {
             addWarning("Cannot load non-boolean parameter $" + parameterName + " into a boolean type: " + key);
             return null;
           }
-          break;
+        }
         }
       }
       result.append(expression, index, matcher.start());
@@ -952,7 +968,7 @@ public class JsonFixture extends LXFixture {
       return 0;
     }
     try {
-      float value = _evaluateSimpleExpression(obj, key, substitutedExpression.replaceAll("\\s", ""));
+      float value = Expression.evaluateNumeric(substitutedExpression.replaceAll("\\s", ""));
       if (Float.isNaN(value)) {
         addWarning("Variable expression produces NaN: " + expression);
         return 0;
@@ -969,224 +985,18 @@ public class JsonFixture extends LXFixture {
     }
   }
 
-  // 2D array of operators by precedence (low to high)
-  private final static char[][] SIMPLE_EXPRESSION_OPERATORS = {
-    { '+', '-' },
-    { '*', '/', '%' },
-    { '^' }
-  };
-
-
-  private enum SimpleFunction {
-    sin(f -> { return (float) Math.sin(Math.toRadians(f)); }),
-    cos(f -> { return (float) Math.cos(Math.toRadians(f)); }),
-    tan(f -> { return (float) Math.tan(Math.toRadians(f)); }),
-    asin(f -> { return (float) Math.toDegrees(Math.asin(f)); }),
-    acos(f -> { return (float) Math.toDegrees(Math.acos(f)); }),
-    atan(f -> { return (float) Math.toDegrees(Math.atan(f)); }),
-    deg(f -> { return (float) Math.toDegrees(f); }),
-    rad(f -> { return (float) Math.toRadians(f); }),
-    abs(f -> { return Math.abs(f); }),
-    sqrt(f -> { return (float) Math.sqrt(f); });
-
-    private interface Compute {
-      public float compute(float f);
-    }
-
-    private final Compute compute;
-
-    private SimpleFunction(Compute compute) {
-      this.compute = compute;
-    }
-
-  }
-
-  private static boolean isOperator(char ch, char[] operators) {
-    for (char operator : operators) {
-      if (ch == operator) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  private static boolean isSimpleOperator(char ch) {
-    for (char[] operators : SIMPLE_EXPRESSION_OPERATORS) {
-      if (isOperator(ch, operators)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  private static boolean isUnaryMinus(char[] chars, int index) {
-    // Check it's actually a minus
-    if (chars[index] != '-') {
-      return false;
-    }
-
-    // Check if preceded by another simple operator, e.g. 4+-4
-    if (isSimpleOperator(chars[index-1])) {
-      return true;
-    }
-    // Check if preceded by a simple function token, which will no longer have
-    // parentheses, e.g. sin(-4) will have become sin-4 after parenthetical resolution
-    for (SimpleFunction function : SimpleFunction.values()) {
-      final String name = function.name();
-      final int len = name.length();
-      if ((index >= len) && new String(chars, index-len, len).equals(name)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  // Super-trivial hacked up implementation of *very* basic math expressions, which has now
-  // got some functions tacked on. If this slippery slope keeps sliding will need to get a
-  // real expression parsing + evaluation library involved at some point...
-  private float _evaluateSimpleExpression(JsonObject obj, String key, String expression) {
-    char[] chars = expression.toCharArray();
-
-    // Parentheses pass
-    int openParen = -1;
-    for (int i = 0; i < chars.length; ++i) {
-      if (chars[i] == '(') {
-        openParen = i;
-      } else if (chars[i] == ')') {
-        if (openParen < 0) {
-          throw new IllegalArgumentException("Mismatched parentheses in expression: " + expression);
-        }
-
-        // Whenever we find a closed paren, evaluate just this one parenthetical.
-        // This will naturally work from in->out on nesting, since every closed-paren
-        // catches the open-paren that was closest to it.
-        String substitutedExpression =
-          // Expression to the left of parens (maybe empty)
-          expression.substring(0, openParen) +
-          // Evaluation of what's inside the parens
-          _evaluateSimpleExpression(obj, key, expression.substring(openParen+1, i)) +
-          // Expression to right of parens (maybe empty)
-          expression.substring(i + 1);
-
-        return _evaluateSimpleExpression(obj, key, substitutedExpression);
-      }
-    }
-
-    // All parentheses have now been cleared!
-
-    // Operator pass - these are prioritized by precedence and are left-to-right associative
-    for (char[] operators : SIMPLE_EXPRESSION_OPERATORS) {
-      for (int index = chars.length - 2; index > 0; --index) {
-        if (isOperator(chars[index], operators)) {
-
-          // Skip over the tricky unary minus operator! If preceded by another operator,
-          // then it's actually just a negative sign which will be handled below. Do not
-          // process it now as subtraction.
-          if (isUnaryMinus(chars, index)) {
-            continue;
-          }
-
-          final float left = _evaluateSimpleExpression(obj, key, expression.substring(0, index));
-          final float right = _evaluateSimpleExpression(obj, key, expression.substring(index + 1));
-
-          switch (chars[index]) {
-          case '+': return left + right;
-          case '-': return left - right;
-          case '*': return left * right;
-          case '/': return left / right;
-          case '%': return left % right;
-          case '^': return (float) Math.pow(left, right);
-          }
-        }
-      }
-    }
-
-    // The dreaded nasty unary minus operator!
-    if (chars[0] == '-') {
-      // Float.parseFloat() would handle one of these fine, but it won't handle
-      // them potentially stacking up at the front, e.g. if multiple expression
-      // resolutions have resulted in something like ---4, so do the negations
-      // manually one by one
-      return -_evaluateSimpleExpression(obj, key, expression.substring(1));
-    }
-
-    // Check for simple function operators
-    for (SimpleFunction function : SimpleFunction.values()) {
-      final String name = function.name();
-      if (expression.startsWith(name)) {
-        return function.compute.compute(_evaluateSimpleExpression(obj, key, expression.substring(name.length())));
-      }
-    }
-
-    // All clear, this *should* just be a number now (if not, syntax was bad)
-    return Float.parseFloat(expression);
-  }
-
-  private final static char[] SIMPLE_BOOLEAN_OPERATORS = { '|', '&' };
-
   private boolean evaluateBooleanExpression(JsonObject obj, String key, String expression) {
     String substitutedExpression = replaceVariables(key, expression, ParameterType.BOOLEAN);
     if (substitutedExpression == null) {
       return false;
     }
     try {
-      return _evaluateBooleanExpression(obj, key, substitutedExpression);
+      return Expression.evaluateBoolean(substitutedExpression.replaceAll("\\s", ""));
     } catch (Exception x) {
       addWarning("Bad formatting in boolean expression: " + expression);
       x.printStackTrace();
       return false;
     }
-  }
-
-  // Super-trivial implementation of *very* basic boolean expressions
-  private boolean _evaluateBooleanExpression(JsonObject obj, String key, String expression) {
-    // Parentheses pass
-    char[] chars = expression.toCharArray();
-    int openParen = -1;
-    for (int i = 0; i < chars.length; ++i) {
-      if (chars[i] == '(') {
-        openParen = i;
-      } else if (chars[i] == ')') {
-        if (openParen < 0) {
-          throw new IllegalArgumentException("Mismatched parentheses in expression: " + expression);
-        }
-
-        // Whenever we find a closed paren, evaluate just this one parenthetical.
-        // This will naturally work from in->out on nesting, since every closed-paren
-        // catches the open-paren that was closest to it.
-        String substitutedExpression =
-          // Expression to the left of parens (maybe empty)
-          expression.substring(0, openParen) +
-          // Evaluation of what's inside the parens
-          _evaluateBooleanExpression(obj, key, expression.substring(openParen+1, i)) +
-          // Expression to right of parens (maybe empty)
-          expression.substring(i + 1);
-
-        return _evaluateBooleanExpression(obj, key, substitutedExpression);
-      }
-    }
-
-    // Operator pass - these are prioritized so that & takes precedence over |
-    for (char operator : SIMPLE_BOOLEAN_OPERATORS) {
-      int index = expression.indexOf(operator);
-      if ((index > 0) && (index < expression.length() - 1)) {
-        boolean left = _evaluateBooleanExpression(obj, key, expression.substring(0, index));
-        boolean right = _evaluateBooleanExpression(obj, key, expression.substring(index + 1));
-        switch (operator) {
-        case '&': return left && right;
-        case '|': return left || right;
-        }
-      }
-    }
-
-    // Check for any '!' operators!
-    String trimmed = expression.trim();
-    if (!trimmed.isEmpty() && (trimmed.charAt(0) == '!')) {
-      return !_evaluateBooleanExpression(obj, key, trimmed.substring(1));
-    }
-
-    // Okay just parse it!
-    return Boolean.parseBoolean(trimmed);
   }
 
   private float loadFloat(JsonObject obj, String key, boolean variablesAllowed) {
@@ -1236,6 +1046,15 @@ public class JsonFixture extends LXFixture {
       addWarning(warning);
     }
     return 0;
+  }
+
+  private int loadColor(JsonObject obj, String key) {
+    JsonPrimitive colorElem = obj.get(key).getAsJsonPrimitive();
+    if (colorElem.isString() && colorElem.getAsString().toLowerCase().startsWith("0x")) {
+      return Integer.parseUnsignedInt(colorElem.getAsString().substring(2), 16);
+    } else {
+      return colorElem.getAsInt();
+    }
   }
 
   private LXVector loadVector(JsonObject obj, String warning) {
@@ -1312,6 +1131,10 @@ public class JsonFixture extends LXFixture {
     }
     if (obj.has(KEY_SCALE)) {
       fixture.scale.setValue(loadFloat(obj, KEY_SCALE, true));
+    }
+    if (obj.has(KEY_POINT_SIZE)) {
+      fixture.hasCustomPointSize.setValue(true);
+      fixture.pointSize.setValue(loadFloat(obj, KEY_POINT_SIZE, true));
     }
   }
 
@@ -1472,10 +1295,10 @@ public class JsonFixture extends LXFixture {
     }
   }
 
-  private void loadTags(LXFixture fixture, JsonObject obj, boolean required, boolean includeParent, boolean replaceVariables) {
-    List<String> validTags = _loadTags(obj, required, replaceVariables, this);
+  private void loadTags(LXFixture fixture, JsonObject obj, boolean includeParent, boolean replaceVariables) {
+    List<String> validTags = _loadTags(obj, replaceVariables, this);
     if (includeParent) {
-      for (String tag : _loadTags(this.jsonParameterValues, false, true, this.jsonParameterContext)) {
+      for (String tag : _loadTags(this.jsonParameterValues, true, this.jsonParameterContext)) {
         if (validTags.contains(tag)) {
           addWarning("Parent JSON fixture redundantly specifies tag: " + tag);
         } else {
@@ -1486,7 +1309,7 @@ public class JsonFixture extends LXFixture {
     fixture.setTags(validTags);
   }
 
-  private List<String> _loadTags(JsonObject obj, boolean required, boolean replaceVariables, JsonFixture variableContext) {
+  private List<String> _loadTags(JsonObject obj, boolean replaceVariables, JsonFixture variableContext) {
     warnDuplicateKeys(obj, KEY_MODEL_KEY, KEY_MODEL_KEYS, KEY_TAG, KEY_TAGS);
     String keyTags = obj.has(KEY_TAGS) ? KEY_TAGS : KEY_MODEL_KEYS;
     String keyTag = obj.has(KEY_TAG) ? KEY_TAG : KEY_MODEL_KEY;
@@ -1530,8 +1353,6 @@ public class JsonFixture extends LXFixture {
           validTags.add(tag);
         }
       }
-    } else if (required) {
-      addWarning("Fixture definition must specify one of " + KEY_TAG + "/" + KEY_TAGS);
     }
 
     return validTags;
@@ -1564,7 +1385,7 @@ public class JsonFixture extends LXFixture {
       JsonObject parameterObj = parameterElem.getAsJsonObject();
       if (parameterObj.has(KEY_PARAMETER_LABEL)) {
         String rawLabel = loadString(parameterObj, KEY_PARAMETER_LABEL, false, "Parameter " + KEY_PARAMETER_LABEL + " must be valid String");
-        if (!rawLabel.matches("^[a-zA-Z0-9 ]+$")) {
+        if (!rawLabel.matches("^[a-zA-Z0-9 _-]+$")) {
           addWarning("Invalid parameter label, must be non-empty only containing ASCII alphanumerics: " + rawLabel);
         } else {
           parameterLabel = rawLabel;
@@ -2164,7 +1985,7 @@ public class JsonFixture extends LXFixture {
 
       // Load tags for non-JSON child types
       if (type != ChildType.JSON) {
-        loadTags(child, childObj, false, false, true);
+        loadTags(child, childObj, false, true);
       }
 
       // Load meta-data fields for the child
@@ -2658,6 +2479,10 @@ public class JsonFixture extends LXFixture {
     String meshTypeStr = meshObj.get(KEY_TYPE).getAsString();
     if (MESH_TYPE_UNIFORM_FILL.equals(meshTypeStr)) {
       meshType = LXModel.Mesh.Type.UNIFORM_FILL;
+    } else if (MESH_TYPE_TEXTURE_2D.equals(meshTypeStr)) {
+      meshType = LXModel.Mesh.Type.TEXTURE_2D;
+    } else if (MESH_TYPE_PHONG.equals(meshTypeStr)) {
+      meshType = LXModel.Mesh.Type.PHONG;
     }
     if (meshType == null) {
       addWarning("Unknown mesh type: " + meshTypeStr);
@@ -2666,12 +2491,35 @@ public class JsonFixture extends LXFixture {
 
     int meshColor = 0xffffffff;
     if (meshObj.has(KEY_MESH_COLOR)) {
-      JsonPrimitive meshColorElem = meshObj.get(KEY_MESH_COLOR).getAsJsonPrimitive();
-      if (meshColorElem.isString() && meshColorElem.getAsString().toLowerCase().startsWith("0x")) {
-        meshColor = Integer.parseUnsignedInt(meshColorElem.getAsString().substring(2), 16);
-      } else {
-        meshColor = meshColorElem.getAsInt();
+      meshColor = loadColor(meshObj, KEY_MESH_COLOR);
+    }
+
+    LXModel.Mesh.Lighting meshLighting = LXModel.Mesh.Lighting.DEFAULT;
+    int meshLightColor = 0xffffffff;
+    LXModel.Mesh.Vertex meshLightDirection = new LXModel.Mesh.Vertex(0, 0, 1);
+    if (meshObj.has(KEY_MESH_LIGHTING)) {
+      final JsonObject meshLightingObj = meshObj.get(KEY_MESH_LIGHTING).getAsJsonObject();
+      meshLighting = new LXModel.Mesh.Lighting(
+        loadFloat(meshLightingObj, KEY_MESH_LIGHTING_AMBIENT, true),
+        loadFloat(meshLightingObj, KEY_MESH_LIGHTING_DIFFUSE, true),
+        loadFloat(meshLightingObj, KEY_MESH_LIGHTING_SPECULAR, true),
+        loadFloat(meshLightingObj, KEY_MESH_LIGHTING_SHININESS, true)
+      );
+      if (meshLightingObj.has(KEY_MESH_LIGHTING_COLOR)) {
+        meshLightColor = loadColor(meshLightingObj, KEY_MESH_LIGHTING_COLOR);
       }
+      if (meshLightingObj.has(KEY_MESH_LIGHTING_DIRECTION)) {
+        JsonObject meshLightingDirectionObj = meshLightingObj.get(KEY_MESH_LIGHTING_DIRECTION).getAsJsonObject();
+        float x = loadFloat(meshLightingDirectionObj, KEY_X, true);
+        float y = loadFloat(meshLightingDirectionObj, KEY_Y, true);
+        float z = loadFloat(meshLightingDirectionObj, KEY_Z, true);
+        meshLightDirection = new LXModel.Mesh.Vertex(x, y, z);
+      }
+    }
+
+    File meshTexture = null;
+    if (meshObj.has(KEY_MESH_TEXTURE)) {
+      meshTexture = getMeshFile(meshObj.get(KEY_MESH_TEXTURE).getAsString());
     }
 
     if (meshObj.has(KEY_MESH_VERTICES) && meshObj.has(KEY_MESH_FILE)) {
@@ -2684,8 +2532,10 @@ public class JsonFixture extends LXFixture {
       return;
     }
 
+    LXModel.Mesh mesh = null;
+
     if (meshObj.has(KEY_MESH_VERTICES)) {
-      List<LXVector> vertices = new ArrayList<>();
+      LXModel.Mesh.VertexList vertices = new LXModel.Mesh.VertexList();
       JsonArray verticesArr = meshObj.get(KEY_MESH_VERTICES).getAsJsonArray();
       for (JsonElement vertexElem : verticesArr) {
         JsonObject vertexObj = vertexElem.getAsJsonObject();
@@ -2718,17 +2568,23 @@ public class JsonFixture extends LXFixture {
         addWarning("UI mesh object must specify non-empty " + KEY_MESH_VERTICES);
         return;
       }
-
-      this.mutableMeshes.add(new LXModel.Mesh(meshType, vertices, meshColor));
+      mesh = new LXModel.Mesh(meshType, vertices, meshColor, meshTexture);
     } else if (meshObj.has(KEY_MESH_FILE)) {
       final String meshFileStr = meshObj.get(KEY_MESH_FILE).getAsString();
       final File meshFile = getMeshFile(meshFileStr);
       if (!meshFile.exists()) {
         addWarning("Cannot find UI mesh file: " + meshFileStr);
-        return;
       } else {
-        this.mutableMeshes.add(new LXModel.Mesh(meshType, meshFile, meshColor));
+        mesh = new LXModel.Mesh(meshType, meshFile, meshColor);
       }
+    }
+
+    if (mesh != null) {
+      mesh.setLighting(meshLighting);
+      mesh.setLightColor(meshLightColor);
+      mesh.setLightDirection(meshLightDirection);
+      mesh.invertNormals = loadBoolean(meshObj, KEY_MESH_INVERT_NORMALS, true, "Mesh must specify valid boolean for " + KEY_MESH_INVERT_NORMALS);
+      this.mutableMeshes.add(mesh);
     }
   }
 
@@ -2748,8 +2604,11 @@ public class JsonFixture extends LXFixture {
     }
   }
 
-  private void loadUIVertex(JsonObject vertexObj, List<LXVector> vertices) {
-    LXVector vertex = loadVector(vertexObj, "Mesh vertex must contain one of x/y/z");
+  private void loadUIVertex(JsonObject vertexObj, LXModel.Mesh.VertexList vertices) {
+    LXVector vector = loadVector(vertexObj, "Mesh vertex must specify at least one of x/y/z");
+    final float u = loadFloat(vertexObj, "u", true);
+    final float v = loadFloat(vertexObj, "v", true);
+
     MeshVertexType vertexType = MeshVertexType.VERTEX;
     if (vertexObj.has(KEY_TYPE)) {
       String typeStr = vertexObj.get(KEY_TYPE).getAsString();
@@ -2760,9 +2619,9 @@ public class JsonFixture extends LXFixture {
       }
     }
     switch (vertexType) {
-      case VERTEX -> vertices.add(vertex);
-      case RECT -> loadUIVertexRect(vertexObj, vertex, vertices);
-      case CUBOID -> loadUIVertexCuboid(vertexObj, vertex, vertices);
+      case VERTEX -> vertices.add(new LXModel.Mesh.Vertex(vector.x, vector.y, vector.z, u, v));
+      case RECT -> loadUIVertexRect(vertexObj, vector, vertices);
+      case CUBOID -> loadUIVertexCuboid(vertexObj, vector, vertices);
     };
   }
 
@@ -2785,7 +2644,7 @@ public class JsonFixture extends LXFixture {
     }
   }
 
-  private void loadUIVertexRect(JsonObject vertexObj, LXVector vertex, List<LXVector> vertices) {
+  private void loadUIVertexRect(JsonObject vertexObj, LXVector vertex, LXModel.Mesh.VertexList vertices) {
     final float width = loadFloat(vertexObj, KEY_MESH_RECT_WIDTH, true);
     final float height = loadFloat(vertexObj, KEY_MESH_RECT_HEIGHT, true);
     if ((width == 0) || (height == 0)) {
@@ -2805,60 +2664,60 @@ public class JsonFixture extends LXFixture {
     _loadUIVertexRect(vertices, vertex, width, height, rectAxis);
   }
 
-  private void _loadUIVertexRect(List<LXVector> vertices, LXVector vertex, float width, float height, MeshRectAxis rectAxis) {
+  private void _loadUIVertexRect(LXModel.Mesh.VertexList vertices, LXVector vertex, float width, float height, MeshRectAxis rectAxis) {
     switch (rectAxis) {
       case XY -> {
-        vertices.add(vertex);
-        vertices.add(vertex.copy().add(width, 0));
-        vertices.add(vertex.copy().add(0, height));
-        vertices.add(vertex.copy().add(0, height));
-        vertices.add(vertex.copy().add(width, 0));
-        vertices.add(vertex.copy().add(width, height));
+        vertices.add(vertex, 0, 1);
+        vertices.add(vertex.copy().add(width, 0), 1, 1);
+        vertices.add(vertex.copy().add(0, height), 0, 0);
+        vertices.add(vertex.copy().add(0, height), 0, 0);
+        vertices.add(vertex.copy().add(width, 0), 1, 1);
+        vertices.add(vertex.copy().add(width, height), 1, 0);
       }
       case XZ -> {
-        vertices.add(vertex);
-        vertices.add(vertex.copy().add(width, 0, 0));
-        vertices.add(vertex.copy().add(0, 0, height));
-        vertices.add(vertex.copy().add(0, 0, height));
-        vertices.add(vertex.copy().add(width, 0, 0));
-        vertices.add(vertex.copy().add(width, 0, height));
+        vertices.add(vertex, 0, 1);
+        vertices.add(vertex.copy().add(width, 0, 0), 1, 1);
+        vertices.add(vertex.copy().add(0, 0, height), 0, 0);
+        vertices.add(vertex.copy().add(0, 0, height), 0, 0);
+        vertices.add(vertex.copy().add(width, 0, 0), 1, 1);
+        vertices.add(vertex.copy().add(width, 0, height), 1, 0);
       }
       case YX -> {
-        vertices.add(vertex);
-        vertices.add(vertex.copy().add(0, width, 0));
-        vertices.add(vertex.copy().add(height, 0, 0));
-        vertices.add(vertex.copy().add(height, 0, 0));
-        vertices.add(vertex.copy().add(0, width, 0));
-        vertices.add(vertex.copy().add(height, width, 0));
+        vertices.add(vertex, 0, 1);
+        vertices.add(vertex.copy().add(0, width, 0), 1, 1);
+        vertices.add(vertex.copy().add(height, 0, 0), 0, 0);
+        vertices.add(vertex.copy().add(height, 0, 0), 0, 0);
+        vertices.add(vertex.copy().add(0, width, 0), 1, 1);
+        vertices.add(vertex.copy().add(height, width, 0), 1, 0);
       }
       case YZ -> {
-        vertices.add(vertex);
-        vertices.add(vertex.copy().add(0, width, 0));
-        vertices.add(vertex.copy().add(0, 0, height));
-        vertices.add(vertex.copy().add(0, 0, height));
-        vertices.add(vertex.copy().add(0, width, 0));
-        vertices.add(vertex.copy().add(0, width, height));
+        vertices.add(vertex, 0, 1);
+        vertices.add(vertex.copy().add(0, width, 0), 1, 1);
+        vertices.add(vertex.copy().add(0, 0, height), 0, 0);
+        vertices.add(vertex.copy().add(0, 0, height), 0, 0);
+        vertices.add(vertex.copy().add(0, width, 0), 1, 1);
+        vertices.add(vertex.copy().add(0, width, height), 1, 0);
       }
       case ZX -> {
-        vertices.add(vertex);
-        vertices.add(vertex.copy().add(0, 0, width));
-        vertices.add(vertex.copy().add(height, 0, 0));
-        vertices.add(vertex.copy().add(height, 0, 0));
-        vertices.add(vertex.copy().add(0, 0, width));
-        vertices.add(vertex.copy().add(height, 0, width));
+        vertices.add(vertex, 0, 1);
+        vertices.add(vertex.copy().add(0, 0, width), 1, 1);
+        vertices.add(vertex.copy().add(height, 0, 0), 0, 0);
+        vertices.add(vertex.copy().add(height, 0, 0), 0, 0);
+        vertices.add(vertex.copy().add(0, 0, width), 1, 1);
+        vertices.add(vertex.copy().add(height, 0, width), 1, 0);
       }
       case ZY -> {
-        vertices.add(vertex);
-        vertices.add(vertex.copy().add(0, 0, width));
-        vertices.add(vertex.copy().add(0, height, 0));
-        vertices.add(vertex.copy().add(0, height, 0));
-        vertices.add(vertex.copy().add(0, 0, width));
-        vertices.add(vertex.copy().add(0, height, width));
+        vertices.add(vertex, 0, 1);
+        vertices.add(vertex.copy().add(0, 0, width), 1, 1);
+        vertices.add(vertex.copy().add(0, height, 0), 0, 0);
+        vertices.add(vertex.copy().add(0, height, 0), 0, 0);
+        vertices.add(vertex.copy().add(0, 0, width), 1, 1);
+        vertices.add(vertex.copy().add(0, height, width), 1, 0);
       }
     }
   }
 
-  private void loadUIVertexCuboid(JsonObject vertexObj, LXVector vertex, List<LXVector> vertices) {
+  private void loadUIVertexCuboid(JsonObject vertexObj, LXVector vertex, LXModel.Mesh.VertexList vertices) {
     final float width = loadFloat(vertexObj, KEY_MESH_RECT_WIDTH, true);
     final float height = loadFloat(vertexObj, KEY_MESH_RECT_HEIGHT, true);
     final float depth = loadFloat(vertexObj, KEY_MESH_RECT_DEPTH, true);

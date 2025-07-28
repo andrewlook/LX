@@ -211,6 +211,20 @@ public class LXMatrix {
     );
   }
 
+  public LXMatrix transpose() {
+    return setTranspose(this);
+  }
+
+  public LXMatrix setTranspose(LXMatrix that) {
+    set(
+      that.m11, that.m21, that.m31, that.m41,
+      that.m12, that.m22, that.m32, that.m42,
+      that.m13, that.m23, that.m33, that.m43,
+      that.m14, that.m24, that.m34, that.m44
+    );
+    return this;
+  }
+
   public float x() {
     return m14;
   }
@@ -221,6 +235,18 @@ public class LXMatrix {
 
   public float z() {
     return m34;
+  }
+
+  public float x(float x, float y, float z, float w) {
+    return m11 * x + m12 * y + m13 * z + m14 * w;
+  }
+
+  public float y(float x, float y, float z, float w) {
+    return m21 * x + m22 * y + m23 * z + m24 * w;
+  }
+
+  public float z(float x, float y, float z, float w) {
+    return m31 * x + m32 * y + m33 * z + m34 * w;
   }
 
   /**

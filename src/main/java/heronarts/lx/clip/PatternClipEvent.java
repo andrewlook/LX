@@ -11,7 +11,7 @@ public class PatternClipEvent extends LXClipEvent<PatternClipEvent> {
   private LXPattern pattern;
 
   public PatternClipEvent(PatternClipLane lane, Cursor cursor, int patternIndex) {
-    this(lane, lane.channel.patterns.get(patternIndex));
+    this(lane, lane.engine.patterns.get(patternIndex));
     setCursor(cursor);
   }
 
@@ -44,11 +44,13 @@ public class PatternClipEvent extends LXClipEvent<PatternClipEvent> {
   }
 
   protected static final String KEY_PATTERN_INDEX = "patternIndex";
+  protected static final String KEY_PATTERN_ID = "patternId";
 
   @Override
   public void save(LX lx, JsonObject obj) {
     super.save(lx, obj);
     obj.addProperty(KEY_PATTERN_INDEX, this.pattern.getIndex());
+    obj.addProperty(KEY_PATTERN_ID, this.pattern.getId());
   }
 
 }
