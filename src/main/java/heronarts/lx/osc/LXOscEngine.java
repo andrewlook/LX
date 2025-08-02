@@ -73,6 +73,19 @@ public class LXOscEngine extends LXComponent {
     public void outputRemoved(LXOscEngine osc, LXOscConnection.Output output);
   }
 
+  public interface MessageSplitter {
+    /**
+     * Given an original message, append additional messages to the provided
+     * buffer. The original message is always sent unless you clear the buffer
+     * first.
+     *
+     * @param originalMessage The message about to be sent
+     * @param messageBuffer Reusable buffer to append additional messages to
+     */
+    void splitMessage(OscMessage originalMessage,
+                      List<OscMessage> messageBuffer);
+  }
+
   public enum IOState {
     STOPPED,
     BINDING,
@@ -162,6 +175,11 @@ public class LXOscEngine extends LXComponent {
 
   private final List<LXOscListener> listeners =
     new ArrayList<LXOscListener>();
+
+  private final List<MessageSplitter> messageSplitters = new ArrayList<MessageSplitter>();
+
+  // Reusable buffer for message splitting (single-threaded engine use only)
+  private final List<OscMessage> messageSplitBuffer = new ArrayList<OscMessage>();
 
   private final LXOscQueryServer oscQueryServer;
   private final Zeroconf zeroconf;
@@ -296,6 +314,25 @@ public class LXOscEngine extends LXComponent {
     return this;
   }
 
+  public LXOscEngine addMessageSplitter(MessageSplitter splitter) {
+    Objects.requireNonNull("May not add null MessageSplitter");
+    if (this.messageSplitters.contains(splitter)) {
+      throw new IllegalStateException(
+              "Cannot add duplicate LXOscEngine.MessageSplitter: " + splitter);
+    }
+    this.messageSplitters.add(splitter);
+    return this;
+  }
+
+  public LXOscEngine removeMessageSplitter(MessageSplitter splitter) {
+    if (!this.messageSplitters.contains(splitter)) {
+      throw new IllegalStateException(
+              "Cannot remove non-existent LXOscEngine.MessageSplitter: " + splitter);
+    }
+    this.messageSplitters.remove(splitter);
+    return this;
+  }
+
   public LXOscEngine addListener(LXOscListener listener) {
     Objects.requireNonNull("May not add null LXOscListener");
     if (this.listeners.contains(listener)) {
@@ -317,52 +354,108 @@ public class LXOscEngine extends LXComponent {
     return this;
   }
 
+  // Reusable message objects for engine-level sending
+  private final OscMessage engineOscMessage = new OscMessage("");
+  private final OscFloat engineOscFloat = new OscFloat(0);
+  private final OscInt engineOscInt = new OscInt(0);
+  private final OscString engineOscString = new OscString("");
+  private final OscRgba engineOscRgba = new OscRgba(0);
+
   public LXOscEngine sendMessage(String path, int value) {
-    if (this.engineTransmitter != null) {
-      this.engineTransmitter.sendMessage(path, value);
-    }
-    for (LXOscConnection.Output output : this.outputs) {
-      if (output.transmitter != null) {
-        output.transmitter.sendMessage(path, value);
-      }
-    }
+    this.engineOscMessage.clearArguments();
+    this.engineOscMessage.setAddressPattern(path);
+    this.engineOscInt.setValue(value);
+    this.engineOscMessage.add(this.engineOscInt);
+    sendMessageWithSplitting(this.engineOscMessage);
     return this;
   }
 
   public LXOscEngine sendMessage(String path, float value) {
-    if (this.engineTransmitter != null) {
-      this.engineTransmitter.sendMessage(path, value);
-    }
-    for (LXOscConnection.Output output : this.outputs) {
-      if (output.transmitter != null) {
-        output.transmitter.sendMessage(path, value);
-      }
-    }
+    this.engineOscMessage.clearArguments();
+    this.engineOscMessage.setAddressPattern(path);
+    this.engineOscFloat.setValue(value);
+    this.engineOscMessage.add(this.engineOscFloat);
+    sendMessageWithSplitting(this.engineOscMessage);
     return this;
   }
 
   public LXOscEngine sendMessage(String path, String value) {
-    if (this.engineTransmitter != null) {
-      this.engineTransmitter.sendMessage(path, value);
-    }
-    for (LXOscConnection.Output output : this.outputs) {
-      if (output.transmitter != null) {
-        output.transmitter.sendMessage(path, value);
-      }
-    }
+    this.engineOscMessage.clearArguments();
+    this.engineOscMessage.setAddressPattern(path);
+    this.engineOscString.setValue(value);
+    this.engineOscMessage.add(this.engineOscString);
+    sendMessageWithSplitting(this.engineOscMessage);
     return this;
   }
 
-  public LXOscEngine sendParameter(LXParameter parameter) {
-    if (this.engineTransmitter != null) {
-      this.engineTransmitter.onParameterChanged(parameter);
-    }
-    for (LXOscConnection.Output output : this.outputs) {
-      if (output.transmitter != null) {
-        output.transmitter.onParameterChanged(parameter);
+  private void sendMessageWithSplitting(OscMessage originalMessage) {
+    // Clear and populate the reusable buffer
+    this.messageSplitBuffer.clear();
+    this.messageSplitBuffer.add(originalMessage);
+
+    // Apply all splitters to expand the message list
+    if (!this.messageSplitters.isEmpty()) {
+      for (MessageSplitter splitter : this.messageSplitters) {
+        splitter.splitMessage(originalMessage, this.messageSplitBuffer);
       }
     }
-    return this;
+
+    // Send all messages (original + split) to all transmitters
+    for (OscMessage message : this.messageSplitBuffer) {
+      sendMessageToAllTransmitters(message);
+    }
+  }
+
+  private void sendMessageToAllTransmitters(OscMessage message) {
+    try {
+      // Adding 'isActive' check here b/c it circumvents EngineTransmitter's 'sendMessage' layer
+      if (this.engineTransmitter != null && this.engineTransmitter.isActive()) {
+        this.engineTransmitter.send(message);
+      }
+      for (LXOscConnection.Output output : this.outputs) {
+        if (output.transmitter != null && output.transmitter.isActive()) {
+          output.transmitter.send(message);
+        }
+      }
+    } catch (Exception e) {
+      error(e, "Failed to send OSC message: " + message.getAddressPattern().getValue());
+    }
+  }
+
+  public void sendParameter(LXParameter parameter) {
+    // Check parameter has valid OSC address
+    final String address = getOscAddress(parameter);
+    if (address == null) {
+      return;
+    }
+    this.engineOscMessage.clearArguments();
+    this.engineOscMessage.setAddressPattern(address);
+
+    if (parameter instanceof BooleanParameter b) {
+      this.engineOscInt.setValue(b.isOn() ? 1 : 0);
+      this.engineOscMessage.add(this.engineOscInt);
+    } else if (parameter instanceof StringParameter string) {
+      this.engineOscString.setValue(string.getString());
+      this.engineOscMessage.add(this.engineOscString);
+    } else if (parameter instanceof ColorParameter color) {
+      engineOscRgba.setARGB(color.getBaseColor());
+      this.engineOscMessage.add(engineOscRgba);
+    } else if (parameter instanceof DiscreteParameter discrete) {
+      this.engineOscInt.setValue(discrete.getBaseValuei());
+      this.engineOscMessage.add(this.engineOscInt);
+    } else if (parameter instanceof LXNormalizedParameter normalizedParameter) {
+      if (normalizedParameter.getOscMode() == LXNormalizedParameter.OscMode.ABSOLUTE) {
+        this.engineOscFloat.setValue(normalizedParameter.getBaseValuef());
+      } else {
+        this.engineOscFloat.setValue(normalizedParameter.getBaseNormalizedf());
+      }
+      this.engineOscMessage.add(this.engineOscFloat);
+    } else {
+      this.engineOscFloat.setValue(parameter.getBaseValuef());
+      this.engineOscMessage.add(this.engineOscFloat);
+    }
+
+    sendMessageWithSplitting(this.engineOscMessage);
   }
 
   /**
@@ -414,7 +507,7 @@ public class LXOscEngine extends LXComponent {
           lx.engine.audio.adm.handleAdmOscMessage(message, parts, 1);
         } else if (parts[1].equals(Envelop.ENVELOP_OSC_PATH)) {
           lx.engine.audio.envelop.handleEnvelopOscMessage(message, parts, 1);
-        }  else if (parts[1].equals(Reaper.REAPER_OSC_PATH)) {
+        } else if (parts[1].equals(Reaper.REAPER_OSC_PATH)) {
           lx.engine.audio.reaper.handleReaperOscMessage(message, parts, 1);
         } else if (LXOscEngine.this.listeners.isEmpty()) {
           throw new OscException();
@@ -432,7 +525,6 @@ public class LXOscEngine extends LXComponent {
         }
       }
     }
-
   }
 
   public class Transmitter {
