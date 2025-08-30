@@ -73,6 +73,16 @@ public class LXOscEngine extends LXComponent {
     public void outputRemoved(LXOscEngine osc, LXOscConnection.Output output);
   }
 
+  public interface MessageSplitter {
+    /**
+     * Given an original message, return a list of "split" messages that should be sent.
+     *
+     * @param originalMessage The message about to be sent
+     * @return List of additional messages to send
+     */
+    List<OscMessage> splitMessage(OscMessage originalMessage);
+  }
+
   public enum IOState {
     STOPPED,
     BINDING,
@@ -162,6 +172,8 @@ public class LXOscEngine extends LXComponent {
 
   private final List<LXOscListener> listeners =
     new ArrayList<LXOscListener>();
+
+  private final List<MessageSplitter> messageSplitters = new ArrayList<MessageSplitter>();
 
   private final LXOscQueryServer oscQueryServer;
   private final Zeroconf zeroconf;
@@ -296,6 +308,25 @@ public class LXOscEngine extends LXComponent {
     return this;
   }
 
+  public LXOscEngine addMessageSplitter(MessageSplitter splitter) {
+    Objects.requireNonNull("May not add null MessageSplitter");
+    if (this.messageSplitters.contains(splitter)) {
+      throw new IllegalStateException(
+              "Cannot add duplicate LXOscEngine.MessageSplitter: " + splitter);
+    }
+    this.messageSplitters.add(splitter);
+    return this;
+  }
+
+  public LXOscEngine removeMessageSplitter(MessageSplitter splitter) {
+    if (!this.messageSplitters.contains(splitter)) {
+      throw new IllegalStateException(
+              "Cannot remove non-existent LXOscEngine.MessageSplitter: " + splitter);
+    }
+    this.messageSplitters.remove(splitter);
+    return this;
+  }
+
   public LXOscEngine addListener(LXOscListener listener) {
     Objects.requireNonNull("May not add null LXOscListener");
     if (this.listeners.contains(listener)) {
@@ -414,7 +445,7 @@ public class LXOscEngine extends LXComponent {
           lx.engine.audio.adm.handleAdmOscMessage(message, parts, 1);
         } else if (parts[1].equals(Envelop.ENVELOP_OSC_PATH)) {
           lx.engine.audio.envelop.handleEnvelopOscMessage(message, parts, 1);
-        }  else if (parts[1].equals(Reaper.REAPER_OSC_PATH)) {
+        } else if (parts[1].equals(Reaper.REAPER_OSC_PATH)) {
           lx.engine.audio.reaper.handleReaperOscMessage(message, parts, 1);
         } else if (LXOscEngine.this.listeners.isEmpty()) {
           throw new OscException();
@@ -432,7 +463,6 @@ public class LXOscEngine extends LXComponent {
         }
       }
     }
-
   }
 
   public class Transmitter {
@@ -443,12 +473,14 @@ public class LXOscEngine extends LXComponent {
     protected final DatagramPacket packet;
     private BooleanParameter log;
     private TriggerParameter activity;
+    private final List<MessageSplitter> splitters;
 
-    private Transmitter(InetAddress address, int port, int bufferSize) throws SocketException {
+    private Transmitter(InetAddress address, int port, int bufferSize, List<MessageSplitter> splitters) throws SocketException {
       this.bytes = new byte[bufferSize];
       this.buffer = ByteBuffer.wrap(this.bytes);
       this.packet = new DatagramPacket(this.bytes, this.bytes.length, address, port);
       this.socket = new DatagramSocket();
+      this.splitters = splitters;
     }
 
     Transmitter setLog(BooleanParameter log) {
@@ -462,6 +494,10 @@ public class LXOscEngine extends LXComponent {
     }
 
     public void send(OscPacket packet) throws IOException {
+      send(packet, false);
+    }
+
+    private void send(OscPacket packet, boolean alreadySplit) throws IOException {
       if ((this.log != null) && this.log.isOn()) {
         log("[TX] [" + this.packet.getPort() + "] " + packet.toString());
       }
@@ -472,6 +508,18 @@ public class LXOscEngine extends LXComponent {
       packet.serialize(this.buffer);
       this.packet.setLength(this.buffer.position());
       this.socket.send(this.packet);
+
+      // Handle message splitting for OscMessage packets (not bundles)
+      if (!alreadySplit && packet instanceof OscMessage && this.splitters != null && !this.splitters.isEmpty()) {
+        for (MessageSplitter splitter : this.splitters) {
+          List<OscMessage> splitResult = splitter.splitMessage((OscMessage) packet);
+          if (splitResult != null) {
+            for (OscMessage msg : splitResult) {
+              send(msg, true);
+            }
+          }
+        }
+      }
     }
 
     public void setPort(int port) {
@@ -495,16 +543,16 @@ public class LXOscEngine extends LXComponent {
     private final EnumParameter<IOState> state;
     private LXOscConnection connection;
 
-    EngineTransmitter(InetAddress address, int port, int bufferSize) throws SocketException {
-      super(address, port, bufferSize);
+    EngineTransmitter(InetAddress address, int port, int bufferSize, List<MessageSplitter> splitters) throws SocketException {
+      super(address, port, bufferSize, splitters);
       this.active = transmitActive;
       this.state = transmitState;
       setActivity(transmitActivity);
       setLog(logOutput);
     }
 
-    EngineTransmitter(InetAddress address, int port, int bufferSize, LXOscConnection.Output output) throws SocketException {
-      super(address, port, bufferSize);
+    EngineTransmitter(InetAddress address, int port, int bufferSize, LXOscConnection.Output output, List<MessageSplitter> splitters) throws SocketException {
+      super(address, port, bufferSize, splitters);
       this.active = output.active;
       this.state = output.state;
       setActivity(output.activity);
@@ -928,7 +976,7 @@ public class LXOscEngine extends LXComponent {
         this.transmitState.setValue(IOState.BINDING);
         InetAddress address = InetAddress.getByName(host);
         this.unknownTransmitHost.setValue(false);
-        this.engineTransmitter = new EngineTransmitter(address, port, DEFAULT_MAX_PACKET_SIZE);
+        this.engineTransmitter = new EngineTransmitter(address, port, DEFAULT_MAX_PACKET_SIZE, this.messageSplitters);
         this.transmitState.setValue(IOState.BOUND);
       } catch (UnknownHostException uhx) {
         error("Invalid host: " + uhx.getLocalizedMessage());
@@ -978,11 +1026,11 @@ public class LXOscEngine extends LXComponent {
   }
 
   public Transmitter transmitter(InetAddress address, int port, int bufferSize) throws SocketException {
-    return new Transmitter(address, port, bufferSize);
+    return new Transmitter(address, port, bufferSize, this.messageSplitters);
   }
 
   EngineTransmitter transmitter(InetAddress address, int port, LXOscConnection.Output output) throws SocketException {
-    return new EngineTransmitter(address, port, DEFAULT_MAX_PACKET_SIZE, output);
+    return new EngineTransmitter(address, port, DEFAULT_MAX_PACKET_SIZE, output, this.messageSplitters);
   }
 
   public LXOscConnection.Input addInput() {
