@@ -73,6 +73,17 @@ public class LXOscEngine extends LXComponent {
     public void outputRemoved(LXOscEngine osc, LXOscConnection.Output output);
   }
 
+  public interface AddressSplitter {
+    /**
+     * Given an original OSC address, append additional addresses to send to.
+     * The original address is always sent unless you clear the buffer first.
+     *
+     * @param originalAddress The OSC address about to be sent
+     * @param addressBuffer Reusable buffer to append additional addresses to
+     */
+    void splitAddress(String originalAddress, List<String> addressBuffer);
+  }
+
   public enum IOState {
     STOPPED,
     BINDING,
@@ -162,6 +173,11 @@ public class LXOscEngine extends LXComponent {
 
   private final List<LXOscListener> listeners =
     new ArrayList<LXOscListener>();
+
+  private final List<AddressSplitter> addressSplitters =
+      new ArrayList<AddressSplitter>();
+
+  private final List<String> addressSplitBuffer = new ArrayList<String>();
 
   private final LXOscQueryServer oscQueryServer;
   private final Zeroconf zeroconf;
@@ -296,6 +312,25 @@ public class LXOscEngine extends LXComponent {
     return this;
   }
 
+  public LXOscEngine addAddressSplitter(AddressSplitter splitter) {
+    Objects.requireNonNull("May not add null AddressSplitter");
+    if (this.addressSplitters.contains(splitter)) {
+      throw new IllegalStateException(
+              "Cannot add duplicate LXOscEngine.AddressSplitter: " + splitter);
+    }
+    this.addressSplitters.add(splitter);
+    return this;
+  }
+
+  public LXOscEngine removeAddressSplitter(AddressSplitter splitter) {
+    if (!this.addressSplitters.contains(splitter)) {
+      throw new IllegalStateException(
+              "Cannot remove non-existent LXOscEngine.AddressSplitter: " + splitter);
+    }
+    this.addressSplitters.remove(splitter);
+    return this;
+  }
+
   public LXOscEngine addListener(LXOscListener listener) {
     Objects.requireNonNull("May not add null LXOscListener");
     if (this.listeners.contains(listener)) {
@@ -318,51 +353,140 @@ public class LXOscEngine extends LXComponent {
   }
 
   public LXOscEngine sendMessage(String path, int value) {
-    if (this.engineTransmitter != null) {
-      this.engineTransmitter.sendMessage(path, value);
-    }
-    for (LXOscConnection.Output output : this.outputs) {
-      if (output.transmitter != null) {
-        output.transmitter.sendMessage(path, value);
-      }
-    }
+    sendMessageWithAddressSplitting(path, value);
     return this;
   }
 
   public LXOscEngine sendMessage(String path, float value) {
-    if (this.engineTransmitter != null) {
-      this.engineTransmitter.sendMessage(path, value);
-    }
-    for (LXOscConnection.Output output : this.outputs) {
-      if (output.transmitter != null) {
-        output.transmitter.sendMessage(path, value);
-      }
-    }
+    sendMessageWithAddressSplitting(path, value);
     return this;
   }
 
   public LXOscEngine sendMessage(String path, String value) {
-    if (this.engineTransmitter != null) {
-      this.engineTransmitter.sendMessage(path, value);
-    }
-    for (LXOscConnection.Output output : this.outputs) {
-      if (output.transmitter != null) {
-        output.transmitter.sendMessage(path, value);
-      }
-    }
+    sendMessageWithAddressSplitting(path, value);
     return this;
   }
 
   public LXOscEngine sendParameter(LXParameter parameter) {
-    if (this.engineTransmitter != null) {
-      this.engineTransmitter.onParameterChanged(parameter);
+    final String address = getOscAddress(parameter);
+    if (address == null) {
+      return this;
     }
-    for (LXOscConnection.Output output : this.outputs) {
-      if (output.transmitter != null) {
-        output.transmitter.onParameterChanged(parameter);
+
+    // For parameters, convert to appropriate type and use address splitting
+    if (parameter instanceof BooleanParameter b) {
+      sendMessageWithAddressSplitting(address, b.isOn() ? 1 : 0);
+    } else if (parameter instanceof StringParameter string) {
+      sendMessageWithAddressSplitting(address, string.getString());
+    } else if (parameter instanceof DiscreteParameter discrete) {
+      sendMessageWithAddressSplitting(address, discrete.getBaseValuei());
+    } else if (parameter instanceof LXNormalizedParameter normalizedParameter) {
+      if (normalizedParameter.getOscMode() == LXNormalizedParameter.OscMode.ABSOLUTE) {
+        sendMessageWithAddressSplitting(address, normalizedParameter.getBaseValuef());
+      } else {
+        sendMessageWithAddressSplitting(address, normalizedParameter.getBaseNormalizedf());
+      }
+    } else {
+      sendMessageWithAddressSplitting(address, parameter.getBaseValuef());
+    }
+
+    // TODO: ColorParameter needs special handling - for now fall back to original behavior
+    if (parameter instanceof ColorParameter) {
+      if (this.engineTransmitter != null) {
+        this.engineTransmitter.onParameterChanged(parameter);
+      }
+      for (LXOscConnection.Output output : this.outputs) {
+        if (output.transmitter != null) {
+          output.transmitter.onParameterChanged(parameter);
+        }
       }
     }
+
     return this;
+  }
+
+  /**
+   * Internal helper to send int message with address splitting
+   */
+  private void sendMessageWithAddressSplitting(String originalAddress, int value) {
+    // Clear and populate the reusable address buffer
+    this.addressSplitBuffer.clear();
+    this.addressSplitBuffer.add(originalAddress);
+    
+    // Apply all splitters to expand the address list
+    if (!this.addressSplitters.isEmpty()) {
+      for (AddressSplitter splitter : this.addressSplitters) {
+        splitter.splitAddress(originalAddress, this.addressSplitBuffer);
+      }
+    }
+    
+    // Send to all expanded addresses using existing transmitter methods
+    for (String address : this.addressSplitBuffer) {
+      if (this.engineTransmitter != null) {
+        this.engineTransmitter.sendMessage(address, value);
+      }
+      for (LXOscConnection.Output output : this.outputs) {
+        if (output.transmitter != null) {
+          output.transmitter.sendMessage(address, value);
+        }
+      }
+    }
+  }
+
+  /**
+   * Internal helper to send float message with address splitting
+   */
+  private void sendMessageWithAddressSplitting(String originalAddress, float value) {
+    // Clear and populate the reusable address buffer
+    this.addressSplitBuffer.clear();
+    this.addressSplitBuffer.add(originalAddress);
+    
+    // Apply all splitters to expand the address list
+    if (!this.addressSplitters.isEmpty()) {
+      for (AddressSplitter splitter : this.addressSplitters) {
+        splitter.splitAddress(originalAddress, this.addressSplitBuffer);
+      }
+    }
+    
+    // Send to all expanded addresses using existing transmitter methods
+    for (String address : this.addressSplitBuffer) {
+      if (this.engineTransmitter != null) {
+        this.engineTransmitter.sendMessage(address, value);
+      }
+      for (LXOscConnection.Output output : this.outputs) {
+        if (output.transmitter != null) {
+          output.transmitter.sendMessage(address, value);
+        }
+      }
+    }
+  }
+
+  /**
+   * Internal helper to send string message with address splitting
+   */
+  private void sendMessageWithAddressSplitting(String originalAddress, String value) {
+    // Clear and populate the reusable address buffer
+    this.addressSplitBuffer.clear();
+    this.addressSplitBuffer.add(originalAddress);
+    
+    // Apply all splitters to expand the address list
+    if (!this.addressSplitters.isEmpty()) {
+      for (AddressSplitter splitter : this.addressSplitters) {
+        splitter.splitAddress(originalAddress, this.addressSplitBuffer);
+      }
+    }
+    
+    // Send to all expanded addresses using existing transmitter methods
+    for (String address : this.addressSplitBuffer) {
+      if (this.engineTransmitter != null) {
+        this.engineTransmitter.sendMessage(address, value);
+      }
+      for (LXOscConnection.Output output : this.outputs) {
+        if (output.transmitter != null) {
+          output.transmitter.sendMessage(address, value);
+        }
+      }
+    }
   }
 
   /**
@@ -432,7 +556,6 @@ public class LXOscEngine extends LXComponent {
         }
       }
     }
-
   }
 
   public class Transmitter {
@@ -444,7 +567,9 @@ public class LXOscEngine extends LXComponent {
     private BooleanParameter log;
     private TriggerParameter activity;
 
-    private Transmitter(InetAddress address, int port, int bufferSize) throws SocketException {
+    private Transmitter(
+        InetAddress address, int port, int bufferSize)
+        throws SocketException {
       this.bytes = new byte[bufferSize];
       this.buffer = ByteBuffer.wrap(this.bytes);
       this.packet = new DatagramPacket(this.bytes, this.bytes.length, address, port);
@@ -468,6 +593,11 @@ public class LXOscEngine extends LXComponent {
       if (this.activity != null) {
         this.activity.trigger();
       }
+
+      _send(packet);
+    }
+
+    void _send(OscPacket packet) throws IOException {
       this.buffer.rewind();
       packet.serialize(this.buffer);
       this.packet.setLength(this.buffer.position());
@@ -660,12 +790,12 @@ public class LXOscEngine extends LXComponent {
       this(new DatagramSocket(port, address), port, bufferSize);
     }
 
-    private Receiver(int port, int bufferSize) throws SocketException {
+    private Receiver(int port, int bufferSize)
+      throws SocketException {
       this(new DatagramSocket(port), port, bufferSize);
     }
 
-    private Receiver(DatagramSocket socket, int port, int bufferSize)
-      throws SocketException {
+    private Receiver(DatagramSocket socket, int port, int bufferSize) throws SocketException {
       this.socket = socket;
       this.address = socket.getLocalSocketAddress();
       this.port = port;
@@ -741,8 +871,7 @@ public class LXOscEngine extends LXComponent {
             }
           } catch (IOException iox) {
             if (!isInterrupted()) {
-              error(iox, "Exception in OSC listener on port " + port + ":"
-                + iox.getLocalizedMessage());
+              error(iox, "Exception in OSC listener on port " + port + ":" + iox.getLocalizedMessage());
             }
           }
         }
